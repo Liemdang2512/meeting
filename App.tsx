@@ -324,11 +324,16 @@ function App() {
 
   const handleLogout = async () => {
     await signOut();
+    // Reset toàn bộ state để quay lại trang đăng nhập ngay
+    setAuthState({ session: null, user: null });
     setStatus(TranscriptionStatus.IDLE);
     setFileMeta(null);
     setTranscription(null);
     setSummary(null);
     setErrorMsg(null);
+    setUserApiKey('');
+    setHasApiKey(null);
+    localStorage.removeItem('gemini_api_key');
   };
 
   if (authLoading) {
