@@ -58,6 +58,29 @@ export interface Database {
                     prompt_used?: string | null
                 }
             }
+            user_settings: {
+                Row: {
+                    id: string
+                    user_id: string
+                    gemini_api_key: string | null
+                    created_at: string
+                    updated_at: string
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    gemini_api_key?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    gemini_api_key?: string | null
+                    created_at?: string
+                    updated_at?: string
+                }
+            }
         }
     }
 }

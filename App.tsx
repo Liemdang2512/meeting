@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { TranscriptionStatus, FileMetadata } from './types';
 import { transcribeAudio, summarizeTranscript } from './services/geminiService';
-import { supabase, isSupabaseConfigured, getInitialAuthState, signOut, type AuthState } from './lib/supabase';
+import { supabase, isSupabaseConfigured, getInitialAuthState, signOut, loadApiKeyFromAccount, saveApiKeyToAccount, type AuthState } from './lib/supabase';
 import { FileUpload } from './components/FileUpload';
 import { TranscriptionView } from './components/TranscriptionView';
 import { Spinner } from './components/Spinner';
@@ -48,7 +48,7 @@ function App() {
 
   useEffect(() => {
     const init = async () => {
-      // Load API key from localStorage on mount
+      // Load API key from localStorage on mount (as cache)
       const savedKey = localStorage.getItem('gemini_api_key');
       if (savedKey) {
         setUserApiKey(savedKey);
@@ -66,12 +66,33 @@ function App() {
       setAuthState(initialAuth);
       setAuthLoading(false);
 
+      // Nếu đã đăng nhập, tải API key từ tài khoản Supabase
+      if (initialAuth.user) {
+        const accountKey = await loadApiKeyFromAccount(initialAuth.user.id);
+        if (accountKey) {
+          setUserApiKey(accountKey);
+          localStorage.setItem('gemini_api_key', accountKey);
+          setHasApiKey(true);
+          setShowApiKeyInput(false);
+        }
+      }
+
       if (supabase) {
-        supabase.auth.onAuthStateChange((_event, session) => {
+        supabase.auth.onAuthStateChange(async (_event, session) => {
           setAuthState({
             session: session,
             user: session?.user ?? null,
           });
+          // Khi đăng nhập trên thiết bị mới, tự động tải API key
+          if (_event === 'SIGNED_IN' && session?.user) {
+            const accountKey = await loadApiKeyFromAccount(session.user.id);
+            if (accountKey) {
+              setUserApiKey(accountKey);
+              localStorage.setItem('gemini_api_key', accountKey);
+              setHasApiKey(true);
+              setShowApiKeyInput(false);
+            }
+          }
         });
       }
     };
@@ -102,11 +123,20 @@ function App() {
     }
   };
 
-  const handleSaveApiKey = () => {
+  const handleSaveApiKey = async () => {
     if (userApiKey && userApiKey.trim().length > 0) {
-      localStorage.setItem('gemini_api_key', userApiKey.trim());
+      const trimmedKey = userApiKey.trim();
+      localStorage.setItem('gemini_api_key', trimmedKey);
       setHasApiKey(true);
       setShowApiKeyInput(false);
+
+      // Lưu API key vào tài khoản Supabase (đồng bộ qua các thiết bị)
+      if (authState.user) {
+        const saved = await saveApiKeyToAccount(authState.user.id, trimmedKey);
+        if (saved) {
+          console.log('API key đã được lưu vào tài khoản.');
+        }
+      }
     } else {
       alert('Vui lòng nhập API key hợp lệ');
     }

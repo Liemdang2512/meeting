@@ -54,3 +54,38 @@ export const signOut = async () => {
   if (!supabase) return;
   await supabase.auth.signOut();
 };
+
+// Tải API key từ tài khoản Supabase
+export const loadApiKeyFromAccount = async (userId: string): Promise<string | null> => {
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from('user_settings')
+    .select('gemini_api_key')
+    .eq('user_id', userId)
+    .single();
+
+  if (error || !data) return null;
+  return (data as any).gemini_api_key || null;
+};
+
+// Lưu API key vào tài khoản Supabase
+export const saveApiKeyToAccount = async (userId: string, apiKey: string): Promise<boolean> => {
+  if (!supabase) return false;
+
+  const { error } = await supabase
+    .from('user_settings')
+    .upsert({
+      user_id: userId,
+      gemini_api_key: apiKey,
+      updated_at: new Date().toISOString(),
+    } as any, {
+      onConflict: 'user_id',
+    });
+
+  if (error) {
+    console.error('Error saving API key to account:', error);
+    return false;
+  }
+  return true;
+};
