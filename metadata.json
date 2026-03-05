@@ -1,0 +1,5 @@
+{
+  "name": "Meeting Scribe AI Pro",
+  "description": "Chuyển đổi file ghi âm cuộc họp thành văn bản (Speech-to-Text) sử dụng Gemini 3 Pro. Hỗ trợ file dài, tách người nói và phân tích nội dung chuyên sâu.",
+  "requestFramePermissions": []
+}
