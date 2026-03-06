@@ -20,14 +20,76 @@ declare global {
   }
 }
 
-const DEFAULT_SUMMARY_PROMPT = `Dựa vào văn bản ghi chép trên, hãy tạo một biên bản cuộc họp chuyên nghiệp theo cấu trúc sau:
-1. Tóm tắt ngắn gọn mục đích cuộc họp.
-2. Danh sách các thành phần tham dự (nếu có thông tin).
-3. Các nội dung chính đã thảo luận (trình bày dưới dạng bullet points).
-4. Các quyết định đã được đưa ra.
-5. Danh sách các đầu việc (Action Items): Ghi rõ ai làm gì, thời hạn (nếu có).
+const DEFAULT_SUMMARY_PROMPT = `Dựa vào văn bản ghi chép cuộc họp ở trên, hãy tạo một BIÊN BẢN CUỘC HỌP (Meeting Minute - MOM) chuyên nghiệp theo đúng cấu trúc sau. Hãy trích xuất thông tin chính xác từ nội dung cuộc họp:
 
-Yêu cầu trình bày sạch đẹp bằng Markdown, ngôn ngữ trang trọng.`;
+---
+
+## MEETING MINUTE
+
+**Chủ đề cuộc họp:** [Tóm tắt chủ đề/nội dung chính của cuộc họp]
+
+**Mục đích cuộc họp:** [Mục tiêu chính cần đạt được trong cuộc họp]
+
+**Thời gian:** [Ngày tháng năm nếu có thông tin, nếu không ghi "Theo file ghi âm"]
+
+**Hình thức họp:** [Online/Offline - dựa vào nội dung để suy luận]
+
+---
+
+### THÀNH PHẦN THAM DỰ
+
+| Bên A | Bên B (nếu có) |
+|-------|----------------|
+| [Tên - Chức vụ] | [Tên - Chức vụ] |
+
+*(Liệt kê tất cả người tham dự được nhắc đến trong cuộc họp, nếu không rõ tên thì ghi "Người nói 1", "Người nói 2"...)*
+
+---
+
+### NỘI DUNG TRAO ĐỔI
+
+Tóm tắt các nội dung chính đã thảo luận, chia theo từng chủ đề/mục:
+
+**Nội dung 01: [Tiêu đề nội dung thảo luận 1]**
+
+- [Chi tiết các ý chính đã trao đổi]
+- [Ý kiến của từng bên]
+
+**Nội dung 02: [Tiêu đề nội dung thảo luận 2]**
+
+- [Chi tiết]
+
+*(Tiếp tục với các nội dung khác...)*
+
+---
+
+### KẾT LUẬN
+
+- [Tóm tắt các quyết định đã được thống nhất]
+- [Các điểm đã đồng ý]
+- [Phương hướng tiếp theo]
+
+---
+
+### KẾ HOẠCH TRIỂN KHAI
+
+| Chi tiết công việc | Phụ trách thực hiện |
+|---------------------|---------------------|
+| [Công việc cần làm 1] | [Người/Bên phụ trách] |
+| [Công việc cần làm 2] | [Người/Bên phụ trách] |
+
+---
+
+*Trân trọng*
+
+---
+
+**YÊU CẦU QUAN TRỌNG:**
+- Trình bày bằng Markdown sạch đẹp, ngôn ngữ trang trọng, chuyên nghiệp.
+- Trích xuất ĐẦY ĐỦ các ý chính, KHÔNG bỏ sót thông tin quan trọng.
+- Nếu có thông tin về tên người, chức vụ, công ty, thời gian → ghi chính xác.
+- Phần "Kế hoạch triển khai" phải dạng BẢNG với 2 cột: Chi tiết công việc | Phụ trách thực hiện.
+- Nội dung trao đổi phải được chia thành các MỤC rõ ràng (Nội dung 01, 02, 03...).`;
 
 function App() {
   const [authState, setAuthState] = useState<AuthState>({ session: null, user: null });
