@@ -17,24 +17,6 @@ const getApiKey = (): string => {
   throw new Error('API Key chưa được cấu hình. Vui lòng nhập API key trong phần ⚙️ API Key ở góc trên bên phải.');
 };
 
-// Wrapper để thêm timeout cho API call (5 phút)
-const withTimeout = <T>(promise: Promise<T>, timeoutMs: number = 300000): Promise<T> => {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      reject(new Error('Quá thời gian xử lý (5 phút). Vui lòng thử lại với file nhỏ hơn hoặc kiểm tra API key.'));
-    }, timeoutMs);
-
-    promise
-      .then((result) => {
-        clearTimeout(timer);
-        resolve(result);
-      })
-      .catch((err) => {
-        clearTimeout(timer);
-        reject(err);
-      });
-  });
-};
 
 const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -97,7 +79,7 @@ export const transcribeAudio = async (file: File): Promise<string> => {
       },
     };
 
-    const response = await withTimeout(ai.models.generateContent({
+    const response = await ai.models.generateContent({
       model: modelId,
       contents: {
         parts: [audioPart],
@@ -106,7 +88,7 @@ export const transcribeAudio = async (file: File): Promise<string> => {
         systemInstruction: systemPrompt,
         temperature: 0.1, // Lower temperature for more accurate transcription/translation
       }
-    }));
+    });
 
     if (response.text) {
       return response.text;
@@ -122,6 +104,43 @@ export const transcribeAudio = async (file: File): Promise<string> => {
 };
 
 /**
+ * Synthesizes multiple transcriptions from multiple audio files into one coherent document.
+ */
+export const synthesizeTranscriptions = async (transcriptions: { name: string; text: string }[]): Promise<string> => {
+  const apiKey = getApiKey();
+  const ai = new GoogleGenAI({ apiKey });
+
+  const combined = transcriptions
+    .map((t, i) => `## File ${i + 1}: ${t.name}\n\n${t.text}`)
+    .join('\n\n---\n\n');
+
+  const prompt = `Dưới đây là văn bản ghi chép từ ${transcriptions.length} file ghi âm của cùng một cuộc họp, theo đúng thứ tự thời gian:
+
+${combined}
+
+---
+
+**YÊU CẦU:** Hãy tổng hợp tất cả các file trên thành MỘT VĂN BẢN DUY NHẤT, liên tục và mạch lạc theo đúng thứ tự thời gian. Các quy tắc bắt buộc:
+- KHÔNG ĐƯỢC lược bỏ bất kỳ nội dung, chi tiết, hay đoạn hội thoại nào
+- Nếu có phần trùng lặp ở đầu/cuối các file (do ghi âm chồng lên nhau), chỉ giữ lại một lần
+- Giữ nguyên tên người nói và định dạng Markdown
+- Kết quả phải là một văn bản hoàn chỉnh, liền mạch như thể ghi từ một cuộc họp liên tục`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: prompt,
+      config: { temperature: 0.1 },
+    });
+
+    if (response.text) return response.text;
+    throw new Error("Không nhận được phản hồi khi tổng hợp.");
+  } catch (error: any) {
+    throw new Error(error.message || "Lỗi khi tổng hợp nội dung các file.");
+  }
+};
+
+/**
  * Generates a summary/meeting minutes from the transcribed text.
  */
 export const summarizeTranscript = async (transcript: string, customPrompt: string): Promise<string> => {
@@ -130,13 +149,13 @@ export const summarizeTranscript = async (transcript: string, customPrompt: stri
   const ai = new GoogleGenAI({ apiKey });
 
   try {
-    const response = await withTimeout(ai.models.generateContent({
+    const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: `Dưới đây là văn bản ghi chép cuộc họp:\n\n${transcript}\n\n--- Yêu cầu: ---\n${customPrompt}`,
       config: {
         temperature: 0.3,
       }
-    }));
+    });
 
     if (response.text) {
       return response.text;

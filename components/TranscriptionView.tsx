@@ -42,7 +42,7 @@ export const TranscriptionView: React.FC<TranscriptionViewProps> = ({ text }) =>
           </button>
           <button
             onClick={handleDownload}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
           >
             <DownloadIcon className="w-4 h-4" />
             Tải về
@@ -51,7 +51,7 @@ export const TranscriptionView: React.FC<TranscriptionViewProps> = ({ text }) =>
       </div>
 
       <div className="flex-1 p-6 overflow-y-auto bg-white">
-        <div className="prose prose-slate max-w-none prose-p:my-3 prose-headings:text-slate-800 prose-strong:text-indigo-900 prose-strong:font-bold">
+        <div className="prose prose-slate max-w-none prose-p:my-3 prose-headings:text-slate-800 prose-strong:text-blue-900 prose-strong:font-bold">
           <ReactMarkdown>{text}</ReactMarkdown>
         </div>
       </div>
