@@ -50,16 +50,40 @@ const getMimeType = (file: File): string => {
   }
 };
 
+// Giới hạn inlineData: file <= 20MB dùng base64, file > 20MB dùng File API
+const INLINE_DATA_LIMIT = 20 * 1024 * 1024; // 20MB
+
+// Timeout cho API call (10 phút)
+const API_TIMEOUT_MS = 10 * 60 * 1000;
+
+// Hàm tạo promise với timeout
+const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, errorMessage: string): Promise<T> => {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(errorMessage));
+    }, timeoutMs);
+
+    promise
+      .then((result) => {
+        clearTimeout(timer);
+        resolve(result);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+};
+
 export const transcribeAudio = async (file: File): Promise<string> => {
-  // Always create a new instance to use the most up-to-date API key
   const apiKey = getApiKey();
   const ai = new GoogleGenAI({ apiKey });
 
   try {
-    const modelId = 'gemini-3-pro-preview';
+    const modelId = 'gemini-2.5-flash-preview-05-20';
 
     const systemPrompt = `
-      Bạn là một chuyên gia bóc tách âm thanh và dịch thuật cao cấp sử dụng Gemini 3 Pro. Nhiệm vụ của bạn là:
+      Bạn là một chuyên gia bóc tách âm thanh và dịch thuật cao cấp. Nhiệm vụ của bạn là:
       
       1. TRÍCH XUẤT TOÀN BỘ: Chuyển đổi toàn bộ lời nói từ file âm thanh thành văn bản (Transcription). KHÔNG ĐƯỢC tóm tắt, lược bỏ hay bỏ qua bất kỳ đoạn hội thoại nào, kể cả những chi tiết nhỏ.
       2. DỊCH SANG TIẾNG VIỆT: Nếu ngôn ngữ trong âm thanh gốc không phải là Tiếng Việt (ví dụ: Tiếng Anh, Tiếng Nhật, Tiếng Trung...), hãy DỊCH TOÀN BỘ nội dung đó sang Tiếng Việt một cách chính xác và trôi chảy.
@@ -69,34 +93,107 @@ export const transcribeAudio = async (file: File): Promise<string> => {
       Hãy bắt đầu xử lý file âm thanh ngay bây giờ:
     `;
 
-    // Convert audio file to base64 for inlineData.
-    const base64Audio = await fileToBase64(file);
-    const audioPart = {
-      inlineData: {
-        mimeType: getMimeType(file),
-        data: base64Audio,
-      },
-    };
+    const fileSizeMB = (file.size / 1024 / 1024).toFixed(1);
+    console.log(`[Transcribe] File: ${file.name}, Size: ${fileSizeMB}MB, MIME: ${getMimeType(file)}`);
 
-    const response = await ai.models.generateContent({
-      model: modelId,
-      contents: {
-        parts: [audioPart],
-      },
-      config: {
-        systemInstruction: systemPrompt,
-        temperature: 0.1, // Lower temperature for more accurate transcription/translation
+    let response;
+
+    if (file.size <= INLINE_DATA_LIMIT) {
+      // File nhỏ (<= 20MB): dùng inlineData (base64)
+      console.log('[Transcribe] Sử dụng inlineData (file nhỏ)');
+      const base64Audio = await fileToBase64(file);
+      const audioPart = {
+        inlineData: {
+          mimeType: getMimeType(file),
+          data: base64Audio,
+        },
+      };
+
+      response = await withTimeout(
+        ai.models.generateContent({
+          model: modelId,
+          contents: {
+            parts: [audioPart],
+          },
+          config: {
+            systemInstruction: systemPrompt,
+            temperature: 0.1,
+          }
+        }),
+        API_TIMEOUT_MS,
+        `Quá thời gian xử lý (10 phút). File ${fileSizeMB}MB có thể quá lớn. Hãy thử file nhỏ hơn hoặc cắt nhỏ file âm thanh.`
+      );
+    } else {
+      // File lớn (> 20MB): upload qua File API trước
+      console.log('[Transcribe] Sử dụng File API (file lớn > 20MB)');
+
+      const uploadedFile = await withTimeout(
+        ai.files.upload({
+          file: file,
+          config: {
+            mimeType: getMimeType(file),
+          },
+        }),
+        5 * 60 * 1000, // 5 phút để upload
+        `Quá thời gian upload file (5 phút). Kiểm tra kết nối mạng và thử lại.`
+      );
+
+      console.log('[Transcribe] Upload xong, đang chờ xử lý...');
+
+      // Chờ file được xử lý xong trên server
+      let fileStatus = uploadedFile;
+      let waitCount = 0;
+      const maxWait = 60; // Tối đa 60 lần kiểm tra (5 phút)
+
+      while (fileStatus.state === 'PROCESSING' && waitCount < maxWait) {
+        await new Promise(resolve => setTimeout(resolve, 5000)); // Chờ 5 giây
+        waitCount++;
+        console.log(`[Transcribe] Đang chờ xử lý file... (${waitCount * 5}s)`);
+
+        if (fileStatus.name) {
+          const checkResult = await ai.files.get({ name: fileStatus.name });
+          fileStatus = checkResult;
+        }
       }
-    });
+
+      if (fileStatus.state === 'FAILED') {
+        throw new Error('File không thể xử lý được. Vui lòng thử file khác.');
+      }
+
+      response = await withTimeout(
+        ai.models.generateContent({
+          model: modelId,
+          contents: {
+            parts: [
+              {
+                fileData: {
+                  fileUri: fileStatus.uri!,
+                  mimeType: getMimeType(file),
+                },
+              },
+            ],
+          },
+          config: {
+            systemInstruction: systemPrompt,
+            temperature: 0.1,
+          }
+        }),
+        API_TIMEOUT_MS,
+        `Quá thời gian phân tích nội dung (10 phút). File ${fileSizeMB}MB có thể quá dài. Hãy cắt nhỏ file âm thanh và thử lại.`
+      );
+    }
 
     if (response.text) {
       return response.text;
     } else {
-      throw new Error("Không nhận được phản hồi từ Gemini 3 Pro.");
+      throw new Error("Không nhận được phản hồi từ AI.");
     }
   } catch (error: any) {
     if (error.message?.includes("Requested entity was not found")) {
       throw new Error("API_KEY_EXPIRED");
+    }
+    if (error.message?.includes("Quá thời gian")) {
+      throw error;
     }
     throw new Error(error.message || "Lỗi xử lý âm thanh.");
   }
@@ -106,18 +203,21 @@ export const transcribeAudio = async (file: File): Promise<string> => {
  * Generates a summary/meeting minutes from the transcribed text.
  */
 export const summarizeTranscript = async (transcript: string, customPrompt: string): Promise<string> => {
-  // Always create a new instance to use the most up-to-date API key
   const apiKey = getApiKey();
   const ai = new GoogleGenAI({ apiKey });
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: `Dưới đây là văn bản ghi chép cuộc họp:\n\n${transcript}\n\n--- Yêu cầu: ---\n${customPrompt}`,
-      config: {
-        temperature: 0.3,
-      }
-    });
+    const response = await withTimeout(
+      ai.models.generateContent({
+        model: 'gemini-2.5-flash-preview-05-20',
+        contents: `Dưới đây là văn bản ghi chép cuộc họp:\n\n${transcript}\n\n--- Yêu cầu: ---\n${customPrompt}`,
+        config: {
+          temperature: 0.3,
+        }
+      }),
+      API_TIMEOUT_MS,
+      'Quá thời gian tạo biên bản (10 phút). Vui lòng thử lại.'
+    );
 
     if (response.text) {
       return response.text;
