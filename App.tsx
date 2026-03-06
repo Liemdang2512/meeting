@@ -143,8 +143,16 @@ function App() {
   };
 
   const handleFileSelect = async (file: File) => {
-    if (!hasApiKey) {
-      await handleOpenKeySelector();
+    // Kiểm tra API key THỰC SỰ hợp lệ trước khi xử lý
+    const savedKey = localStorage.getItem('gemini_api_key');
+    const envKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const hasValidKey = (savedKey && savedKey.trim().length > 0 && savedKey.trim() !== 'your_gemini_api_key_here') ||
+      (envKey && envKey !== 'PLACEHOLDER_API_KEY' && envKey !== 'your_gemini_api_key_here');
+
+    if (!hasValidKey) {
+      setShowApiKeyInput(true);
+      setErrorMsg('Vui lòng nhập Gemini API Key trước khi tải file lên.');
+      return; // DỪNG - không bắt đầu processing
     }
 
     setFileMeta({
