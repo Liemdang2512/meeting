@@ -367,13 +367,6 @@ function App() {
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">Meeting Scribe <span className="text-indigo-600">Pro</span></h1>
           </div>
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => setShowApiKeyInput(true)}
-              className="text-xs bg-slate-100 text-slate-600 border border-slate-200 px-3 py-1.5 rounded-full font-medium hover:bg-slate-200 transition-colors flex items-center gap-1"
-              title="Thay đổi API Key"
-            >
-              ⚙️ API Key
-            </button>
             {status !== TranscriptionStatus.IDLE && (
               <button
                 onClick={resetApp}
