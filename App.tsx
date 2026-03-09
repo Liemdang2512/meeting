@@ -587,8 +587,8 @@ function App() {
               <FileAudioIcon className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-base font-bold leading-tight">Meeting Scribe Pro</h1>
-              <p className="text-blue-300 text-xs leading-tight">Trợ lý AI chuyển đổi audio/video thành văn bản và lập biên bản cuộc họp tự động, chính xác</p>
+              <h1 className="text-base font-bold leading-tight">Meeting Minutes - MoMai</h1>
+              <p className="text-blue-300 text-xs leading-tight">Trợ lý họp</p>
             </div>
           </div>
           <div className="flex items-center gap-3 shrink-0">
@@ -746,48 +746,48 @@ function App() {
               <p className="text-slate-500 text-sm mt-1">AI đang lắng nghe và ghi chép từng file. Kết quả hiện ngay khi mỗi file hoàn thành.</p>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Trái: File queue với trạng thái */}
-            <div className="space-y-3">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Danh sách file</p>
-              <div className="bg-white p-4 rounded-2xl shadow-xl border border-slate-200">
-                <FileUpload
-                  pendingFiles={pendingFiles}
-                  onAddFiles={handleAddFiles}
-                  onRemoveFile={handleRemoveFile}
-                  onStartConvert={handleStartConvert}
-                  fileStatuses={fileStatuses}
-                  disabled={true}
-                />
+              {/* Trái: File queue với trạng thái */}
+              <div className="space-y-3">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Danh sách file</p>
+                <div className="bg-white p-4 rounded-2xl shadow-xl border border-slate-200">
+                  <FileUpload
+                    pendingFiles={pendingFiles}
+                    onAddFiles={handleAddFiles}
+                    onRemoveFile={handleRemoveFile}
+                    onStartConvert={handleStartConvert}
+                    fileStatuses={fileStatuses}
+                    disabled={true}
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Phải: Kết quả từng file khi xong */}
-            <div className="space-y-3 flex flex-col h-[calc(100vh-260px)]">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Văn bản ghi chép</p>
-                {completedTranscriptions.length > 1 && (
-                  <div className="flex gap-1 flex-wrap justify-end">
-                    {completedTranscriptions.map((t, i) => (
-                      <button key={i} onClick={() => setViewingIndex(i)}
-                        className={`text-xs font-bold px-2.5 py-1 rounded-full border transition-colors ${i === viewingIndex ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300'}`}>
-                        {t.name.length > 15 ? t.name.substring(0, 15) + '…' : t.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
+              {/* Phải: Kết quả từng file khi xong */}
+              <div className="space-y-3 flex flex-col h-[calc(100vh-260px)]">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Văn bản ghi chép</p>
+                  {completedTranscriptions.length > 1 && (
+                    <div className="flex gap-1 flex-wrap justify-end">
+                      {completedTranscriptions.map((t, i) => (
+                        <button key={i} onClick={() => setViewingIndex(i)}
+                          className={`text-xs font-bold px-2.5 py-1 rounded-full border transition-colors ${i === viewingIndex ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300'}`}>
+                          {t.name.length > 15 ? t.name.substring(0, 15) + '…' : t.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  {completedTranscriptions.length === 0 ? (
+                    <div className="h-full bg-white rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-3 text-center p-8">
+                      <Spinner size="lg" className="text-blue-400" />
+                      <p className="text-slate-500 font-medium">Đã xong {currentFileIndex}/{totalFiles} file...</p>
+                      <p className="text-slate-400 text-sm italic">Kết quả sẽ hiện tại đây khi file xong</p>
+                    </div>
+                  ) : (
+                    <TranscriptionView text={completedTranscriptions[viewingIndex]?.text || ''} />
+                  )}
+                </div>
               </div>
-              <div className="flex-1 overflow-hidden">
-                {completedTranscriptions.length === 0 ? (
-                  <div className="h-full bg-white rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-3 text-center p-8">
-                    <Spinner size="lg" className="text-blue-400" />
-                    <p className="text-slate-500 font-medium">Đã xong {currentFileIndex}/{totalFiles} file...</p>
-                    <p className="text-slate-400 text-sm italic">Kết quả sẽ hiện tại đây khi file xong</p>
-                  </div>
-                ) : (
-                  <TranscriptionView text={completedTranscriptions[viewingIndex]?.text || ''} />
-                )}
-              </div>
-            </div>
             </div>{/* end grid */}
           </div>
         )}
@@ -887,139 +887,139 @@ function App() {
                 {summary ? 'Biên bản đã được tạo. Bạn có thể tạo lại hoặc xuất file Excel.' : 'Văn bản đã sẵn sàng. Nhấn tạo biên bản để AI tổng hợp nội dung cuộc họp.'}
               </p>
             </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-            {/* Cột 1: Văn bản tổng hợp (multi-file) hoặc văn bản thô (single file) */}
-            <div className="space-y-4 flex flex-col h-[calc(100vh-280px)]">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="bg-blue-600 text-white text-xs font-black w-5 h-5 flex items-center justify-center rounded-full">1</span>
-                  <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
-                    {synthesizedTranscription ? 'Nội dung tổng hợp' : 'Văn bản thô'}
-                  </h2>
-                  {synthesizedTranscription && (
-                    <span className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-full font-bold">
-                      {totalFiles} files đã gộp
-                    </span>
+              {/* Cột 1: Văn bản tổng hợp (multi-file) hoặc văn bản thô (single file) */}
+              <div className="space-y-4 flex flex-col h-[calc(100vh-280px)]">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-blue-600 text-white text-xs font-black w-5 h-5 flex items-center justify-center rounded-full">1</span>
+                    <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
+                      {synthesizedTranscription ? 'Nội dung tổng hợp' : 'Văn bản thô'}
+                    </h2>
+                    {synthesizedTranscription && (
+                      <span className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-full font-bold">
+                        {totalFiles} files đã gộp
+                      </span>
+                    )}
+                  </div>
+                  {!synthesizedTranscription && completedTranscriptions.length > 1 && (
+                    <div className="flex gap-1 flex-wrap">
+                      {completedTranscriptions.map((t, i) => (
+                        <button key={i} onClick={() => setViewingIndex(i)}
+                          className={`text-xs font-bold px-2.5 py-1 rounded-full border transition-colors ${i === viewingIndex ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300'}`}>
+                          {t.name.length > 12 ? t.name.substring(0, 12) + '…' : t.name}
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
-                {!synthesizedTranscription && completedTranscriptions.length > 1 && (
-                  <div className="flex gap-1 flex-wrap">
-                    {completedTranscriptions.map((t, i) => (
-                      <button key={i} onClick={() => setViewingIndex(i)}
-                        className={`text-xs font-bold px-2.5 py-1 rounded-full border transition-colors ${i === viewingIndex ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300'}`}>
-                        {t.name.length > 12 ? t.name.substring(0, 12) + '…' : t.name}
+                <div className="flex-1 overflow-hidden">
+                  <TranscriptionView text={
+                    synthesizedTranscription
+                      ? synthesizedTranscription
+                      : completedTranscriptions.length > 1
+                        ? completedTranscriptions[viewingIndex]?.text || ''
+                        : transcription
+                  } />
+                </div>
+              </div>
+
+              {/* Cột 2: Biên bản — luôn dùng toàn bộ transcription (combined) */}
+              <div className="space-y-4 flex flex-col h-[calc(100vh-280px)]">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="bg-blue-600 text-white text-xs font-black w-5 h-5 flex items-center justify-center rounded-full">2</span>
+                    <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">Biên bản cuộc họp</h2>
+                    {totalFiles > 1 && (
+                      <span className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-full font-bold">
+                        {totalFiles} files
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setShowPromptEditor(!showPromptEditor)}
+                    className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors underline decoration-2 underline-offset-4"
+                  >
+                    {showPromptEditor ? "Đóng tùy chỉnh" : "Sửa lại yêu cầu biên bản"}
+                  </button>
+                </div>
+
+                {/* Prompt Editor (Toggleable) */}
+                {showPromptEditor && (
+                  <div className="bg-white border-2 border-blue-100 rounded-xl p-4 shadow-lg animate-in fade-in zoom-in duration-200">
+                    <label className="block text-xs font-bold text-blue-900 uppercase mb-2">Cấu hình Prompt tóm tắt:</label>
+                    <textarea
+                      value={summaryPrompt}
+                      onChange={(e) => setSummaryPrompt(e.target.value)}
+                      className="w-full h-40 text-sm p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none font-mono"
+                      placeholder="Nhập yêu cầu tóm tắt tại đây..."
+                    />
+                    <div className="mt-3 flex justify-end gap-2">
+                      <button
+                        onClick={() => setSummaryPrompt(DEFAULT_SUMMARY_PROMPT)}
+                        className="text-xs text-slate-400 hover:text-slate-600"
+                      >
+                        Khôi phục mặc định
                       </button>
-                    ))}
+                      <button
+                        onClick={() => setShowPromptEditor(false)}
+                        className="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-blue-700"
+                      >
+                        Lưu cấu hình
+                      </button>
+                    </div>
                   </div>
                 )}
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <TranscriptionView text={
-                  synthesizedTranscription
-                    ? synthesizedTranscription
-                    : completedTranscriptions.length > 1
-                      ? completedTranscriptions[viewingIndex]?.text || ''
-                      : transcription
-                } />
-              </div>
-            </div>
 
-            {/* Cột 2: Biên bản — luôn dùng toàn bộ transcription (combined) */}
-            <div className="space-y-4 flex flex-col h-[calc(100vh-280px)]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="bg-blue-600 text-white text-xs font-black w-5 h-5 flex items-center justify-center rounded-full">2</span>
-                  <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">Biên bản cuộc họp</h2>
-                  {totalFiles > 1 && (
-                    <span className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-full font-bold">
-                      {totalFiles} files
-                    </span>
-                  )}
-                </div>
-                <button
-                  onClick={() => setShowPromptEditor(!showPromptEditor)}
-                  className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors underline decoration-2 underline-offset-4"
-                >
-                  {showPromptEditor ? "Đóng tùy chỉnh" : "Sửa lại yêu cầu biên bản"}
-                </button>
-              </div>
-
-              {/* Prompt Editor (Toggleable) */}
-              {showPromptEditor && (
-                <div className="bg-white border-2 border-blue-100 rounded-xl p-4 shadow-lg animate-in fade-in zoom-in duration-200">
-                  <label className="block text-xs font-bold text-blue-900 uppercase mb-2">Cấu hình Prompt tóm tắt:</label>
-                  <textarea
-                    value={summaryPrompt}
-                    onChange={(e) => setSummaryPrompt(e.target.value)}
-                    className="w-full h-40 text-sm p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none font-mono"
-                    placeholder="Nhập yêu cầu tóm tắt tại đây..."
-                  />
-                  <div className="mt-3 flex justify-end gap-2">
-                    <button
-                      onClick={() => setSummaryPrompt(DEFAULT_SUMMARY_PROMPT)}
-                      className="text-xs text-slate-400 hover:text-slate-600"
-                    >
-                      Khôi phục mặc định
-                    </button>
-                    <button
-                      onClick={() => setShowPromptEditor(false)}
-                      className="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-blue-700"
-                    >
-                      Lưu cấu hình
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex-1 flex flex-col min-h-0">
-                {!summary ? (
-                  <div className="flex-1 bg-white rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center p-8 text-center space-y-4">
-                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
-                      <DownloadIcon className="w-8 h-8 opacity-20" />
-                    </div>
-                    <div>
-                      <h3 className="text-slate-700 font-bold">Chưa tạo biên bản</h3>
-                      <p className="text-slate-400 text-sm mt-1">Sử dụng Gemini 3 Pro để tự động hóa biên bản từ văn bản thô.</p>
-                    </div>
-                    <button
-                      onClick={handleGenerateSummary}
-                      disabled={status === TranscriptionStatus.SUMMARIZING}
-                      className="bg-blue-600 text-white font-black px-8 py-3 rounded-xl shadow-blue-200 shadow-xl hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-50"
-                    >
-                      {status === TranscriptionStatus.SUMMARIZING
-                        ? "ĐANG XỬ LÝ..."
-                        : totalFiles > 1
-                          ? `TẠO BIÊN BẢN (${totalFiles} FILES)`
-                          : "TẠO BIÊN BẢN NGAY"}
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-4 duration-500">
-                    <TranscriptionView text={summary} />
-                    <div className="mt-4 flex gap-4">
+                <div className="flex-1 flex flex-col min-h-0">
+                  {!summary ? (
+                    <div className="flex-1 bg-white rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center p-8 text-center space-y-4">
+                      <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
+                        <DownloadIcon className="w-8 h-8 opacity-20" />
+                      </div>
+                      <div>
+                        <h3 className="text-slate-700 font-bold">Chưa tạo biên bản</h3>
+                        <p className="text-slate-400 text-sm mt-1">Sử dụng Gemini 3 Pro để tự động hóa biên bản từ văn bản thô.</p>
+                      </div>
                       <button
                         onClick={handleGenerateSummary}
-                        className="flex-1 border-2 border-blue-600 text-blue-600 font-bold py-3 rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+                        disabled={status === TranscriptionStatus.SUMMARIZING}
+                        className="bg-blue-600 text-white font-black px-8 py-3 rounded-xl shadow-blue-200 shadow-xl hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-50"
                       >
-                        <RefreshIcon className="w-4 h-4" />
-                        Tạo lại bản khác
-                      </button>
-
-                      <button
-                        onClick={handleExportExcel}
-                        className="flex-1 bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-green-100"
-                      >
-                        <DownloadIcon className="w-4 h-4" />
-                        Xuất Excel
+                        {status === TranscriptionStatus.SUMMARIZING
+                          ? "ĐANG XỬ LÝ..."
+                          : totalFiles > 1
+                            ? `TẠO BIÊN BẢN (${totalFiles} FILES)`
+                            : "TẠO BIÊN BẢN NGAY"}
                       </button>
                     </div>
-                  </div>
-                )}
-              </div>
-            </div>
+                  ) : (
+                    <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-4 duration-500">
+                      <TranscriptionView text={summary} />
+                      <div className="mt-4 flex gap-4">
+                        <button
+                          onClick={handleGenerateSummary}
+                          className="flex-1 border-2 border-blue-600 text-blue-600 font-bold py-3 rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+                        >
+                          <RefreshIcon className="w-4 h-4" />
+                          Tạo lại bản khác
+                        </button>
 
-          </div>
+                        <button
+                          onClick={handleExportExcel}
+                          className="flex-1 bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-green-100"
+                        >
+                          <DownloadIcon className="w-4 h-4" />
+                          Xuất Excel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+            </div>
           </div>
         )}
 

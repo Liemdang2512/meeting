@@ -39,7 +39,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             3
           </div>
           <h1 className="text-2xl font-black text-slate-900">
-            Meeting Scribe <span className="text-blue-600">Pro</span>
+            Meeting Minutes - <span className="text-blue-600">MoMai</span>
           </h1>
           <p className="text-slate-500 text-sm">
             Đăng nhập để sử dụng trình ghi biên bản cuộc họp.
