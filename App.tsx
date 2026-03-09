@@ -329,27 +329,27 @@ function App() {
     const combined = allTranscriptions.join('\n\n---\n\n');
     setTranscription(combined);
 
-    // Save to Supabase if configured (lưu file đầu tiên làm đại diện)
+    // Save to Supabase in background (không block bước chuyển tiếp)
     if (isSupabaseConfigured() && supabase && files[0]) {
-      try {
-        const { data, error } = await supabase
-          .from('transcriptions')
-          .insert({
-            file_name: files.length > 1 ? `${files[0].name} (+${files.length - 1} files)` : files[0].name,
-            file_size: files.reduce((sum, f) => sum + f.size, 0),
-            transcription_text: combined
-          } as any)
-          .select()
-          .single();
-
-        if (error) {
-          console.error('Error saving to Supabase:', error);
-        } else if (data) {
-          setTranscriptionId((data as any).id);
-        }
-      } catch (dbError) {
-        console.error('Database error:', dbError);
-      }
+      supabase
+        .from('transcriptions')
+        .insert({
+          file_name: files.length > 1 ? `${files[0].name} (+${files.length - 1} files)` : files[0].name,
+          file_size: files.reduce((sum, f) => sum + f.size, 0),
+          transcription_text: combined
+        } as any)
+        .select()
+        .single()
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Error saving to Supabase:', error);
+          } else if (data) {
+            setTranscriptionId((data as any).id);
+          }
+        })
+        .catch((dbError) => {
+          console.error('Database error:', dbError);
+        });
     }
 
     setPendingFiles([]);
