@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { TranscriptionStatus, FileMetadata } from './types';
-import { transcribeAudio, summarizeTranscript, synthesizeTranscriptions } from './services/geminiService';
+import { transcribeBasic, transcribeDeep, summarizeTranscript, synthesizeTranscriptions, type DeepProgressCallback } from './services/geminiService';
 import { supabase, isSupabaseConfigured, getInitialAuthState, signOut, loadApiKeyFromAccount, saveApiKeyToAccount, type AuthState } from './lib/supabase';
 import { FileUpload } from './components/FileUpload';
 import { TranscriptionView } from './components/TranscriptionView';
 import { Spinner } from './components/Spinner';
 import { FileAudioIcon, RefreshIcon, AlertCircleIcon, DownloadIcon, CheckIcon, CopyIcon } from './components/Icons';
 import { LoginPage } from './components/LoginPage';
+import type { MeetingInfo } from './features/minutes/types';
+import { loadMeetingInfoDraft, clearMeetingInfoDraft } from './features/minutes/storage';
+import { buildMinutesCustomPrompt } from './features/minutes/prompt';
+import { MeetingInfoForm } from './features/minutes/components/MeetingInfoForm';
 
 declare global {
   interface AIStudio {
@@ -121,6 +125,22 @@ function App() {
 
   // Trạng thái từng file khi xử lý song song
   const [fileStatuses, setFileStatuses] = useState<('idle' | 'processing' | 'done' | 'error')[]>([]);
+
+  // Chế độ phiên âm
+  const [transcribeMode, setTranscribeMode] = useState<'basic' | 'deep'>('basic');
+
+  // Progress cho chế độ chuyên sâu (3 bước)
+  const [deepProgress, setDeepProgress] = useState<{ step: number; label: string } | null>(null);
+
+  const [meetingInfo, setMeetingInfo] = useState<MeetingInfo>(() => (
+    loadMeetingInfoDraft() ?? {
+      companyName: '',
+      companyAddress: '',
+      meetingDatetime: '',
+      meetingLocation: '',
+      participants: [],
+    }
+  ));
 
   useEffect(() => {
     const init = async () => {
@@ -266,7 +286,15 @@ function App() {
     await Promise.all(
       files.map(async (file, i) => {
         try {
-          const resultText = await transcribeAudio(file);
+          let resultText: string;
+          if (transcribeMode === 'deep') {
+            resultText = await transcribeDeep(file, (step, label) => {
+              setDeepProgress({ step, label });
+            });
+            setDeepProgress(null);
+          } else {
+            resultText = await transcribeBasic(file);
+          }
           orderedResults[i] = resultText;
 
           // Cập nhật trạng thái file này thành done
@@ -383,7 +411,8 @@ function App() {
     setStatus(TranscriptionStatus.SUMMARIZING);
 
     try {
-      const resultSummary = await summarizeTranscript(sourceText, summaryPrompt);
+      const customPrompt = buildMinutesCustomPrompt({ meetingInfo, templatePrompt: summaryPrompt });
+      const resultSummary = await summarizeTranscript(sourceText, customPrompt);
       setSummary(resultSummary);
 
       // Save summary to Supabase if configured and we have a transcription ID
@@ -394,7 +423,7 @@ function App() {
             .insert({
               transcription_id: transcriptionId,
               summary_text: resultSummary,
-              prompt_used: summaryPrompt
+              prompt_used: customPrompt
             } as any);
 
           if (error) {
@@ -506,6 +535,14 @@ function App() {
     setErrorMsg(null);
     setViewStep(1);
     setFileStatuses([]);
+    clearMeetingInfoDraft();
+    setMeetingInfo({
+      companyName: '',
+      companyAddress: '',
+      meetingDatetime: '',
+      meetingLocation: '',
+      participants: [],
+    });
   };
 
   const handleLogout = async () => {
@@ -528,6 +565,7 @@ function App() {
     setUserApiKey('');
     setHasApiKey(null);
     localStorage.removeItem('gemini_api_key');
+    clearMeetingInfoDraft();
   };
 
   if (authLoading) {
@@ -544,7 +582,8 @@ function App() {
 
   // Tính bước hiện tại cho step indicator
   const isMultiFile = totalFiles > 1;
-  const biênBảnStep = isMultiFile ? 4 : 3;
+  const meetingInfoStep = isMultiFile ? 4 : 3;
+  const biênBảnStep = isMultiFile ? 5 : 4;
   const isNavigableState = status === TranscriptionStatus.SYNTHESIZED || status === TranscriptionStatus.COMPLETED;
 
   const currentStep = (() => {
@@ -552,14 +591,14 @@ function App() {
       if (status === TranscriptionStatus.IDLE) return 1;
       if (status === TranscriptionStatus.PROCESSING || status === TranscriptionStatus.READING_FILE) return 2;
       if (status === TranscriptionStatus.SYNTHESIZING || status === TranscriptionStatus.SYNTHESIZED) return 3;
-      if (status === TranscriptionStatus.SUMMARIZING) return 4;
-      if (status === TranscriptionStatus.COMPLETED) return summary ? 5 : 4;
+      if (status === TranscriptionStatus.SUMMARIZING) return biênBảnStep;
+      if (status === TranscriptionStatus.COMPLETED) return summary ? 6 : meetingInfoStep;
       return 1;
     } else {
       if (status === TranscriptionStatus.IDLE) return 1;
       if (status === TranscriptionStatus.PROCESSING || status === TranscriptionStatus.READING_FILE) return 2;
-      if (status === TranscriptionStatus.SUMMARIZING) return 3;
-      if (status === TranscriptionStatus.COMPLETED) return summary ? 4 : 3;
+      if (status === TranscriptionStatus.SUMMARIZING) return biênBảnStep;
+      if (status === TranscriptionStatus.COMPLETED) return summary ? 5 : meetingInfoStep;
       return 1;
     }
   })();
@@ -568,13 +607,15 @@ function App() {
     { n: 1, label: 'Tải lên file' },
     { n: 2, label: 'Ghi chép' },
     { n: 3, label: 'Tổng hợp' },
-    { n: 4, label: 'Biên bản' },
-    { n: 5, label: 'Hoàn thành' },
+    { n: 4, label: 'Thông tin cuộc họp' },
+    { n: 5, label: 'Biên bản' },
+    { n: 6, label: 'Hoàn thành' },
   ] : [
     { n: 1, label: 'Tải lên file' },
     { n: 2, label: 'Ghi chép' },
-    { n: 3, label: 'Biên bản' },
-    { n: 4, label: 'Hoàn thành' },
+    { n: 3, label: 'Thông tin cuộc họp' },
+    { n: 4, label: 'Biên bản' },
+    { n: 5, label: 'Hoàn thành' },
   ];
 
   return (
@@ -734,6 +775,50 @@ function App() {
                 disabled={false}
               />
             </div>
+
+            {/* Chọn chế độ phiên âm */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+              <p className="text-sm font-semibold text-slate-700">Chế độ phiên âm</p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => setTranscribeMode('basic')}
+                  className={`flex flex-col items-start gap-1 p-4 rounded-xl border-2 transition-all text-left ${
+                    transcribeMode === 'basic'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">⚡</span>
+                    <span className="font-semibold text-slate-800 text-sm">Cơ bản</span>
+                    {transcribeMode === 'basic' && (
+                      <span className="ml-auto text-xs font-medium text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">Đang chọn</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500">1 bước · Nhanh hơn</p>
+                  <p className="text-xs text-slate-400">Phù hợp họp nội bộ, nội dung đơn giản</p>
+                </button>
+                <button
+                  onClick={() => setTranscribeMode('deep')}
+                  className={`flex flex-col items-start gap-1 p-4 rounded-xl border-2 transition-all text-left ${
+                    transcribeMode === 'deep'
+                      ? 'border-purple-500 bg-purple-50'
+                      : 'border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🔍</span>
+                    <span className="font-semibold text-slate-800 text-sm">Chuyên sâu</span>
+                    {transcribeMode === 'deep' && (
+                      <span className="ml-auto text-xs font-medium text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">Đang chọn</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500">3 bước · Chính xác hơn</p>
+                  <p className="text-xs text-slate-400">Họp quan trọng, đa ngôn ngữ, thuật ngữ chuyên ngành</p>
+                </button>
+              </div>
+            </div>
+
             <p className="text-xs text-slate-400 text-center">Vui lòng hoàn thành bước 1 trước khi chuyển sang các bước tiếp theo.</p>
           </div>
         )}
@@ -779,9 +864,25 @@ function App() {
                 <div className="flex-1 overflow-hidden">
                   {completedTranscriptions.length === 0 ? (
                     <div className="h-full bg-white rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-3 text-center p-8">
-                      <Spinner size="lg" className="text-blue-400" />
+                      <Spinner size="lg" className={transcribeMode === 'deep' ? 'text-purple-400' : 'text-blue-400'} />
                       <p className="text-slate-500 font-medium">Đã xong {currentFileIndex}/{totalFiles} file...</p>
-                      <p className="text-slate-400 text-sm italic">Kết quả sẽ hiện tại đây khi file xong</p>
+                      {transcribeMode === 'deep' && deepProgress ? (
+                        <div className="w-full max-w-xs space-y-2">
+                          <p className="text-purple-600 text-sm font-medium">{deepProgress.label}</p>
+                          <div className="flex gap-1.5 justify-center">
+                            {[1, 2, 3].map(s => (
+                              <div key={s} className={`h-1.5 flex-1 rounded-full transition-all ${
+                                s < deepProgress.step ? 'bg-purple-500' :
+                                s === deepProgress.step ? 'bg-purple-400 animate-pulse' :
+                                'bg-slate-200'
+                              }`} />
+                            ))}
+                          </div>
+                          <p className="text-xs text-slate-400">Bước {deepProgress.step}/3</p>
+                        </div>
+                      ) : (
+                        <p className="text-slate-400 text-sm italic">Kết quả sẽ hiện tại đây khi file xong</p>
+                      )}
                     </div>
                   ) : (
                     <TranscriptionView text={completedTranscriptions[viewingIndex]?.text || ''} />
@@ -853,18 +954,18 @@ function App() {
               </div>
               {status !== TranscriptionStatus.COMPLETED && (
                 <button
-                  onClick={() => { setStatus(TranscriptionStatus.COMPLETED); setViewStep(biênBảnStep); }}
+                  onClick={() => { setStatus(TranscriptionStatus.COMPLETED); setViewStep(meetingInfoStep); }}
                   className="bg-blue-600 text-white font-black px-8 py-3 rounded-xl shadow-blue-200 shadow-lg hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:translate-y-0 whitespace-nowrap"
                 >
-                  Tạo biên bản từ nội dung này →
+                  Nhập thông tin cuộc họp →
                 </button>
               )}
               {status === TranscriptionStatus.COMPLETED && (
                 <button
-                  onClick={() => setViewStep(biênBảnStep)}
+                  onClick={() => setViewStep(meetingInfoStep)}
                   className="bg-blue-600 text-white font-black px-8 py-3 rounded-xl shadow-blue-200 shadow-lg hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:translate-y-0 whitespace-nowrap"
                 >
-                  Xem biên bản →
+                  Nhập thông tin cuộc họp →
                 </button>
               )}
             </div>
@@ -874,14 +975,35 @@ function App() {
           </div>
         )}
 
-        {/* BƯỚC 3/4: Biên bản — COMPLETED / SUMMARIZING */}
+        {/* BƯỚC 3/4: Thông tin cuộc họp */}
+        {isNavigableState && viewStep === meetingInfoStep && transcription && (
+          <div className="animate-in fade-in duration-300 space-y-4">
+            <div>
+              <h2 className="text-xl font-bold text-slate-800">
+                {`Bước ${meetingInfoStep}: Thông tin cuộc họp`}
+              </h2>
+              <p className="text-slate-500 text-sm mt-1">
+                Nhập thông tin cơ bản để biên bản chính xác hơn. Bạn có thể bỏ qua nếu không cần.
+              </p>
+            </div>
+
+            <MeetingInfoForm
+              initialValue={meetingInfo}
+              onChange={setMeetingInfo}
+              onSkip={() => setViewStep(biênBảnStep)}
+              onContinue={() => setViewStep(biênBảnStep)}
+            />
+          </div>
+        )}
+
+        {/* BƯỚC: Biên bản — COMPLETED / SUMMARIZING */}
         {((isNavigableState && viewStep === biênBảnStep) || status === TranscriptionStatus.SUMMARIZING) && transcription && (
           <div className="animate-in fade-in duration-300 space-y-4">
             <div>
               <h2 className="text-xl font-bold text-slate-800">
                 {summary
-                  ? `Bước ${isMultiFile ? 5 : 4}: Biên bản hoàn thành`
-                  : `Bước ${isMultiFile ? 4 : 3}: Tạo biên bản cuộc họp`}
+                  ? `Bước ${biênBảnStep}: Biên bản hoàn thành`
+                  : `Bước ${biênBảnStep}: Tạo biên bản cuộc họp`}
               </h2>
               <p className="text-slate-500 text-sm mt-1">
                 {summary ? 'Biên bản đã được tạo. Bạn có thể tạo lại hoặc xuất file Excel.' : 'Văn bản đã sẵn sàng. Nhấn tạo biên bản để AI tổng hợp nội dung cuộc họp.'}
