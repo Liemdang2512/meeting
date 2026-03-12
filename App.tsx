@@ -12,6 +12,7 @@ import type { MeetingInfo } from './features/minutes/types';
 import { loadMeetingInfoDraft, clearMeetingInfoDraft } from './features/minutes/storage';
 import { buildMinutesCustomPrompt } from './features/minutes/prompt';
 import { MeetingInfoForm } from './features/minutes/components/MeetingInfoForm';
+import { FileSplitPage } from './features/file-split';
 
 declare global {
   interface AIStudio {
@@ -131,6 +132,8 @@ function App() {
 
   // Progress cho chế độ chuyên sâu (3 bước)
   const [deepProgress, setDeepProgress] = useState<{ step: number; label: string } | null>(null);
+
+  const [mode, setMode] = useState<'notes' | 'splitter'>('notes');
 
   const [meetingInfo, setMeetingInfo] = useState<MeetingInfo>(() => (
     loadMeetingInfoDraft() ?? {
@@ -359,25 +362,26 @@ function App() {
 
     // Save to Supabase in background (không block bước chuyển tiếp)
     if (isSupabaseConfigured() && supabase && files[0]) {
-      supabase
-        .from('transcriptions')
-        .insert({
-          file_name: files.length > 1 ? `${files[0].name} (+${files.length - 1} files)` : files[0].name,
-          file_size: files.reduce((sum, f) => sum + f.size, 0),
-          transcription_text: combined
-        } as any)
-        .select()
-        .single()
-        .then(({ data, error }) => {
+      void (async () => {
+        try {
+          const { data, error } = await supabase
+            .from('transcriptions')
+            .insert({
+              file_name: files.length > 1 ? `${files[0].name} (+${files.length - 1} files)` : files[0].name,
+              file_size: files.reduce((sum, f) => sum + f.size, 0),
+              transcription_text: combined
+            } as any)
+            .select()
+            .single();
           if (error) {
             console.error('Error saving to Supabase:', error);
           } else if (data) {
             setTranscriptionId((data as any).id);
           }
-        })
-        .catch((dbError) => {
+        } catch (dbError) {
           console.error('Database error:', dbError);
-        });
+        }
+      })();
     }
 
     setPendingFiles([]);
@@ -644,6 +648,22 @@ function App() {
             </button>
           </div>
         </div>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-white/10">
+          <div className="flex gap-1">
+            <button
+              onClick={() => setMode('notes')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${mode === 'notes' ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'}`}
+            >
+              Ghi chép
+            </button>
+            <button
+              onClick={() => setMode('splitter')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${mode === 'splitter' ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'}`}
+            >
+              Cắt file
+            </button>
+          </div>
+        </div>
       </header>
 
       {/* Step indicator — clickable cho các bước đã hoàn thành */}
@@ -691,8 +711,8 @@ function App() {
       </div>
 
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-
-
+      {mode === 'splitter' && <FileSplitPage />}
+      {mode === 'notes' && <>
 
         {/* API Key Input Modal */}
         {showApiKeyInput && (
@@ -1145,6 +1165,7 @@ function App() {
           </div>
         )}
 
+      </>}
       </main>
 
 
