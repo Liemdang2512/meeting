@@ -14,6 +14,7 @@
     "db:up": "docker compose -f docker-compose.test.yml up -d",
     "db:down": "docker compose -f docker-compose.test.yml down",
     "db:reset": "bash scripts/db-reset.sh",
+    "db:seed": "docker exec -i meeting_postgres_test psql -U postgres -d meeting_test < db/seed.sql",
     "server": "tsx server/index.ts",
     "server:dev": "tsx server/index.ts",
     "dev:full": "concurrently \"npm run dev\" \"npm run server\""

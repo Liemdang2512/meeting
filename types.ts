@@ -22,3 +22,42 @@ export interface FileMetadata {
   type: string;
   lastModified: number;
 }
+
+export type TokenUsageFeature =
+  | 'minutes'
+  | 'file-split'
+  | 'token-usage-admin'
+  | 'my-token-usage'
+  | 'other';
+
+export type TokenUsageActionType =
+  | 'minutes-generate'
+  | 'transcribe-basic'
+  | 'transcribe-deep'
+  | 'file-split-analyze'
+  | 'admin-view'
+  | 'my-usage-view'
+  | 'other';
+
+export type TokenUsageMetadataValue = string | number | boolean | null;
+
+export type TokenUsageMetadata = Record<string, TokenUsageMetadataValue>;
+
+export interface TokenUsageLog {
+  id: string;
+  userId: string;
+  createdAt: string;
+  feature: TokenUsageFeature;
+  actionType: TokenUsageActionType;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  totalTokens: number | null;
+  model: string;
+  metadata: TokenUsageMetadata | null;
+}
+
+export interface TokenLoggingContext {
+  feature: TokenUsageFeature;
+  actionType: TokenUsageActionType;
+  metadata?: TokenUsageMetadata;
+}

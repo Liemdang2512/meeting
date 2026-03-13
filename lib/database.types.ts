@@ -81,6 +81,67 @@ export interface Database {
                     updated_at?: string
                 }
             }
+            profiles: {
+                Row: {
+                    id: string
+                    user_id: string
+                    role: string | null
+                    created_at: string
+                    updated_at: string | null
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    role?: string | null
+                    created_at?: string
+                    updated_at?: string | null
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    role?: string | null
+                    created_at?: string
+                    updated_at?: string | null
+                }
+            }
+            token_usage_logs: {
+                Row: {
+                    id: string
+                    user_id: string
+                    created_at: string
+                    action_type: string
+                    feature: string
+                    input_tokens: number | null
+                    output_tokens: number | null
+                    total_tokens: number | null
+                    model: string
+                    metadata: Json | null
+                }
+                Insert: {
+                    id?: string
+                    user_id: string
+                    created_at?: string
+                    action_type: string
+                    feature: string
+                    input_tokens?: number | null
+                    output_tokens?: number | null
+                    total_tokens?: number | null
+                    model: string
+                    metadata?: Json | null
+                }
+                Update: {
+                    id?: string
+                    user_id?: string
+                    created_at?: string
+                    action_type?: string
+                    feature?: string
+                    input_tokens?: number | null
+                    output_tokens?: number | null
+                    total_tokens?: number | null
+                    model?: string
+                    metadata?: Json | null
+                }
+            }
         }
     }
 }

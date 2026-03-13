@@ -17,5 +17,13 @@ services:
     volumes:
       - postgres_test_data:/var/lib/postgresql/data
 
+  adminer:
+    image: adminer
+    container_name: meeting_adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres-test
+
 volumes:
   postgres_test_data:

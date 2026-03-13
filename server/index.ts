@@ -6,6 +6,7 @@ import transcriptionsRouter from './routes/transcriptions';
 import summariesRouter from './routes/summaries';
 import profilesRouter from './routes/profiles';
 import tokenLogsRouter from './routes/tokenLogs';
+import adminRouter from './routes/admin';
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -22,6 +23,7 @@ app.use('/api/transcriptions', transcriptionsRouter);
 app.use('/api/summaries', summariesRouter);
 app.use('/api/profiles', profilesRouter);
 app.use('/api/token-logs', tokenLogsRouter);
+app.use('/api/admin', adminRouter);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 

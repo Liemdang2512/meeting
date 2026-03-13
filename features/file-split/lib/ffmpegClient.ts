@@ -3,78 +3,76 @@ import { fetchFile, toBlobURL } from '@ffmpeg/util';
 
 let ffmpeg: FFmpeg | null = null;
 let isLoaded = false;
+let loadPromise: Promise<void> | null = null;
 
 export type ProgressInfo = { current: number; total: number; ratio: number };
 
-async function ensureLoaded(
-  onProgress?: (info: ProgressInfo) => void
-): Promise<void> {
-  if (isLoaded && ffmpeg) return;
-
+async function doLoad(): Promise<void> {
   if (!ffmpeg) {
     ffmpeg = new FFmpeg();
+    ffmpeg.on('log', ({ message }) => console.log('[ffmpeg]', message));
   }
 
-  if (onProgress) {
-    ffmpeg.on('progress', ({ progress }) => {
-      onProgress({ current: 0, total: 1, ratio: progress });
-    });
-  }
+  const hasSAB = typeof SharedArrayBuffer !== 'undefined';
+  console.log('[ffmpegClient] SharedArrayBuffer:', hasSAB);
+  console.log('[ffmpegClient] Loading ffmpeg core from local files...');
 
-  const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+  // Single-threaded core — không cần workerURL, đơn giản và ổn định
   await ffmpeg.load({
-    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+    coreURL: await toBlobURL('/ffmpeg/ffmpeg-core.js', 'text/javascript'),
+    wasmURL: '/ffmpeg/ffmpeg-core.wasm',
   });
 
+  console.log('[ffmpegClient] ffmpeg loaded OK');
   isLoaded = true;
 }
 
-export async function getDuration(file: File): Promise<number> {
-  return new Promise((resolve, reject) => {
-    const el = document.createElement('video');
-    const url = URL.createObjectURL(file);
-    el.src = url;
-    el.onloadedmetadata = () => {
-      URL.revokeObjectURL(url);
-      resolve(el.duration);
-    };
-    el.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error('Cannot determine duration'));
-    };
-  });
+async function ensureLoaded(): Promise<void> {
+  if (isLoaded && ffmpeg) return;
+
+  // Tránh load song song nhiều lần
+  if (!loadPromise) {
+    loadPromise = doLoad().catch((err) => {
+      loadPromise = null; // reset để có thể retry
+      throw err;
+    });
+  }
+  await loadPromise;
 }
 
 export async function splitIntoSegments(params: {
   file: File;
   segments: { start: number; end: number }[];
   onProgress?: (info: ProgressInfo) => void;
-  onLoadingFFmpeg?: () => void;
+  onStatus?: (msg: string) => void;
 }): Promise<Blob[]> {
-  const { file, segments, onProgress, onLoadingFFmpeg } = params;
+  const { file, segments, onProgress, onStatus } = params;
 
-  if (!isLoaded) {
-    onLoadingFFmpeg?.();
-  }
-
+  onStatus?.('loading-ffmpeg');
+  console.log('[ffmpegClient] ensureLoaded...');
   await ensureLoaded();
+  console.log('[ffmpegClient] ensureLoaded done');
 
-  if (!ffmpeg) throw new Error('FFmpeg not initialized');
+  if (!ffmpeg) throw new Error('FFmpeg không khởi tạo được');
 
-  const ext = file.name.split('.').pop() || 'mp4';
+  const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
   const inputName = `input.${ext}`;
 
+  onStatus?.('splitting');
+  console.log('[ffmpegClient] Writing file to virtual FS...');
   await ffmpeg.writeFile(inputName, await fetchFile(file));
+  console.log('[ffmpegClient] File written, starting segments...');
 
   const blobs: Blob[] = [];
 
   for (let i = 0; i < segments.length; i++) {
     const seg = segments[i];
     const duration = seg.end - seg.start;
-    const outputName = `output_${i}.${ext}`;
+    const outputName = `out_${i}.${ext}`;
 
-    await ffmpeg.exec([
+    console.log(`[ffmpegClient] Segment ${i + 1}/${segments.length}: ${seg.start.toFixed(1)}s → ${seg.end.toFixed(1)}s`);
+
+    const ret = await ffmpeg.exec([
       '-ss', String(seg.start),
       '-t', String(duration),
       '-i', inputName,
@@ -82,17 +80,20 @@ export async function splitIntoSegments(params: {
       outputName,
     ]);
 
-    const data = await ffmpeg.readFile(outputName);
-    blobs.push(new Blob([data], { type: file.type || `audio/${ext}` }));
+    console.log(`[ffmpegClient] Segment ${i + 1} exec returned:`, ret);
 
+    const data = await ffmpeg.readFile(outputName);
+    blobs.push(new Blob([data as Uint8Array], { type: file.type || `audio/${ext}` }));
     await ffmpeg.deleteFile(outputName);
 
     onProgress?.({ current: i + 1, total: segments.length, ratio: (i + 1) / segments.length });
   }
 
   await ffmpeg.deleteFile(inputName);
-
+  console.log('[ffmpegClient] Done:', blobs.length, 'segments');
   return blobs;
 }
 
-export { ensureLoaded };
+export function preload(): void {
+  ensureLoaded().catch((err) => console.warn('[ffmpegClient] Preload failed:', err));
+}

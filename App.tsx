@@ -18,6 +18,7 @@ import { MeetingInfoForm } from './features/minutes/components/MeetingInfoForm';
 const FileSplitPage = lazy(() => import('./features/file-split').then(m => ({ default: m.FileSplitPage })));
 const TokenUsageAdminPage = lazy(() => import('./features/token-usage-admin/TokenUsageAdminPage').then(m => ({ default: m.TokenUsageAdminPage })));
 const MyTokenUsagePage = lazy(() => import('./features/token-usage-user/MyTokenUsagePage').then(m => ({ default: m.MyTokenUsagePage })));
+const UserManagementPage = lazy(() => import('./features/user-management/UserManagementPage').then(m => ({ default: m.UserManagementPage })));
 
 declare global {
   interface AIStudio {
@@ -692,6 +693,7 @@ function App() {
   const isNotesRoute = route === '/' || route === '';
   const isAdminRoute = route === '/admin/token-usage';
   const isMyUsageRoute = route === '/me/token-usage';
+  const isUserMgmtRoute = route === '/admin/users';
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -759,6 +761,15 @@ function App() {
                 Admin token usage
               </button>
             )}
+            {isAdmin && (
+              <button
+                onClick={() => navigate('/admin/users')}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${isUserMgmtRoute ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'
+                  }`}
+              >
+                Quản lý tài khoản
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -814,6 +825,9 @@ function App() {
           )}
           {isMyUsageRoute && user && (
             <MyTokenUsagePage currentUserId={user.userId} />
+          )}
+          {isUserMgmtRoute && user && (
+            <UserManagementPage currentUserId={user.userId} isAdmin={isAdmin} />
           )}
           {isNotesRoute && mode === 'splitter' && (
             <FileSplitPage

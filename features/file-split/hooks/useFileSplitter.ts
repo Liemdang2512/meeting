@@ -67,19 +67,17 @@ export function useFileSplitter() {
     setResultSegments([]);
 
     try {
-      setStatus('loading-ffmpeg');
-      const { splitIntoSegments } = await import('../lib/ffmpegClient');
+      const { splitAudio } = await import('../lib/webAudioSplitter');
 
-      setStatus('splitting');
-      const blobs = await splitIntoSegments({
+      const blobs = await splitAudio({
         file,
         segments,
         onProgress: (info) => setProgress(info),
-        onLoadingFFmpeg: () => setStatus('loading-ffmpeg'),
+        onStatus: (s) => setStatus(s as any),
       });
 
-      const ext = file.name.split('.').pop() || 'mp4';
       const baseName = file.name.replace(/\.[^/.]+$/, '');
+      const ext = 'wav'; // Web Audio API output là WAV
 
       const result: SplitSegment[] = blobs.map((blob, i) => ({
         index: i,

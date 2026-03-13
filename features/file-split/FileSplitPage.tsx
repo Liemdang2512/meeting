@@ -1,10 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useFileSplitter } from './hooks/useFileSplitter';
 import { FileSplitUploader } from './components/FileSplitUploader';
 import { FileSplitControls } from './components/FileSplitControls';
 import { FileSplitResultList } from './components/FileSplitResultList';
 
-export function FileSplitPage() {
+interface Props {
+  onSendToTranscription?: (files: File[]) => void;
+}
+
+export function FileSplitPage({ onSendToTranscription }: Props) {
+
   const {
     file,
     fileSizeMB,
@@ -21,11 +26,15 @@ export function FileSplitPage() {
     reset,
   } = useFileSplitter();
 
-  const isSplitting = status === 'splitting' || status === 'loading-ffmpeg';
-  const canSplit = file !== null && !error && !isSplitting && durationSeconds !== null;
+  // Lỗi chọn file (size, duration) — khác với lỗi khi xử lý
+  const fileSelectionError = error && status !== 'error';
+  const processingError = error && status === 'error';
+
+  const isBusy = status === 'splitting' || status === 'loading-ffmpeg';
+  const canSplit = file !== null && !fileSelectionError && !isBusy && durationSeconds !== null;
 
   const statusText = (() => {
-    if (status === 'loading-ffmpeg') return 'Đang tải ffmpeg (lần đầu có thể hơi lâu)…';
+    if (status === 'loading-ffmpeg') return 'Đang giải mã file audio…';
     if (status === 'splitting') {
       if (progress.total > 0) return `Đang cắt đoạn ${progress.current}/${progress.total}…`;
       return 'Đang cắt file…';
@@ -47,13 +56,13 @@ export function FileSplitPage() {
         <FileSplitUploader
           file={file}
           fileSizeMB={fileSizeMB}
-          error={error}
+          error={fileSelectionError ? error : null}
           onSelectFile={onSelectFile}
         />
       </div>
 
-      {/* Controls section */}
-      {file && !error && (
+      {/* Controls section — chỉ ẩn khi lỗi chọn file */}
+      {file && !fileSelectionError && (
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <FileSplitControls
             durationSeconds={durationSeconds}
@@ -64,8 +73,8 @@ export function FileSplitPage() {
         </div>
       )}
 
-      {/* Action & progress section */}
-      {file && !error && (
+      {/* Action, progress & error section */}
+      {file && !fileSelectionError && (
         <div className="space-y-3">
           <button
             onClick={splitFile}
@@ -89,9 +98,16 @@ export function FileSplitPage() {
             </div>
           )}
 
-          {status === 'error' && error && (
+          {/* Lỗi khi xử lý — luôn hiển thị */}
+          {processingError && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-red-700 text-sm font-medium">{error}</p>
+              <p className="text-red-700 text-sm font-medium">❌ {error}</p>
+              <button
+                onClick={splitFile}
+                className="mt-2 text-sm text-red-600 underline hover:text-red-800"
+              >
+                Thử lại
+              </button>
             </div>
           )}
         </div>
@@ -101,12 +117,27 @@ export function FileSplitPage() {
       {status === 'done' && resultSegments.length > 0 && (
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <FileSplitResultList segments={resultSegments} />
-          <button
-            onClick={reset}
-            className="mt-4 w-full py-2 border-2 border-slate-200 text-slate-600 font-medium rounded-xl hover:bg-slate-50 transition-colors"
-          >
-            Cắt file khác
-          </button>
+          <div className="mt-4 flex gap-3">
+            {onSendToTranscription && (
+              <button
+                onClick={() => {
+                  const files = resultSegments
+                    .filter((seg) => seg.blob)
+                    .map((seg) => new File([seg.blob!], seg.name, { type: seg.blob!.type }));
+                  onSendToTranscription(files);
+                }}
+                className="flex-1 py-2 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
+              >
+                Chuyển sang văn bản
+              </button>
+            )}
+            <button
+              onClick={reset}
+              className="flex-1 py-2 border-2 border-slate-200 text-slate-600 font-medium rounded-xl hover:bg-slate-50 transition-colors"
+            >
+              Cắt file khác
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -22,9 +22,24 @@ export function FileSplitResultList({ segments }: Props) {
     URL.revokeObjectURL(url);
   };
 
+  const handleDownloadAll = () => {
+    segments.forEach((seg, i) => {
+      if (!seg.blob) return;
+      setTimeout(() => handleDownload(seg), i * 300);
+    });
+  };
+
   return (
     <div className="space-y-2">
-      <h3 className="font-bold text-slate-800">Kết quả ({segments.length} đoạn)</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="font-bold text-slate-800">Kết quả ({segments.length} đoạn)</h3>
+        <button
+          onClick={handleDownloadAll}
+          className="px-3 py-1.5 bg-slate-800 text-white text-sm font-medium rounded-lg hover:bg-slate-900 transition-colors"
+        >
+          Tải tất cả
+        </button>
+      </div>
       {segments.map((seg) => (
         <div key={seg.index} className="flex items-center gap-3 bg-white border border-slate-200 rounded-lg p-3">
           <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold text-sm shrink-0">
