@@ -45,16 +45,20 @@ router.get('/', async (req, res) => {
 
   try {
     // Build dynamic WHERE clauses with postgres.js tagged templates
-    const featureFilter = feature && feature !== 'all' ? sql`AND feature = ${feature}` : sql``;
-    const userFilter = userId ? sql`AND user_id = ${userId}::uuid` : sql``;
+    const featureFilter = feature && feature !== 'all' ? sql`AND l.feature = ${feature}` : sql``;
+    const userFilter = userId ? sql`AND l.user_id = ${userId}::uuid` : sql``;
 
     const rows = await sql`
-      SELECT * FROM public.token_usage_logs
-      WHERE created_at >= ${from}::timestamptz
-        AND created_at <= ${to}::timestamptz
+      SELECT
+        l.*,
+        u.email
+      FROM public.token_usage_logs l
+      JOIN auth.users u ON u.id = l.user_id
+      WHERE l.created_at >= ${from}::timestamptz
+        AND l.created_at <= ${to}::timestamptz
         ${featureFilter}
         ${userFilter}
-      ORDER BY created_at DESC
+      ORDER BY l.created_at DESC
       LIMIT ${pageSizeNum} OFFSET ${offset}
     `;
     return res.json(rows);

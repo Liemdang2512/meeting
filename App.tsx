@@ -704,8 +704,8 @@ function App() {
               <FileAudioIcon className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-sans font-medium leading-tight">Meeting Assistant</h1>
-              <p className="text-slate-500 text-xs font-medium leading-tight">MoMai Analytics</p>
+              <h1 className="text-lg font-sans font-medium leading-tight">Meeting Minutes - MoMai</h1>
+              <p className="text-slate-500 text-xs font-medium leading-tight">Trợ lý họp</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 shrink-0">

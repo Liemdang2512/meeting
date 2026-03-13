@@ -35,7 +35,7 @@ export interface UseTokenUsageLogsResult {
   refetch: () => void;
 }
 
-const buildSummary = (logs: TokenUsageLog[]): TokenUsageSummary => {
+export const buildSummary = (logs: TokenUsageLog[]): TokenUsageSummary => {
   const byUserMap = new Map<string, number>();
   const byFeatureMap = new Map<string, number>();
 
@@ -109,6 +109,7 @@ export const useTokenUsageLogs = (options: UseTokenUsageLogsOptions): UseTokenUs
       const mappedLogs: TokenUsageLog[] = data.map((row) => ({
         id: row.id,
         userId: row.user_id,
+        userEmail: row.email ?? null,
         createdAt: row.created_at,
         feature: row.feature,
         actionType: row.action_type,

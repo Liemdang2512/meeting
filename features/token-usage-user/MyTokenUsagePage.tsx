@@ -75,10 +75,10 @@ export const MyTokenUsagePage: React.FC<MyTokenUsagePageProps> = ({ currentUserI
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-indigo-600 border-slate-200 p-6 shadow-sm rounded-xl border">
-          <p className="text-xs font-medium text-slate-800 mb-2">
+          <p className="text-xs font-medium text-indigo-100 mb-2">
             Tổng tokens (theo filter)
           </p>
-          <p className="text-4xl font-sans font-medium text-slate-800">
+          <p className="text-4xl font-sans font-medium text-white">
             {summary.totalTokens.toLocaleString('vi-VN')}
           </p>
         </div>

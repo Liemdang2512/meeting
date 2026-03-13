@@ -46,6 +46,7 @@ export type TokenUsageMetadata = Record<string, TokenUsageMetadataValue>;
 export interface TokenUsageLog {
   id: string;
   userId: string;
+  userEmail: string | null;
   createdAt: string;
   feature: TokenUsageFeature;
   actionType: TokenUsageActionType;

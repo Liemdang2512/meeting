@@ -43,7 +43,8 @@ export const TokenUsageTable: React.FC<TokenUsageTableProps> = ({
           <thead className="bg-indigo-900 text-white border-b border-slate-200">
             <tr>
               <th className="px-4 py-3 text-left font-medium">Time</th>
-              <th className="px-4 py-3 text-left font-medium">User</th>
+              <th className="px-4 py-3 text-left font-medium">Email</th>
+              <th className="px-4 py-3 text-left font-medium">User ID</th>
               <th className="px-4 py-3 text-left font-medium">Feature</th>
               <th className="px-4 py-3 text-left font-medium">Action</th>
               <th className="px-4 py-3 text-left font-medium hidden sm:table-cell">Model</th>
@@ -81,6 +82,9 @@ export const TokenUsageTable: React.FC<TokenUsageTableProps> = ({
                 <tr key={log.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3 text-slate-800 font-medium font-mono text-xs">
                     {new Date(log.createdAt).toLocaleString('vi-VN')}
+                  </td>
+                  <td className="px-4 py-3 text-slate-800 font-medium max-w-[200px] truncate">
+                    {log.userEmail ?? '—'}
                   </td>
                   <td className="px-4 py-3 text-slate-800 font-medium max-w-[160px] truncate">{log.userId}</td>
                   <td className="px-4 py-3 text-slate-600 font-medium text-xs">{log.feature}</td>

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { useTokenUsageLogs } from './hooks/useTokenUsageLogs';
+import { useTokenUsageLogs, buildSummary } from './hooks/useTokenUsageLogs';
 import { TokenUsageOverview } from './components/TokenUsageOverview';
 import { TokenUsageTable } from './components/TokenUsageTable';
 import type { TokenUsageFeature } from '../../types';
@@ -33,6 +33,7 @@ export const TokenUsageAdminPage: React.FC<TokenUsageAdminPageProps> = ({
   const [preset, setPreset] = useState<DateRangePreset>('7d');
   const [featureFilter, setFeatureFilter] = useState<TokenUsageFeature | 'all'>('all');
   const [page, setPage] = useState(1);
+  const [emailFilter, setEmailFilter] = useState('');
 
   const { from, to } = useMemo(() => getDateRange(preset), [preset]);
 
@@ -43,6 +44,18 @@ export const TokenUsageAdminPage: React.FC<TokenUsageAdminPageProps> = ({
     page,
     pageSize: 20,
   });
+
+  const filteredLogs = useMemo(
+    () =>
+      logs.filter((log) => {
+        if (!emailFilter.trim()) return true;
+        const email = log.userEmail ?? '';
+        return email.toLowerCase().includes(emailFilter.trim().toLowerCase());
+      }),
+    [logs, emailFilter],
+  );
+
+  const filteredSummary = useMemo(() => buildSummary(filteredLogs), [filteredLogs]);
 
   if (!isAdmin) {
     return (
@@ -174,14 +187,27 @@ export const TokenUsageAdminPage: React.FC<TokenUsageAdminPageProps> = ({
             ),
           )}
         </div>
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-slate-800">Email:</span>
+          <input
+            type="text"
+            value={emailFilter}
+            onChange={(e) => {
+              setEmailFilter(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Nhập email để lọc..."
+            className="px-3 py-1.5 border text-xs font-medium rounded-xl border-slate-200 bg-white placeholder-slate-400 text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
         <div className="flex-1 text-right text-xs text-slate-500 font-medium whitespace-nowrap">
           Đang xem: <span className="font-medium border-b border-slate-200 px-1 text-slate-800">{currentUserId}</span> (admin)
         </div>
       </div>
 
-      <TokenUsageOverview summary={summary} />
+      <TokenUsageOverview summary={filteredSummary} />
       <TokenUsageTable
-        logs={logs}
+        logs={filteredLogs}
         isLoading={isLoading}
         error={error}
         page={page}
