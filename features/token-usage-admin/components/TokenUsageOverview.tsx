@@ -15,27 +15,27 @@ export const TokenUsageOverview: React.FC<TokenUsageOverviewProps> = ({ summary 
     .slice(0, 5);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="bg-indigo-600 border-slate-200 p-6 shadow-sm rounded-xl border">
+        <p className="text-xs font-medium text-slate-800 mb-2">
           Tổng tokens (theo filter)
         </p>
-        <p className="text-2xl font-bold text-slate-900">
+        <p className="text-4xl font-sans font-medium text-slate-800">
           {summary.totalTokens.toLocaleString('vi-VN')}
         </p>
       </div>
-      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+      <div className="bg-white border-slate-200 p-6 shadow-sm rounded-xl border">
+        <p className="text-xs font-medium text-slate-800 mb-4">
           Top user theo tokens
         </p>
         {topUsers.length === 0 ? (
-          <p className="text-xs text-slate-400">Chưa có dữ liệu.</p>
+          <p className="text-sm font-medium text-slate-400">Chưa có dữ liệu.</p>
         ) : (
-          <ul className="space-y-1">
+          <ul className="space-y-3">
             {topUsers.map((u) => (
-              <li key={u.userId} className="flex justify-between text-xs">
-                <span className="text-slate-700 truncate">{u.userId}</span>
-                <span className="font-semibold text-slate-900">
+              <li key={u.userId} className="flex justify-between text-sm items-center">
+                <span className="text-slate-500 font-medium truncate pr-4">{u.userId}</span>
+                <span className="font-sans font-medium text-slate-800 text-lg">
                   {u.totalTokens.toLocaleString('vi-VN')}
                 </span>
               </li>
@@ -43,18 +43,18 @@ export const TokenUsageOverview: React.FC<TokenUsageOverviewProps> = ({ summary 
           </ul>
         )}
       </div>
-      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+      <div className="bg-slate-50 border-slate-200 p-6 shadow-sm rounded-xl border">
+        <p className="text-xs font-medium text-slate-800 mb-4">
           Tokens theo feature
         </p>
         {topFeatures.length === 0 ? (
-          <p className="text-xs text-slate-400">Chưa có dữ liệu.</p>
+          <p className="text-sm font-medium text-slate-400">Chưa có dữ liệu.</p>
         ) : (
-          <ul className="space-y-1">
+          <ul className="space-y-3">
             {topFeatures.map((f) => (
-              <li key={f.feature} className="flex justify-between text-xs">
-                <span className="text-slate-700">{f.feature}</span>
-                <span className="font-semibold text-slate-900">
+              <li key={f.feature} className="flex justify-between text-sm items-center">
+                <span className="text-slate-500 font-medium">{f.feature}</span>
+                <span className="font-sans font-medium text-slate-800 text-lg">
                   {f.totalTokens.toLocaleString('vi-VN')}
                 </span>
               </li>

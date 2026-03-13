@@ -32,25 +32,25 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl border border-slate-200 p-8 space-y-6">
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-200">
-            3
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white border border-slate-200 p-8 space-y-8 shadow-sm rounded-xl">
+        <div className="text-center space-y-4">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-indigo-600 text-white font-sans font-medium text-3xl mb-2 rounded-xl transition-all shadow-sm">
+            MA
           </div>
-          <h1 className="text-2xl font-black text-slate-900">
-            Meeting Minutes - <span className="text-blue-600">MoMai</span>
+          <h1 className="text-4xl font-sans font-medium text-slate-800 leading-none">
+            Meeting<br/>Assistant
           </h1>
-          <p className="text-slate-500 text-sm">
-            Đăng nhập để sử dụng trình ghi biên bản cuộc họp.
+          <p className="text-slate-500 text-sm font-medium border-b border-slate-200 pb-4 inline-block">
+            Tự động hóa biên bản
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
             <label
               htmlFor="login-email"
-              className="block text-sm font-semibold text-slate-700 mb-1"
+              className="block text-sm font-medium text-slate-800"
             >
               Email
             </label>
@@ -60,15 +60,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
-              placeholder="you@example.com"
+              className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50 focus:bg-white text-slate-800 font-medium transition-colors"
+              placeholder="name@company.com"
             />
           </div>
 
-          <div>
+          <div className="space-y-2">
             <label
               htmlFor="login-password"
-              className="block text-sm font-semibold text-slate-700 mb-1"
+              className="block text-sm font-medium text-slate-800"
             >
               Mật khẩu
             </label>
@@ -78,29 +78,31 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+              className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50 focus:bg-white text-slate-800 font-medium transition-colors"
               placeholder="••••••••"
             />
           </div>
 
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-              {error}
-            </p>
+            <div className="p-4 bg-red-50 border-red-200 rounded-lg text-red-600 font-medium text-center">
+              ⚠ {error}
+            </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-md shadow-blue-200 disabled:opacity-60"
+            className="w-full py-3.5 bg-indigo-600 text-white font-sans font-medium text-lg rounded-xl shadow-sm hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-4"
           >
-            {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+            {loading ? 'Đang xác thực...' : 'Đăng nhập'}
           </button>
         </form>
 
-        <p className="text-xs text-slate-400 text-center">
-          Tài khoản được tạo bởi admin.
-        </p>
+        <div className="pt-4 border-t border-slate-200">
+          <p className="text-xs text-slate-400 text-center font-medium">
+            Liên hệ quản trị viên để cấp quyền truy cập
+          </p>
+        </div>
       </div>
     </div>
   );

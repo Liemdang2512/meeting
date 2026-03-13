@@ -101,15 +101,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   };
 
   return (
-    <div className="w-full space-y-3">
+    <div className="w-full space-y-4">
       {/* Drop Zone — ẩn khi đang xử lý */}
       {!isProcessing && (
         <div
-          className={`relative w-full border-2 border-dashed rounded-xl transition-all duration-200 flex flex-col items-center justify-center p-5 text-center
-            ${disabled ? 'opacity-50 cursor-not-allowed border-slate-200 bg-slate-50' : 'cursor-pointer hover:bg-slate-50'}
-            ${dragActive ? 'border-blue-500 bg-blue-50' : error ? 'border-red-300 bg-red-50' : 'border-slate-300'}
-            ${hasFiles ? 'h-28' : 'h-48'}
-          `}
+          className={`relative w-full border transition-all duration-200 flex flex-col items-center justify-center p-6 text-center ${disabled ? 'opacity-50 cursor-not-allowed border-slate-200 bg-slate-50' : 'cursor-pointer hover:bg-slate-50'} ${dragActive ? 'border-slate-200 bg-slate-100' : error ? 'border-red-900 bg-white' : 'border-slate-200 bg-white border-dashed'} ${hasFiles ? 'h-32' : 'h-56'} ${!disabled && !dragActive && !error ? ' rounded-xl' : ''} `}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
@@ -126,21 +122,21 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           <div className="flex flex-col items-center pointer-events-none">
             {error ? (
               <>
-                <div className="p-2 rounded-full bg-red-100 text-red-500 mb-2">
-                  <AlertCircleIcon className="w-5 h-5" />
+                <div className="p-3 bg-red-600 text-white mb-3 border-red-900 shadow-sm rounded-xl">
+                  <AlertCircleIcon className="w-6 h-6" />
                 </div>
                 <p className="text-sm text-red-600 font-medium px-4">{error}</p>
-                <p className="text-xs text-red-400 mt-0.5">Nhấp để chọn file khác</p>
+                <p className="text-xs text-red-500 mt-2 font-medium">Nhấp để chọn file khác</p>
               </>
             ) : (
               <>
-                <div className={`p-3 rounded-full mb-2 ${dragActive ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500'}`}>
-                  {dragActive ? <FileAudioIcon className="w-6 h-6" /> : <UploadCloudIcon className="w-6 h-6" />}
+                <div className={`p-4 mb-4 border transition-colors ${dragActive ? 'bg-indigo-900 text-white border-slate-200 shadow-sm rounded-xl' : 'bg-white text-slate-800 border-slate-200 shadow-sm rounded-xl'}`}>
+                  {dragActive ? <FileAudioIcon className="w-8 h-8" /> : <UploadCloudIcon className="w-8 h-8" />}
                 </div>
-                <p className="text-sm font-semibold text-slate-700">
-                  {dragActive ? 'Thả tệp vào đây' : hasFiles ? 'Kéo thả hoặc nhấp để thêm file tiếp' : 'Kéo & Thả hoặc Chọn tệp'}
+                <p className="text-lg font-sans font-medium text-slate-800">
+                  {dragActive ? 'Thả tệp vào đây' : hasFiles ? 'Kéo thả tiếp file' : 'Thả tệp hoặc click'}
                 </p>
-                {!hasFiles && <p className="text-slate-400 text-xs mt-0.5">MP3, WAV, M4A, OGG, MP4 · Tối đa 100MB/file</p>}
+                {!hasFiles && <p className="text-slate-500 font-medium text-xs mt-2">MP3, WAV, M4A, OGG, MP4 · &le; 100MB</p>}
               </>
             )}
           </div>
@@ -149,62 +145,54 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
       {/* Danh sách file */}
       {hasFiles && (
-        <div className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-wider px-1 text-slate-400">
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-slate-400">
             {isProcessing
               ? `Đang xử lý song song · ${doneCount}/${pendingFiles.length} file xong`
               : `${pendingFiles.length} file đã chọn`}
           </p>
 
-          <div className="space-y-1.5">
+          <div className="space-y-3">
             {pendingFiles.map((file, index) => {
               const status = getFileStatus(index);
               return (
                 <div
                   key={`${file.name}-${index}`}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 border transition-all duration-300
-                    ${status === 'done' ? 'bg-green-50 border-green-200' : ''}
-                    ${status === 'processing' ? 'bg-blue-50 border-blue-300 shadow-sm' : ''}
-                    ${status === 'error' ? 'bg-red-50 border-red-200' : ''}
-                    ${status === 'idle' ? 'bg-slate-50 border-slate-200' : ''}
-                  `}
+                  className={`flex items-center gap-4 p-4 border transition-all duration-300 ${status === 'done' ? 'bg-slate-50 border-slate-200 shadow-sm rounded-xl' : ''} ${status === 'processing' ? 'bg-white border-slate-200 shadow-sm rounded-xl' : ''} ${status === 'error' ? 'bg-white border-red-900 shadow-sm rounded-xl' : ''} ${status === 'idle' ? 'bg-white border-slate-200 rounded-xl' : ''} `}
                 >
                   <div className="shrink-0">
-                    {status === 'done' && <CheckCircleIcon className="w-4 h-4 text-green-500" />}
-                    {status === 'processing' && <InlineSpinner className="w-4 h-4 text-blue-500" />}
-                    {status === 'error' && <AlertCircleIcon className="w-4 h-4 text-red-400" />}
-                    {status === 'idle' && <FileAudioIcon className="w-4 h-4 text-blue-300" />}
+                    {status === 'done' && <CheckCircleIcon className="w-6 h-6 text-slate-800" />}
+                    {status === 'processing' && <InlineSpinner className="w-6 h-6 text-slate-800" />}
+                    {status === 'error' && <AlertCircleIcon className="w-6 h-6 text-red-600" />}
+                    {status === 'idle' && <FileAudioIcon className="w-6 h-6 text-slate-800" />}
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium truncate
-                      ${status === 'done' ? 'text-green-700' : ''}
-                      ${status === 'processing' ? 'text-blue-700' : ''}
-                      ${status === 'error' ? 'text-red-600' : ''}
-                      ${status === 'idle' ? 'text-slate-700' : ''}
-                    `}>
+                    <p className={`text-base font-medium truncate ${status === 'error' ? 'text-red-600' : 'text-slate-800'}`}>
                       {file.name}
                     </p>
-                    <p className="text-xs text-slate-400">{formatSize(file.size)}</p>
+                    <p className="text-sm font-medium text-slate-500 mt-1">
+                      {formatSize(file.size)}
+                    </p>
                   </div>
 
                   {status === 'idle' && (
                     <button
                       onClick={() => onRemoveFile(index)}
-                      className="text-slate-300 hover:text-red-400 transition-colors shrink-0"
+                      className="text-slate-800 hover:text-white hover:bg-red-600 p-2 border-transparent hover:border-red-900 rounded-xl transition-all shrink-0"
                       aria-label="Xóa file"
                     >
-                      <XIcon className="w-4 h-4" />
+                      <XIcon className="w-5 h-5" />
                     </button>
                   )}
                   {status === 'processing' && (
-                    <span className="text-xs font-bold text-blue-500 shrink-0 whitespace-nowrap">Đang xử lý...</span>
+                    <span className="text-sm font-medium text-slate-800 shrink-0 whitespace-nowrap">Đang xử lý</span>
                   )}
                   {status === 'done' && (
-                    <span className="text-xs font-bold text-green-500 shrink-0">Xong</span>
+                    <span className="text-sm font-medium text-slate-800 shrink-0">Xong</span>
                   )}
                   {status === 'error' && (
-                    <span className="text-xs font-bold text-red-400 shrink-0">Lỗi</span>
+                    <span className="text-sm font-medium text-red-600 shrink-0">Lỗi</span>
                   )}
                 </div>
               );
@@ -216,9 +204,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             <button
               onClick={onStartConvert}
               disabled={disabled}
-              className="w-full bg-blue-600 text-white font-black py-3 rounded-xl shadow-lg shadow-blue-200 hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-4 bg-indigo-600 border-slate-200 text-white font-sans font-medium text-xl shadow-sm rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-6 border"
             >
-              {pendingFiles.length === 1 ? 'CHUYỂN SANG VĂN BẢN' : `CHUYỂN ${pendingFiles.length} FILE SANG VĂN BẢN`}
+              {pendingFiles.length === 1 ? 'Chuyển văn bản' : `Chuyển ${pendingFiles.length} file`}
             </button>
           )}
         </div>

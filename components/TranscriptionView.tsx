@@ -95,32 +95,29 @@ export const TranscriptionView: React.FC<TranscriptionViewProps> = ({ text }) =>
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
-        <h3 className="font-semibold text-slate-700">Kết quả (Văn bản)</h3>
-        <div className="flex gap-2">
+    <div className="bg-white border-slate-200 shadow-sm rounded-xl flex flex-col h-full border">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
+        <h3 className="font-sans font-medium text-xl text-slate-800">Kết quả</h3>
+        <div className="flex gap-3">
           <button
             onClick={handleCopy}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
-              ${copied
-                ? 'bg-green-100 text-green-700'
-                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+            className={`flex items-center justify-center gap-2 px-4 py-2 border-slate-200 text-sm font-medium transition-all shadow-sm rounded-xl min-w-[120px] ${copied ? 'bg-indigo-600 text-white translate-y-px shadow-sm rounded-xl' : 'bg-white text-slate-800 hover:bg-slate-100 rounded-xl'}`}
           >
-            {copied ? <CheckIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
+            {copied ? <CheckIcon className="w-5 h-5" /> : <CopyIcon className="w-5 h-5" />}
             {copied ? "Đã chép" : "Sao chép"}
           </button>
           <button
             onClick={handleDownload}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 border-slate-200 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-sm rounded-xl border"
           >
-            <DownloadIcon className="w-4 h-4" />
+            <DownloadIcon className="w-5 h-5" />
             Tải về
           </button>
         </div>
       </div>
 
-      <div className="flex-1 p-6 overflow-y-auto bg-white">
-        <div className="prose prose-slate max-w-none prose-p:my-3 prose-headings:text-slate-800 prose-strong:text-blue-900 prose-strong:font-bold">
+      <div className="flex-1 p-6 overflow-y-auto bg-white rounded-2xl">
+        <div className="prose max-w-none prose-p:my-3 prose-headings:font-sans prose-headings:font-medium prose-headings:text-slate-800 prose-strong:text-slate-800 prose-strong:font-medium prose-a:text-slate-500 prose-a:font-medium prose-a:border-b prose-a:border-indigo-500 prose-a:no-underline hover:prose-a:text-slate-800 hover:prose-a:border-slate-200 text-slate-800">
           <ReactMarkdown>{text}</ReactMarkdown>
         </div>
       </div>

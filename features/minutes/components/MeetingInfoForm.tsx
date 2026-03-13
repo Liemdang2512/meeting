@@ -62,51 +62,51 @@ export function MeetingInfoForm(props: Props) {
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
+    <div className="bg-white border-slate-200 shadow-sm rounded-xl p-6 space-y-6 border">
       <div className="space-y-1">
-        <h3 className="text-lg font-bold text-slate-800">Thông tin cuộc họp</h3>
-        <p className="text-sm text-slate-500">
+        <h3 className="text-xl font-sans font-medium text-slate-800">Thông tin cuộc họp</h3>
+        <p className="text-sm font-medium text-slate-500">
           Nhập nhanh vài thông tin để biên bản chính xác hơn (có thể bỏ qua).
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1">
-          <label className="block text-sm font-bold text-slate-700">Tên doanh nghiệp</label>
+          <label className="block text-sm font-medium text-slate-800">Tên doanh nghiệp</label>
           <input
             value={value.companyName}
             onChange={(e) => updateField('companyName', e.target.value)}
-            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+            className="w-full px-4 py-3 border-slate-200 focus:border-slate-200 bg-white focus:outline-none text-sm font-medium transition-colors border rounded-xl"
             placeholder="VD: Công ty ABC"
           />
         </div>
 
         <div className="space-y-1">
-          <label className="block text-sm font-bold text-slate-700">Địa chỉ doanh nghiệp</label>
+          <label className="block text-sm font-medium text-slate-800">Địa chỉ doanh nghiệp</label>
           <input
             value={value.companyAddress}
             onChange={(e) => updateField('companyAddress', e.target.value)}
-            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+            className="w-full px-4 py-3 border-slate-200 focus:border-slate-200 bg-white focus:outline-none text-sm font-medium transition-colors border rounded-xl"
             placeholder="VD: 123 Nguyễn Trãi, Q.1"
           />
         </div>
 
         <div className="space-y-1">
-          <label className="block text-sm font-bold text-slate-700">Thời gian</label>
+          <label className="block text-sm font-medium text-slate-800">Thời gian</label>
           <input
             value={value.meetingDatetime}
             onChange={(e) => updateField('meetingDatetime', e.target.value)}
-            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+            className="w-full px-4 py-3 border-slate-200 focus:border-slate-200 bg-white focus:outline-none text-sm font-medium transition-colors border rounded-xl"
             placeholder="VD: 09:00 11/03/2026"
           />
         </div>
 
         <div className="space-y-1">
-          <label className="block text-sm font-bold text-slate-700">Địa điểm</label>
+          <label className="block text-sm font-medium text-slate-800">Địa điểm</label>
           <input
             value={value.meetingLocation}
             onChange={(e) => updateField('meetingLocation', e.target.value)}
-            className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+            className="w-full px-4 py-3 border-slate-200 focus:border-slate-200 bg-white focus:outline-none text-sm font-medium transition-colors border rounded-xl"
             placeholder="VD: Online - Google Meet / Văn phòng..."
           />
         </div>
@@ -115,62 +115,62 @@ export function MeetingInfoForm(props: Props) {
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <p className="text-sm font-bold text-slate-700">Thành phần tham dự</p>
-            <p className="text-xs text-slate-500">Gợi ý: nhập tên + chức danh + vai trò (Chủ trì/Thư ký/Tham dự).</p>
+            <p className="text-sm font-medium text-slate-800">Thành phần tham dự</p>
+            <p className="text-xs font-medium text-slate-500">Gợi ý: nhập tên + chức danh + vai trò (Chủ trì/Thư ký/Tham dự).</p>
           </div>
           <button
             type="button"
             onClick={addParticipant}
-            className="px-3 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 border-slate-200 bg-white text-slate-800 text-sm font-medium shadow-sm rounded-xl hover:bg-slate-50 transition-all border"
           >
             + Thêm người
           </button>
         </div>
 
         {value.participants.length === 0 ? (
-          <div className="border-2 border-dashed border-slate-200 rounded-xl p-4 text-sm text-slate-500">
+          <div className="border-dashed border-slate-200 bg-slate-50 p-4 text-sm font-medium text-slate-400 text-center rounded-2xl">
             Chưa có người tham dự. Bạn có thể bấm “Thêm người”, hoặc bỏ qua bước này.
           </div>
         ) : (
           <div className="space-y-3">
             {value.participants.map((p, idx) => (
-              <div key={p.id} className="border border-slate-200 rounded-xl p-4 bg-slate-50/30">
+              <div key={p.id} className="border-slate-200 bg-slate-50 p-4 transition-colors focus-within:border-slate-200 focus-within:bg-white border rounded-2xl">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-bold text-slate-500">Người {idx + 1}</p>
+                  <p className="text-sm font-medium text-slate-800">Người {idx + 1}</p>
                   <button
                     type="button"
                     onClick={() => removeParticipant(p.id)}
-                    className="text-xs font-bold text-red-600 hover:text-red-800"
+                    className="text-xs font-medium text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 border-red-600 shadow-sm rounded-xl transition-all"
                   >
                     Xóa
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
                   <div className="space-y-1">
-                    <label className="block text-xs font-bold text-slate-700">Tên</label>
+                    <label className="block text-xs font-medium text-slate-600">Tên</label>
                     <input
                       value={p.name}
                       onChange={(e) => updateParticipant(p.id, { name: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm bg-white"
+                      className="w-full px-3 py-2 border-slate-200 focus:border-slate-200 bg-white focus:outline-none text-sm font-medium transition-colors border rounded-xl"
                       placeholder="VD: Nguyễn Văn A"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="block text-xs font-bold text-slate-700">Chức danh</label>
+                    <label className="block text-xs font-medium text-slate-600">Chức danh</label>
                     <input
                       value={p.title ?? ''}
                       onChange={(e) => updateParticipant(p.id, { title: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm bg-white"
+                      className="w-full px-3 py-2 border-slate-200 focus:border-slate-200 bg-white focus:outline-none text-sm font-medium transition-colors border rounded-xl"
                       placeholder="VD: Giám đốc / PM"
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="block text-xs font-bold text-slate-700">Vai trò</label>
+                    <label className="block text-xs font-medium text-slate-600">Vai trò</label>
                     <select
                       value={p.role ?? 'Tham dự'}
                       onChange={(e) => updateParticipant(p.id, { role: e.target.value as MeetingParticipantRole })}
-                      className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm bg-white"
+                      className="w-full px-3 py-2 border-slate-200 focus:border-slate-200 bg-white focus:outline-none text-sm font-medium transition-colors appearance-none cursor-pointer border rounded-xl"
                     >
                       {ROLE_OPTIONS.map(r => (
                         <option key={r} value={r}>{r}</option>
@@ -184,18 +184,18 @@ export function MeetingInfoForm(props: Props) {
         )}
       </div>
 
-      <div className="flex gap-3 justify-end flex-wrap pt-2">
+      <div className="flex gap-4 justify-end flex-wrap pt-4">
         <button
           type="button"
           onClick={props.onSkip}
-          className="px-4 py-3 border-2 border-slate-200 text-slate-600 font-bold rounded-lg hover:bg-slate-50 transition-colors"
+          className="px-6 py-3 border-slate-200 text-slate-600 font-medium hover:bg-slate-50 hover:border-slate-200 transition-colors border rounded-xl"
         >
           Bỏ qua
         </button>
         <button
           type="button"
           onClick={props.onContinue}
-          className="px-5 py-3 bg-blue-600 text-white font-black rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200"
+          className="px-6 py-3 bg-indigo-600 text-white font-sans font-medium border-slate-200 shadow-sm rounded-xl hover:bg-indigo-700 transition-all active:bg-indigo-800 border"
         >
           Tiếp tục tạo biên bản ({participantsCount} người)
         </button>

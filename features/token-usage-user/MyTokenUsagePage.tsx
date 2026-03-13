@@ -37,22 +37,22 @@ export const MyTokenUsagePage: React.FC<MyTokenUsagePageProps> = ({ currentUserI
   });
 
   return (
-    <div className="space-y-4 mt-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+    <div className="space-y-6 mt-6">
+      <div className="flex items-center justify-between gap-4 flex-wrap pb-4 border-b border-slate-200">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">My Token Usage</h2>
-          <p className="text-xs text-slate-500">
+          <h2 className="text-3xl font-sans font-medium text-slate-800">My Token Usage</h2>
+          <p className="text-slate-500 font-medium mt-1 text-sm">
             Xem tổng token và lịch sử sử dụng của riêng bạn.
           </p>
         </div>
-        <div className="text-xs text-slate-500">
-          User: <span className="font-semibold">{currentUserId}</span>
+        <div className="text-sm font-medium text-slate-500 whitespace-nowrap">
+          User: <span className="font-medium border-b border-slate-200 px-1 text-slate-800">{currentUserId}</span>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 text-xs">
-        <div className="flex items-center gap-1">
-          <span className="font-semibold text-slate-600">Khoảng thời gian:</span>
+      <div className="flex flex-wrap items-center gap-4 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-slate-800">Khoảng thời gian:</span>
           {([
             { id: '7d', label: '7 ngày' },
             { id: '30d', label: '30 ngày' },
@@ -65,11 +65,7 @@ export const MyTokenUsagePage: React.FC<MyTokenUsagePageProps> = ({ currentUserI
                 setPreset(item.id);
                 setPage(1);
               }}
-              className={`px-2 py-1 rounded-full border text-xs ${
-                preset === item.id
-                  ? 'border-blue-600 bg-blue-50 text-blue-700'
-                  : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}
+              className={`px-3 py-1.5 border text-xs font-medium transition-all ${ preset === item.id ? 'border-slate-200 bg-indigo-900 text-white shadow-sm rounded-xl translate-y-px' : 'border-slate-200 text-slate-800 bg-white hover:bg-slate-50 shadow-sm rounded-xl' }`}
             >
               {item.label}
             </button>
@@ -77,55 +73,55 @@ export const MyTokenUsagePage: React.FC<MyTokenUsagePageProps> = ({ currentUserI
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-indigo-600 border-slate-200 p-6 shadow-sm rounded-xl border">
+          <p className="text-xs font-medium text-slate-800 mb-2">
             Tổng tokens (theo filter)
           </p>
-          <p className="text-2xl font-bold text-slate-900">
+          <p className="text-4xl font-sans font-medium text-slate-800">
             {summary.totalTokens.toLocaleString('vi-VN')}
           </p>
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm">
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-          <p className="text-sm font-semibold text-slate-700">Lịch sử token usage</p>
-          <div className="flex items-center gap-2 text-xs text-slate-500">
+      <div className="bg-white border-slate-200 shadow-sm rounded-xl border">
+        <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+          <p className="text-lg font-medium font-sans text-slate-800">Lịch sử token usage</p>
+          <div className="flex items-center gap-3 text-sm font-medium text-slate-500">
             <span>Trang {page}</span>
             <span className="text-slate-300">•</span>
             <span>{logs.length} dòng</span>
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full text-xs">
-            <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
+          <table className="min-w-full text-sm whitespace-nowrap">
+            <thead className="bg-indigo-900 text-white border-b border-slate-200">
               <tr>
-                <th className="px-3 py-2 text-left font-semibold">Time</th>
-                <th className="px-3 py-2 text-left font-semibold">Feature</th>
-                <th className="px-3 py-2 text-left font-semibold">Action</th>
-                <th className="px-3 py-2 text-left font-semibold">Model</th>
-                <th className="px-3 py-2 text-right font-semibold">Total tokens</th>
+                <th className="px-4 py-3 text-left font-medium">Time</th>
+                <th className="px-4 py-3 text-left font-medium">Feature</th>
+                <th className="px-4 py-3 text-left font-medium">Action</th>
+                <th className="px-4 py-3 text-left font-medium hidden sm:table-cell">Model</th>
+                <th className="px-4 py-3 text-right font-medium">Total tokens</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y-2 divide-slate-100">
               {isLoading && (
                 <tr>
-                  <td colSpan={5} className="px-3 py-6 text-center text-slate-400">
+                  <td colSpan={5} className="px-4 py-8 text-center text-slate-500 font-medium">
                     Đang tải dữ liệu...
                   </td>
                 </tr>
               )}
               {!isLoading && error && (
                 <tr>
-                  <td colSpan={5} className="px-3 py-6 text-center text-red-500">
+                  <td colSpan={5} className="px-4 py-8 text-center text-red-600 font-medium">
                     {error}
                   </td>
                 </tr>
               )}
               {!isLoading && !error && logs.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-3 py-6 text-center text-slate-400">
+                  <td colSpan={5} className="px-4 py-8 text-center text-slate-500 font-medium">
                     Chưa có log nào trong khoảng thời gian này.
                   </td>
                 </tr>
@@ -133,14 +129,14 @@ export const MyTokenUsagePage: React.FC<MyTokenUsagePageProps> = ({ currentUserI
               {!isLoading &&
                 !error &&
                 logs.map((log) => (
-                  <tr key={log.id} className="border-t border-slate-100 hover:bg-slate-50/60">
-                    <td className="px-3 py-2 whitespace-nowrap text-slate-600">
+                  <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 text-slate-800 font-medium font-mono text-xs">
                       {new Date(log.createdAt).toLocaleString('vi-VN')}
                     </td>
-                    <td className="px-3 py-2 text-slate-600">{log.feature}</td>
-                    <td className="px-3 py-2 text-slate-600">{log.actionType}</td>
-                    <td className="px-3 py-2 text-slate-600">{log.model}</td>
-                    <td className="px-3 py-2 text-right font-semibold text-slate-900">
+                    <td className="px-4 py-3 text-slate-600 font-medium text-xs">{log.feature}</td>
+                    <td className="px-4 py-3 text-slate-600 font-medium text-xs">{log.actionType}</td>
+                    <td className="px-4 py-3 text-slate-500 font-mono text-xs hidden sm:table-cell max-w-[120px] truncate">{log.model}</td>
+                    <td className="px-4 py-3 text-right font-medium text-slate-800 text-base">
                       {log.totalTokens !== null ? log.totalTokens.toLocaleString('vi-VN') : '—'}
                     </td>
                   </tr>
@@ -148,12 +144,12 @@ export const MyTokenUsagePage: React.FC<MyTokenUsagePageProps> = ({ currentUserI
             </tbody>
           </table>
         </div>
-        <div className="p-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+        <div className="p-4 border-t border-slate-200 flex items-center justify-between bg-slate-50">
           <button
             type="button"
             onClick={() => page > 1 && setPage(page - 1)}
             disabled={page <= 1}
-            className="px-3 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40"
+            className="px-4 py-2 font-medium text-sm bg-white border-slate-200 text-slate-800 shadow-sm rounded-xl hover:bg-slate-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed border"
           >
             Trang trước
           </button>
@@ -161,7 +157,7 @@ export const MyTokenUsagePage: React.FC<MyTokenUsagePageProps> = ({ currentUserI
             type="button"
             onClick={() => logs.length === 20 && setPage(page + 1)}
             disabled={logs.length < 20}
-            className="px-3 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40"
+            className="px-4 py-2 font-medium text-sm bg-white border-slate-200 text-slate-800 shadow-sm rounded-xl hover:bg-slate-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed border"
           >
             Trang sau
           </button>

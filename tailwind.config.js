@@ -2,15 +2,18 @@
 export default {
   content: [
     './index.html',
+    './src/**/*.{ts,tsx}',
     './**/*.{ts,tsx}',
     '!./node_modules/**',
     '!./dist/**',
   ],
-  corePlugins: {
-    preflight: false, // Tắt CSS reset để không vỡ UI cũ
-  },
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ['DM Sans', 'sans-serif'],
+        display: ['Space Grotesk', 'sans-serif'],
+      },
+    },
   },
   plugins: [],
 };

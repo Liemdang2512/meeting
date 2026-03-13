@@ -628,8 +628,9 @@ function App() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Spinner size="lg" className="text-blue-600" />
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+        <Spinner size="lg" className="text-slate-500 mb-4" />
+        <h2 className="text-xl font-sans font-medium text-slate-800 animate-pulse">Đang tải...</h2>
       </div>
     );
   }
@@ -697,39 +698,40 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Header — dark blue như mẫu */}
-      <header className="bg-blue-950 text-white sticky top-0 z-10 shadow-lg">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+      {/* Modern Flat Header */}
+      <header className="bg-white text-slate-800 sticky top-0 z-10 border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shrink-0 border-slate-200 border">
               <FileAudioIcon className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-base font-bold leading-tight">Meeting Minutes - MoMai</h1>
-              <p className="text-blue-300 text-xs leading-tight">Trợ lý họp</p>
+              <h1 className="text-lg font-sans font-medium leading-tight">Meeting Assistant</h1>
+              <p className="text-slate-500 text-xs font-medium leading-tight">MoMai Analytics</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             {status !== TranscriptionStatus.IDLE && (
-              <button onClick={resetApp} className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+              <button onClick={resetApp} className="flex items-center gap-1.5 bg-slate-50 text-slate-800 hover:bg-slate-100 border-slate-200 text-sm font-medium px-4 py-2 transition-colors border rounded-xl">
                 <RefreshIcon className="w-3.5 h-3.5" />
                 Phiên mới
               </button>
             )}
-            <button onClick={handleLogout} className="text-xs text-blue-300 hover:text-white transition-colors px-2 py-1">
+            <button onClick={handleLogout} className="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors px-3 py-2">
               Đăng xuất
             </button>
           </div>
         </div>
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-white/10">
-          <div className="flex gap-1">
+        
+        {/* Navigation Tabs - Flat Style */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 bg-slate-50 border-t border-slate-200">
+          <div className="flex gap-2 overflow-x-auto py-2 scrollbar-none">
             <button
               onClick={() => {
                 navigate('/');
                 setMode('notes');
               }}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${isNotesRoute ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'
-                }`}
+              className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isNotesRoute ? 'bg-indigo-900 text-white' : 'text-slate-600 hover:bg-slate-200 hover:text-slate-800' }`}
             >
               Ghi chép
             </button>
@@ -738,25 +740,20 @@ function App() {
                 navigate('/');
                 setMode('splitter');
               }}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${isNotesRoute && mode === 'splitter'
-                  ? 'text-white border-b-2 border-white'
-                  : 'text-blue-300 hover:text-white'
-                }`}
+              className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isNotesRoute && mode === 'splitter' ? 'bg-indigo-900 text-white' : 'text-slate-600 hover:bg-slate-200 hover:text-slate-800' }`}
             >
               Cắt file
             </button>
             <button
               onClick={() => navigate('/me/token-usage')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${isMyUsageRoute ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'
-                }`}
+              className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isMyUsageRoute ? 'bg-indigo-900 text-white' : 'text-slate-600 hover:bg-slate-200 hover:text-slate-800' }`}
             >
               My token usage
             </button>
             {isAdmin && (
               <button
                 onClick={() => navigate('/admin/token-usage')}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${isAdminRoute ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'
-                  }`}
+                className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isAdminRoute ? 'bg-indigo-700 text-white rounded-xl' : 'text-slate-600 hover:bg-slate-200 hover:text-slate-800 rounded-xl' }`}
               >
                 Admin token usage
               </button>
@@ -764,8 +761,7 @@ function App() {
             {isAdmin && (
               <button
                 onClick={() => navigate('/admin/users')}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${isUserMgmtRoute ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'
-                  }`}
+                className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isUserMgmtRoute ? 'bg-indigo-700 text-white rounded-xl' : 'text-slate-600 hover:bg-slate-200 hover:text-slate-800 rounded-xl' }`}
               >
                 Quản lý tài khoản
               </button>
@@ -775,9 +771,9 @@ function App() {
       </header>
 
       {/* Step indicator — clickable cho các bước đã hoàn thành */}
-      <div className="bg-white border-b border-slate-200 shadow-sm sticky top-[72px] z-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex items-center justify-center">
+      <div className="bg-white border-b border-slate-200 sticky top-[72px] lg:top-[76px] z-10 transition-all">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 overflow-x-auto scrollbar-none">
+          <div className="flex items-center justify-start sm:justify-center min-w-max">
             {steps.map((step, idx) => {
               const isActivelyProcessing = status === TranscriptionStatus.PROCESSING ||
                 status === TranscriptionStatus.READING_FILE ||
@@ -792,24 +788,15 @@ function App() {
                     onClick={() => isNavigable && setViewStep(step.n)}
                     title={isNavigable ? `Xem lại: ${step.label}` : undefined}
                   >
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-black transition-all duration-300
-                      ${currentStep > step.n ? 'bg-blue-600 text-white' : ''}
-                      ${currentStep === step.n ? 'bg-blue-600 text-white ring-4 ring-blue-200' : ''}
-                      ${currentStep < step.n ? 'bg-white border-2 border-slate-300 text-slate-400' : ''}
-                      ${isViewing ? 'ring-4 ring-offset-2 ring-blue-400' : ''}
-                      ${isNavigable ? 'group-hover:scale-110' : ''}
-                    `}>
+                    <div className={`w-9 h-9 flex items-center justify-center text-sm font-medium border transition-all duration-300 ${currentStep > step.n ? 'bg-indigo-600 text-white border-slate-200' : ''} ${currentStep === step.n ? 'bg-indigo-600 text-white border-slate-200 ring-2 ring-offset-2 ring-indigo-500' : ''} ${currentStep < step.n ? 'bg-white border-slate-200 text-slate-400' : ''} ${isViewing && currentStep > step.n ? 'ring-2 ring-offset-2 ring-indigo-300' : ''} ${isNavigable ? 'group- group- rounded-xl' : ''} `}>
                       {currentStep > step.n ? '✓' : step.n}
                     </div>
-                    <span className={`text-xs mt-1 font-medium whitespace-nowrap transition-colors duration-300
-                      ${currentStep >= step.n ? 'text-blue-700' : 'text-slate-400'}
-                      ${isViewing ? 'underline underline-offset-2 font-bold' : ''}
-                    `}>
+                    <span className={`text-xs mt-2 font-medium whitespace-nowrap transition-colors duration-300 ${currentStep >= step.n ? 'text-slate-800' : 'text-slate-400'} ${isViewing ? 'underline decoration-2 underline-offset-4' : ''} `}>
                       {step.label}
                     </span>
                   </div>
                   {idx < steps.length - 1 && (
-                    <div className={`w-24 h-0.5 mx-3 mb-5 transition-all duration-500 ${currentStep > step.n ? 'bg-blue-600' : 'bg-slate-200'}`} />
+                    <div className={`w-12 sm:w-20 lg:w-24 h-0.5 mx-2 sm:mx-3 mb-6 transition-all duration-500 border-t ${currentStep > step.n ? 'border-indigo-500' : 'border-slate-100 border-dashed'}`} />
                   )}
                 </div>
               );
@@ -842,13 +829,13 @@ function App() {
 
           {/* API Key Input Modal */}
           {showApiKeyInput && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in duration-200">
+            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 rounded-2xl">
+              <div className="bg-white border-slate-200 max-w-md w-full p-6 space-y-4 shadow-sm rounded-xl border">
                 <div className="text-center">
-                  <h3 className="text-2xl font-bold text-slate-800 mb-2">
+                  <h3 className="text-2xl font-sans font-medium text-slate-800 mb-2">
                     {localStorage.getItem('gemini_api_key') ? 'Thay đổi' : 'Cấu hình'} Gemini API Key
                   </h3>
-                  <p className="text-slate-500 text-sm">
+                  <p className="text-slate-500 font-medium text-sm">
                     {localStorage.getItem('gemini_api_key') ? (
                       <>Cập nhật API key mới của bạn</>
                     ) : (
@@ -858,7 +845,7 @@ function App() {
                           href="https://aistudio.google.com/apikey"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline font-medium"
+                          className="text-slate-800 border-b border-slate-200 hover:text-slate-600 font-medium transition-colors"
                         >
                           Google AI Studio
                         </a>
@@ -868,34 +855,34 @@ function App() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-bold text-slate-700">API Key</label>
+                  <label className="block text-sm font-medium text-slate-800">API Key</label>
                   <input
                     type="password"
                     value={userApiKey}
                     onChange={(e) => setUserApiKey(e.target.value)}
                     placeholder="AIza..."
-                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none font-mono text-sm"
+                    className="w-full px-4 py-3 border-slate-200 focus:border-slate-200 focus:outline-none bg-slate-50 focus:bg-white font-mono text-sm transition-colors border rounded-xl"
                     onKeyPress={(e) => {
                       if (e.key === 'Enter') {
                         handleSaveApiKey();
                       }
                     }}
                   />
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs font-medium text-slate-400">
                     API key sẽ được lưu trong trình duyệt của bạn (localStorage)
                   </p>
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex gap-3 pt-2">
                   <button
                     onClick={() => setShowApiKeyInput(false)}
-                    className="flex-1 px-4 py-3 border-2 border-slate-200 text-slate-600 font-bold rounded-lg hover:bg-slate-50 transition-colors"
+                    className="flex-1 px-4 py-3 border-slate-200 bg-white text-slate-800 font-medium shadow-sm rounded-xl transition-all border"
                   >
                     Hủy
                   </button>
                   <button
                     onClick={handleSaveApiKey}
-                    className="flex-1 px-4 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200"
+                    className="flex-1 px-4 py-3 border-slate-200 bg-indigo-600 text-white font-medium shadow-sm rounded-xl hover:bg-indigo-700 transition-all border"
                   >
                     Lưu API Key
                   </button>
@@ -906,12 +893,12 @@ function App() {
 
           {/* BƯỚC 1: Tải lên file */}
           {status === TranscriptionStatus.IDLE && (
-            <div className="max-w-2xl mx-auto space-y-5 animate-in fade-in duration-300">
-              <div>
-                <h2 className="text-xl font-bold text-slate-800">Bước 1: Tải lên file Audio hoặc Video</h2>
-                <p className="text-slate-500 text-sm mt-1">Tải lên một hoặc nhiều file cần ghi chép. Hỗ trợ MP3, MP4, WAV, M4A, OGG — tối đa 100MB/file.</p>
+            <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-300">
+              <div className="text-center md:text-left mb-8">
+                <h2 className="text-2xl font-sans font-medium text-slate-800">Bước 1: Tải lên file Audio hoặc Video</h2>
+                <p className="text-slate-500 font-medium text-sm mt-2">Tải lên một hoặc nhiều file cần ghi chép. Hỗ trợ MP3, MP4, WAV, M4A, OGG — tối đa 100MB/file.</p>
               </div>
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+              <div className="bg-white p-6 md:p-8 border-slate-200 shadow-sm rounded-xl transition-all border">
                 <FileUpload
                   pendingFiles={pendingFiles}
                   onAddFiles={handleAddFiles}
@@ -923,65 +910,56 @@ function App() {
               </div>
 
               {/* Chọn chế độ phiên âm */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-                <p className="text-sm font-semibold text-slate-700">Chế độ phiên âm</p>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="bg-slate-50 p-6 border-slate-200 shadow-sm rounded-xl space-y-4 border">
+                <p className="text-sm font-medium text-slate-800">Chế độ phiên âm</p>
+                <div className="grid grid-cols-2 gap-4">
                   <button
                     onClick={() => setTranscribeMode('basic')}
-                    className={`flex flex-col items-start gap-1 p-4 rounded-xl border-2 transition-all text-left ${transcribeMode === 'basic'
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-slate-200 hover:border-slate-300'
-                      }`}
+                    className={`flex flex-col items-start gap-2 p-4 border transition-all text-left group ${transcribeMode === 'basic' ? 'border-slate-200 bg-slate-200 shadow-sm rounded-xl' : 'border-slate-200 bg-white hover:border-indigo-500 rounded-xl' }`}
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">⚡</span>
-                      <span className="font-semibold text-slate-800 text-sm">Cơ bản</span>
+                    <div className="flex items-center gap-2 w-full">
+                      <span className="text-xl">⚡</span>
+                      <span className="font-medium text-slate-800 text-sm">Cơ bản</span>
                       {transcribeMode === 'basic' && (
-                        <span className="ml-auto text-xs font-medium text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">Đang chọn</span>
+                        <span className="ml-auto text-xs font-medium text-slate-800 bg-white px-2 py-1 border-slate-200 rounded-sm border">Đang chọn</span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-500">1 bước · Nhanh hơn</p>
-                    <p className="text-xs text-slate-400">Phù hợp họp nội bộ, nội dung đơn giản</p>
+                    <p className="text-xs font-medium text-slate-600">1 bước · Nhanh hơn</p>
+                    <p className="text-xs font-medium text-slate-500">Phù hợp họp nội bộ, nội dung đơn giản</p>
                   </button>
                   <button
                     onClick={() => setTranscribeMode('deep')}
-                    className={`flex flex-col items-start gap-1 p-4 rounded-xl border-2 transition-all text-left ${transcribeMode === 'deep'
-                        ? 'border-purple-500 bg-purple-50'
-                        : 'border-slate-200 hover:border-slate-300'
-                      }`}
+                    className={`flex flex-col items-start gap-2 p-4 border transition-all text-left group ${transcribeMode === 'deep' ? 'border-slate-200 bg-indigo-600/40 shadow-sm rounded-xl' : 'border-slate-200 bg-white hover:border-indigo-500 rounded-xl' }`}
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">🔍</span>
-                      <span className="font-semibold text-slate-800 text-sm">Chuyên sâu</span>
+                    <div className="flex items-center gap-2 w-full">
+                      <span className="text-xl">🔍</span>
+                      <span className="font-medium text-slate-800 text-sm">Chuyên sâu</span>
                       {transcribeMode === 'deep' && (
-                        <span className="ml-auto text-xs font-medium text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">Đang chọn</span>
+                        <span className="ml-auto text-xs font-medium text-slate-800 bg-white px-2 py-1 border-slate-200 rounded-sm border">Đang chọn</span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-500">3 bước · Chính xác hơn</p>
-                    <p className="text-xs text-slate-400">Họp quan trọng, đa ngôn ngữ, thuật ngữ chuyên ngành</p>
+                    <p className="text-xs font-medium text-slate-600">3 bước · Chính xác hơn</p>
+                    <p className="text-xs font-medium text-slate-500">Họp quan trọng, đa ngôn ngữ, thuật ngữ chuyên ngành</p>
                   </button>
                 </div>
               </div>
 
               {/* Chọn ngôn ngữ audio */}
-              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-                <p className="text-sm font-semibold text-slate-700">Ngôn ngữ trong file audio</p>
-                <div className="grid grid-cols-3 gap-2">
+              <div className="bg-slate-50 p-6 border-slate-200 shadow-sm rounded-xl space-y-4 border">
+                <p className="text-sm font-medium text-slate-800">Ngôn ngữ trong file audio</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {([
                     { value: 'vi', label: '🇻🇳 Tiếng Việt' },
                     { value: 'en', label: '🇬🇧 Tiếng Anh' },
                     { value: 'zh', label: '🇨🇳 Tiếng Trung' },
                     { value: 'ko', label: '🇰🇷 Tiếng Hàn' },
                     { value: 'ja', label: '🇯🇵 Tiếng Nhật' },
-                    { value: 'other', label: '🌐 Ngôn ngữ khác' },
+                    { value: 'other', label: '🌐 Khác' },
                   ] as { value: AudioLanguage; label: string }[]).map((lang) => (
                     <button
                       key={lang.value}
                       onClick={() => setAudioLanguage(lang.value)}
-                      className={`px-3 py-2 rounded-xl border-2 text-xs font-medium transition-all text-left ${audioLanguage === lang.value
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
-                          : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                        }`}
+                      className={`px-3 py-2.5 border text-xs font-medium transition-all text-left ${audioLanguage === lang.value ? 'border-slate-200 bg-slate-200 text-slate-800 shadow-sm rounded-xl' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-200 hover:text-slate-800 rounded-xl' }`}
                     >
                       {lang.label}
                     </button>
@@ -992,28 +970,28 @@ function App() {
                     type="text"
                     value={customLanguage}
                     onChange={(e) => setCustomLanguage(e.target.value)}
-                    placeholder="Nhập tên ngôn ngữ (ví dụ: Tiếng Thái, Tiếng Pháp...)"
-                    className="w-full px-3 py-2 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    placeholder="Nhập tên ngôn ngữ (ví dụ: Tiếng Thái...)"
+                    className="w-full px-4 py-3 border-slate-200 bg-white focus:border-slate-200 text-sm font-medium focus:outline-none transition-colors border rounded-xl"
                   />
                 )}
               </div>
 
-              <p className="text-xs text-slate-400 text-center">Vui lòng hoàn thành bước 1 trước khi chuyển sang các bước tiếp theo.</p>
+              <p className="text-xs font-medium text-slate-400 text-center">Vui lòng hoàn thành bước 1 trước khi chuyển sang các bước tiếp theo</p>
             </div>
           )}
 
           {/* BƯỚC 2: Ghi chép — split layout cố định */}
           {(status === TranscriptionStatus.PROCESSING || status === TranscriptionStatus.READING_FILE) && (
-            <div className="animate-in fade-in duration-300 space-y-4">
+            <div className="animate-in fade-in duration-300 space-y-6">
               <div>
-                <h2 className="text-xl font-bold text-slate-800">Bước 2: Chuyển đổi âm thanh thành văn bản</h2>
-                <p className="text-slate-500 text-sm mt-1">AI đang lắng nghe và ghi chép từng file. Kết quả hiện ngay khi mỗi file hoàn thành.</p>
+                <h2 className="text-2xl font-sans font-medium text-slate-800">Bước 2: Chuyển đổi âm thanh thành văn bản</h2>
+                <p className="text-slate-500 text-sm font-medium mt-1">AI đang lắng nghe và ghi chép từng file. Kết quả hiện ngay khi mỗi file hoàn thành.</p>
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Trái: File queue với trạng thái */}
                 <div className="space-y-3">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Danh sách file</p>
-                  <div className="bg-white p-4 rounded-2xl shadow-xl border border-slate-200">
+                  <p className="text-xs font-medium text-slate-400">Danh sách file</p>
+                  <div className="bg-slate-50 p-6 border-slate-200 shadow-sm rounded-xl border">
                     <FileUpload
                       pendingFiles={pendingFiles}
                       onAddFiles={handleAddFiles}
@@ -1028,12 +1006,12 @@ function App() {
                 {/* Phải: Kết quả từng file khi xong */}
                 <div className="space-y-3 flex flex-col h-[calc(100vh-260px)]">
                   <div className="flex items-center justify-between">
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Văn bản ghi chép</p>
+                    <p className="text-xs font-medium text-slate-400">Văn bản ghi chép</p>
                     {completedTranscriptions.length > 1 && (
-                      <div className="flex gap-1 flex-wrap justify-end">
+                      <div className="flex gap-2 flex-wrap justify-end">
                         {completedTranscriptions.map((t, i) => (
                           <button key={i} onClick={() => setViewingIndex(i)}
-                            className={`text-xs font-bold px-2.5 py-1 rounded-full border transition-colors ${i === viewingIndex ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300'}`}>
+                            className={`text-xs font-medium px-3 py-1.5 border transition-all shadow-sm rounded-xl ${i === viewingIndex ? 'bg-indigo-600 text-white border-slate-200 translate-y-px shadow-none' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
                             {t.name.length > 15 ? t.name.substring(0, 15) + '…' : t.name}
                           </button>
                         ))}
@@ -1042,24 +1020,21 @@ function App() {
                   </div>
                   <div className="flex-1 overflow-hidden">
                     {completedTranscriptions.length === 0 ? (
-                      <div className="h-full bg-white rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-3 text-center p-8">
-                        <Spinner size="lg" className={transcribeMode === 'deep' ? 'text-purple-400' : 'text-blue-400'} />
-                        <p className="text-slate-500 font-medium">Đã xong {currentFileIndex}/{totalFiles} file...</p>
+                      <div className="h-full bg-slate-50 border-dashed border-slate-200 flex flex-col items-center justify-center gap-4 text-center p-8 rounded-2xl">
+                        <Spinner size="lg" className={transcribeMode === 'deep' ? 'text-slate-500' : 'text-indigo-600'} />
+                        <p className="text-slate-600 font-medium">Đã xong {currentFileIndex}/{totalFiles} file...</p>
                         {transcribeMode === 'deep' && deepProgress ? (
                           <div className="w-full max-w-xs space-y-2">
-                            <p className="text-purple-600 text-sm font-medium">{deepProgress.label}</p>
-                            <div className="flex gap-1.5 justify-center">
+                            <p className="text-slate-700 text-sm font-medium">{deepProgress.label}</p>
+                            <div className="flex gap-2 justify-center">
                               {[1, 2, 3].map(s => (
-                                <div key={s} className={`h-1.5 flex-1 rounded-full transition-all ${s < deepProgress.step ? 'bg-purple-500' :
-                                    s === deepProgress.step ? 'bg-purple-400 animate-pulse' :
-                                      'bg-slate-200'
-                                  }`} />
+                                <div key={s} className={`h-2 flex-1 border transition-all ${s < deepProgress.step ? 'bg-indigo-600 border-slate-200' : s === deepProgress.step ? 'bg-indigo-300 border-indigo-500 animate-pulse' : 'bg-white border-slate-200' }`} />
                               ))}
                             </div>
-                            <p className="text-xs text-slate-400">Bước {deepProgress.step}/3</p>
+                            <p className="text-xs font-medium text-slate-400">Bước {deepProgress.step}/3</p>
                           </div>
                         ) : (
-                          <p className="text-slate-400 text-sm italic">Kết quả sẽ hiện tại đây khi file xong</p>
+                          <p className="text-slate-400 text-sm font-medium">Kết quả sẽ hiện tại đây khi file xong</p>
                         )}
                       </div>
                     ) : (
@@ -1073,48 +1048,48 @@ function App() {
 
           {status === TranscriptionStatus.ERROR && (
             <div className="max-w-xl mx-auto pt-10">
-              <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center space-y-4">
-                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto text-red-600">
-                  <AlertCircleIcon className="w-6 h-6" />
+              <div className="bg-white border-red-500 shadow-sm rounded-xl p-8 text-center space-y-6">
+                <div className="w-16 h-16 bg-red-100 border-red-500 flex items-center justify-center mx-auto text-red-600 rounded-2xl">
+                  <AlertCircleIcon className="w-8 h-8" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-red-800">Lỗi hệ thống</h3>
-                  <p className="text-red-600 mt-1">{errorMsg}</p>
+                  <h3 className="text-2xl font-sans font-medium text-red-900">Lỗi hệ thống</h3>
+                  <p className="text-red-700 font-medium mt-2">{errorMsg}</p>
                 </div>
-                <button onClick={resetApp} className="px-6 py-2 bg-white border border-red-200 text-red-700 font-bold rounded-lg hover:bg-red-50 transition-colors">Tải lại</button>
+                <button onClick={resetApp} className="px-8 py-3 bg-red-50 border-red-500 text-red-800 font-medium hover:bg-red-100 rounded-xl transition-all">Tải lại</button>
               </div>
             </div>
           )}
 
           {/* BƯỚC 3 (multi-file): Đang tổng hợp */}
           {status === TranscriptionStatus.SYNTHESIZING && (
-            <div className="max-w-xl mx-auto pt-16 text-center space-y-5 animate-in fade-in duration-300">
-              <Spinner size="lg" className="text-blue-600" />
+            <div className="max-w-xl mx-auto pt-16 text-center space-y-6 animate-in fade-in duration-300">
+              <Spinner size="lg" className="text-slate-500" />
               <div>
-                <h2 className="text-xl font-bold text-slate-800">Đang tổng hợp nội dung cuộc họp...</h2>
-                <p className="text-slate-500 text-sm mt-2">AI đang gộp {totalFiles} file ghi âm thành một văn bản liền mạch, không bỏ sót nội dung nào.</p>
+                <h2 className="text-2xl font-sans font-medium text-slate-800">Đang tổng hợp nội dung cuộc họp...</h2>
+                <p className="text-slate-500 font-medium mt-2">AI đang gộp {totalFiles} file ghi âm thành một văn bản liền mạch, không bỏ sót nội dung nào.</p>
               </div>
             </div>
           )}
 
           {/* Navigate back: Xem lại ghi chép từng file (bước 2) */}
           {isNavigableState && viewStep === 2 && completedTranscriptions.length > 0 && (
-            <div className="animate-in fade-in duration-300 space-y-4">
+            <div className="animate-in fade-in duration-300 space-y-6">
               <div>
-                <h2 className="text-xl font-bold text-slate-800">Bước 2: Văn bản ghi chép từng file</h2>
-                <p className="text-slate-500 text-sm mt-1">Xem lại nội dung ghi chép của từng file ghi âm.</p>
+                <h2 className="text-2xl font-sans font-medium text-slate-800">Bước 2: Văn bản ghi chép từng file</h2>
+                <p className="text-slate-500 font-medium text-sm mt-1">Xem lại nội dung ghi chép của từng file ghi âm.</p>
               </div>
               {completedTranscriptions.length > 1 && (
-                <div className="flex gap-1 flex-wrap">
+                <div className="flex gap-2 flex-wrap">
                   {completedTranscriptions.map((t, i) => (
                     <button key={i} onClick={() => setViewingIndex(i)}
-                      className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${i === viewingIndex ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300'}`}>
+                      className={`text-xs font-medium px-4 py-2 border transition-all shadow-sm rounded-xl ${i === viewingIndex ? 'bg-indigo-600 text-white border-slate-200 translate-y-px shadow-none' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
                       {t.name.length > 20 ? t.name.substring(0, 20) + '…' : t.name}
                     </button>
                   ))}
                 </div>
               )}
-              <div className="h-[calc(100vh-300px)]">
+              <div className="h-[calc(100vh-300px)] border-transparent rounded-2xl">
                 <TranscriptionView text={completedTranscriptions[viewingIndex]?.text || ''} />
               </div>
             </div>
@@ -1122,18 +1097,18 @@ function App() {
 
           {/* Xem lại bản tổng hợp (bước 3, multi-file) */}
           {isNavigableState && isMultiFile && viewStep === 3 && synthesizedTranscription && (
-            <div className="animate-in fade-in duration-300 space-y-4">
-              <div className="flex items-start justify-between flex-wrap gap-3">
+            <div className="animate-in fade-in duration-300 space-y-6">
+              <div className="flex items-start justify-between flex-wrap gap-4">
                 <div>
-                  <h2 className="text-xl font-bold text-slate-800">Bước 3: Tổng hợp nội dung cuộc họp</h2>
-                  <p className="text-slate-500 text-sm mt-1">
+                  <h2 className="text-2xl font-sans font-medium text-slate-800">Bước 3: Tổng hợp nội dung cuộc họp</h2>
+                  <p className="text-slate-500 font-medium text-sm mt-1">
                     AI đã gộp {totalFiles} file ghi âm thành một văn bản liên tục. Xem lại nội dung bên dưới trước khi tạo biên bản.
                   </p>
                 </div>
                 {status !== TranscriptionStatus.COMPLETED && (
                   <button
                     onClick={() => { setStatus(TranscriptionStatus.COMPLETED); setViewStep(meetingInfoStep); }}
-                    className="bg-blue-600 text-white font-black px-8 py-3 rounded-xl shadow-blue-200 shadow-lg hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:translate-y-0 whitespace-nowrap"
+                    className="bg-indigo-600 text-white font-sans font-medium px-8 py-3 border-slate-200 shadow-sm rounded-xl hover:bg-indigo-700 transition-all active:bg-indigo-800 whitespace-nowrap border"
                   >
                     Nhập thông tin cuộc họp →
                   </button>
@@ -1141,13 +1116,13 @@ function App() {
                 {status === TranscriptionStatus.COMPLETED && (
                   <button
                     onClick={() => setViewStep(meetingInfoStep)}
-                    className="bg-blue-600 text-white font-black px-8 py-3 rounded-xl shadow-blue-200 shadow-lg hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:translate-y-0 whitespace-nowrap"
+                    className="bg-indigo-600 text-white font-sans font-medium px-8 py-3 border-slate-200 shadow-sm rounded-xl hover:bg-indigo-700 transition-all active:bg-indigo-800 whitespace-nowrap border"
                   >
                     Nhập thông tin cuộc họp →
                   </button>
                 )}
               </div>
-              <div className="h-[calc(100vh-280px)]">
+              <div className="h-[calc(100vh-280px)] border-transparent rounded-2xl">
                 <TranscriptionView text={synthesizedTranscription} />
               </div>
             </div>
@@ -1157,10 +1132,10 @@ function App() {
           {isNavigableState && viewStep === meetingInfoStep && transcription && (
             <div className="animate-in fade-in duration-300 space-y-4">
               <div>
-                <h2 className="text-xl font-bold text-slate-800">
+                <h2 className="text-2xl font-sans font-medium text-slate-800">
                   {`Bước ${meetingInfoStep}: Thông tin cuộc họp`}
                 </h2>
-                <p className="text-slate-500 text-sm mt-1">
+                <p className="text-slate-500 font-medium text-sm mt-1">
                   Nhập thông tin cơ bản để biên bản chính xác hơn. Bạn có thể bỏ qua nếu không cần.
                 </p>
               </div>
@@ -1176,14 +1151,14 @@ function App() {
 
           {/* BƯỚC: Biên bản — COMPLETED / SUMMARIZING */}
           {((isNavigableState && viewStep === biênBảnStep) || status === TranscriptionStatus.SUMMARIZING) && transcription && (
-            <div className="animate-in fade-in duration-300 space-y-4">
+            <div className="animate-in fade-in duration-300 space-y-6">
               <div>
-                <h2 className="text-xl font-bold text-slate-800">
+                <h2 className="text-2xl font-sans font-medium text-slate-800">
                   {summary
                     ? `Bước ${biênBảnStep}: Biên bản hoàn thành`
                     : `Bước ${biênBảnStep}: Tạo biên bản cuộc họp`}
                 </h2>
-                <p className="text-slate-500 text-sm mt-1">
+                <p className="text-slate-500 font-medium text-sm mt-1">
                   {summary ? 'Biên bản đã được tạo. Bạn có thể tạo lại hoặc xuất file Excel.' : 'Văn bản đã sẵn sàng. Nhấn tạo biên bản để AI tổng hợp nội dung cuộc họp.'}
                 </p>
               </div>
@@ -1192,29 +1167,29 @@ function App() {
                 {/* Cột 1: Văn bản tổng hợp (multi-file) hoặc văn bản thô (single file) */}
                 <div className="space-y-4 flex flex-col h-[calc(100vh-280px)]">
                   <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="bg-blue-600 text-white text-xs font-black w-5 h-5 flex items-center justify-center rounded-full">1</span>
-                      <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
+                    <div className="flex items-center gap-3">
+                      <span className="bg-indigo-900 text-white text-sm font-medium w-6 h-6 flex items-center justify-center rounded-2xl">1</span>
+                      <h2 className="text-lg font-medium text-slate-800">
                         {synthesizedTranscription ? 'Nội dung tổng hợp' : 'Văn bản thô'}
                       </h2>
                       {synthesizedTranscription && (
-                        <span className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-full font-bold">
+                        <span className="text-xs bg-slate-100 border-slate-200 text-slate-800 px-2.5 py-1 font-medium border rounded-2xl">
                           {totalFiles} files đã gộp
                         </span>
                       )}
                     </div>
                     {!synthesizedTranscription && completedTranscriptions.length > 1 && (
-                      <div className="flex gap-1 flex-wrap">
+                      <div className="flex gap-2 flex-wrap">
                         {completedTranscriptions.map((t, i) => (
                           <button key={i} onClick={() => setViewingIndex(i)}
-                            className={`text-xs font-bold px-2.5 py-1 rounded-full border transition-colors ${i === viewingIndex ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300'}`}>
+                            className={`text-xs font-medium px-3 py-1.5 border transition-all shadow-sm rounded-xl ${i === viewingIndex ? 'bg-indigo-600 text-white border-slate-200 translate-y-px shadow-none' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
                             {t.name.length > 12 ? t.name.substring(0, 12) + '…' : t.name}
                           </button>
                         ))}
                       </div>
                     )}
                   </div>
-                  <div className="flex-1 overflow-hidden">
+                  <div className="flex-1 overflow-hidden border-transparent rounded-2xl">
                     <TranscriptionView text={
                       synthesizedTranscription
                         ? synthesizedTranscription
@@ -1228,43 +1203,43 @@ function App() {
                 {/* Cột 2: Biên bản — luôn dùng toàn bộ transcription (combined) */}
                 <div className="space-y-4 flex flex-col h-[calc(100vh-280px)]">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="bg-blue-600 text-white text-xs font-black w-5 h-5 flex items-center justify-center rounded-full">2</span>
-                      <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">Biên bản cuộc họp</h2>
+                    <div className="flex items-center gap-3">
+                      <span className="bg-indigo-600 text-white border-slate-200 text-sm font-medium w-6 h-6 flex items-center justify-center border rounded-2xl">2</span>
+                      <h2 className="text-lg font-medium text-slate-800">Biên bản cuộc họp</h2>
                       {totalFiles > 1 && (
-                        <span className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-full font-bold">
+                        <span className="text-xs bg-slate-100 border-slate-200 text-slate-800 px-2.5 py-1 font-medium border rounded-2xl">
                           {totalFiles} files
                         </span>
                       )}
                     </div>
                     <button
                       onClick={() => setShowPromptEditor(!showPromptEditor)}
-                      className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors underline decoration-2 underline-offset-4"
+                      className="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors underline decoration-2 underline-offset-4"
                     >
-                      {showPromptEditor ? "Đóng tùy chỉnh" : "Sửa lại yêu cầu biên bản"}
+                      {showPromptEditor ? "Đóng tùy chỉnh" : "Sửa lại yêu cầu"}
                     </button>
                   </div>
 
                   {/* Prompt Editor (Toggleable) */}
                   {showPromptEditor && (
-                    <div className="bg-white border-2 border-blue-100 rounded-xl p-4 shadow-lg animate-in fade-in zoom-in duration-200">
-                      <label className="block text-xs font-bold text-blue-900 uppercase mb-2">Cấu hình Prompt tóm tắt:</label>
+                    <div className="bg-white border-slate-200 p-5 shadow-sm rounded-xl animate-in fade-in duration-200 border">
+                      <label className="block text-sm font-medium text-slate-800 mb-3">Cấu hình Prompt tóm tắt:</label>
                       <textarea
                         value={summaryPrompt}
                         onChange={(e) => setSummaryPrompt(e.target.value)}
-                        className="w-full h-40 text-sm p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none font-mono"
+                        className="w-full h-40 text-sm p-4 border-slate-200 bg-slate-50 focus:border-slate-200 focus:bg-white focus:outline-none font-mono transition-colors border rounded-2xl"
                         placeholder="Nhập yêu cầu tóm tắt tại đây..."
                       />
-                      <div className="mt-3 flex justify-end gap-2">
+                      <div className="mt-4 flex justify-end gap-3">
                         <button
                           onClick={() => setSummaryPrompt(DEFAULT_SUMMARY_PROMPT)}
-                          className="text-xs text-slate-400 hover:text-slate-600"
+                          className="text-sm font-medium text-slate-400 hover:text-slate-700"
                         >
-                          Khôi phục mặc định
+                          Khôi phục
                         </button>
                         <button
                           onClick={() => setShowPromptEditor(false)}
-                          className="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-blue-700"
+                          className="bg-indigo-900 text-white text-sm font-medium px-6 py-2 border-transparent hover:border-white transition-colors rounded-xl"
                         >
                           Lưu cấu hình
                         </button>
@@ -1274,18 +1249,18 @@ function App() {
 
                   <div className="flex-1 flex flex-col min-h-0">
                     {!summary ? (
-                      <div className="flex-1 bg-white rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center p-8 text-center space-y-4">
-                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
-                          <DownloadIcon className="w-8 h-8 opacity-20" />
+                      <div className="flex-1 bg-slate-50 border-dashed border-slate-200 flex flex-col items-center justify-center p-8 text-center space-y-6 rounded-2xl">
+                        <div className="w-20 h-20 bg-white border-slate-200 flex items-center justify-center text-slate-300 shadow-sm rounded-xl border">
+                          <DownloadIcon className="w-10 h-10 opacity-50" />
                         </div>
                         <div>
-                          <h3 className="text-slate-700 font-bold">Chưa tạo biên bản</h3>
-                          <p className="text-slate-400 text-sm mt-1">Sử dụng Gemini 3 Pro để tự động hóa biên bản từ văn bản thô.</p>
+                          <h3 className="text-slate-800 font-medium text-lg">Chưa tạo biên bản</h3>
+                          <p className="text-slate-500 font-medium text-sm mt-2">Sử dụng AI để tự động hóa biên bản từ nội dung ghi chép.</p>
                         </div>
                         <button
                           onClick={handleGenerateSummary}
                           disabled={status === TranscriptionStatus.SUMMARIZING}
-                          className="bg-blue-600 text-white font-black px-8 py-3 rounded-xl shadow-blue-200 shadow-xl hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-50"
+                          className="bg-indigo-600 text-white font-sans font-medium px-8 py-4 border-slate-200 shadow-sm rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50 border"
                         >
                           {status === TranscriptionStatus.SUMMARIZING
                             ? "ĐANG XỬ LÝ..."
@@ -1295,22 +1270,24 @@ function App() {
                         </button>
                       </div>
                     ) : (
-                      <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-4 duration-500">
-                        <TranscriptionView text={summary} />
-                        <div className="mt-4 flex gap-4">
+                      <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-300">
+                        <div className="flex-1 border-transparent overflow-hidden rounded-2xl">
+                          <TranscriptionView text={summary} />
+                        </div>
+                        <div className="mt-4 flex flex-col sm:flex-row gap-4">
                           <button
                             onClick={handleGenerateSummary}
-                            className="flex-1 border-2 border-blue-600 text-blue-600 font-bold py-3 rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+                            className="flex-1 border-slate-200 bg-white text-slate-800 font-medium py-3.5 hover:bg-slate-100 transition-colors flex items-center justify-center gap-2 shadow-sm rounded-xl border"
                           >
-                            <RefreshIcon className="w-4 h-4" />
-                            Tạo lại bản khác
+                            <RefreshIcon className="w-5 h-5" />
+                            Tạo lại
                           </button>
 
                           <button
                             onClick={handleExportExcel}
-                            className="flex-1 bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-green-100"
+                            className="flex-1 bg-indigo-600 border-slate-200 text-white font-medium py-3.5 hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 shadow-sm rounded-xl border"
                           >
-                            <DownloadIcon className="w-4 h-4" />
+                            <DownloadIcon className="w-5 h-5" />
                             Xuất Excel
                           </button>
                         </div>

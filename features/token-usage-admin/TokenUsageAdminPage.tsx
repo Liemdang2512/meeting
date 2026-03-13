@@ -46,9 +46,9 @@ export const TokenUsageAdminPage: React.FC<TokenUsageAdminPageProps> = ({
 
   if (!isAdmin) {
     return (
-      <div className="max-w-3xl mx-auto mt-8 bg-white border border-slate-200 rounded-xl p-6 text-center">
-        <h2 className="text-lg font-bold text-slate-800 mb-2">Không có quyền truy cập</h2>
-        <p className="text-sm text-slate-500">
+      <div className="max-w-3xl mx-auto mt-8 bg-white border-red-500 shadow-sm rounded-xl p-8 text-center">
+        <h2 className="text-2xl font-medium font-sans text-red-700 mb-2">Không có quyền truy cập</h2>
+        <p className="text-sm font-medium text-red-600">
           Trang này chỉ dành cho admin. Vui lòng liên hệ quản trị viên nếu bạn nghĩ đây là nhầm lẫn.
         </p>
       </div>
@@ -108,19 +108,19 @@ export const TokenUsageAdminPage: React.FC<TokenUsageAdminPageProps> = ({
   };
 
   return (
-    <div className="space-y-4 mt-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+    <div className="space-y-6 mt-6">
+      <div className="flex items-center justify-between gap-4 flex-wrap pb-4 border-b border-slate-200">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Admin Token Usage</h2>
-          <p className="text-xs text-slate-500">
+          <h2 className="text-3xl font-sans font-medium text-slate-800">Admin Token Usage</h2>
+          <p className="text-slate-500 font-medium mt-1 text-sm">
             Xem và export log token usage theo user, feature và thời gian.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={refetch}
-            className="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700"
+            className="px-4 py-2 text-sm font-medium bg-white border-slate-200 text-slate-800 shadow-sm rounded-xl transition-all active:bg-slate-50 border"
           >
             Làm mới
           </button>
@@ -128,16 +128,16 @@ export const TokenUsageAdminPage: React.FC<TokenUsageAdminPageProps> = ({
             type="button"
             onClick={handleExportCsv}
             disabled={logs.length === 0}
-            className="px-3 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40"
+            className="px-4 py-2 text-sm font-medium bg-indigo-600 border-slate-200 text-white shadow-sm rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50 border"
           >
             Export CSV
           </button>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 text-xs">
-        <div className="flex items-center gap-1">
-          <span className="font-semibold text-slate-600">Khoảng thời gian:</span>
+      <div className="flex flex-wrap items-center gap-4 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-slate-800">Khoảng thời gian:</span>
           {([
             { id: '7d', label: '7 ngày' },
             { id: '30d', label: '30 ngày' },
@@ -150,18 +150,14 @@ export const TokenUsageAdminPage: React.FC<TokenUsageAdminPageProps> = ({
                 setPreset(item.id);
                 setPage(1);
               }}
-              className={`px-2 py-1 rounded-full border text-xs ${
-                preset === item.id
-                  ? 'border-blue-600 bg-blue-50 text-blue-700'
-                  : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}
+              className={`px-3 py-1.5 border text-xs font-medium transition-all ${ preset === item.id ? 'border-slate-200 bg-indigo-900 text-white shadow-sm rounded-xl translate-y-px' : 'border-slate-200 text-slate-800 bg-white hover:bg-slate-50 shadow-sm rounded-xl' }`}
             >
               {item.label}
             </button>
           ))}
         </div>
-        <div className="flex items-center gap-1">
-          <span className="font-semibold text-slate-600">Feature:</span>
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-slate-800">Feature:</span>
           {(['all', 'minutes', 'file-split', 'token-usage-admin', 'my-token-usage', 'other'] as const).map(
             (feature) => (
               <button
@@ -171,19 +167,15 @@ export const TokenUsageAdminPage: React.FC<TokenUsageAdminPageProps> = ({
                   setFeatureFilter(feature === 'all' ? 'all' : feature);
                   setPage(1);
                 }}
-                className={`px-2 py-1 rounded-full border text-xs ${
-                  featureFilter === feature
-                    ? 'border-blue-600 bg-blue-50 text-blue-700'
-                    : 'border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
+                className={`px-3 py-1.5 border text-xs font-medium transition-all ${ featureFilter === feature ? 'border-slate-200 bg-indigo-900 text-white shadow-sm rounded-xl translate-y-px' : 'border-slate-200 text-slate-800 bg-white hover:bg-slate-50 shadow-sm rounded-xl' }`}
               >
                 {feature === 'all' ? 'Tất cả' : feature}
               </button>
             ),
           )}
         </div>
-        <div className="ml-auto text-xs text-slate-500">
-          Đang xem: <span className="font-semibold">{currentUserId}</span> (admin)
+        <div className="flex-1 text-right text-xs text-slate-500 font-medium whitespace-nowrap">
+          Đang xem: <span className="font-medium border-b border-slate-200 px-1 text-slate-800">{currentUserId}</span> (admin)
         </div>
       </div>
 

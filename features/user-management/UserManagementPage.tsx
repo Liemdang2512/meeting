@@ -57,9 +57,9 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
 
   if (!isAdmin) {
     return (
-      <div className="max-w-3xl mx-auto mt-8 bg-white border border-slate-200 rounded-xl p-6 text-center">
-        <h2 className="text-lg font-bold text-slate-800 mb-2">Không có quyền truy cập</h2>
-        <p className="text-sm text-slate-500">Trang này chỉ dành cho admin.</p>
+      <div className="max-w-3xl mx-auto mt-8 bg-white border-red-500 shadow-sm rounded-xl p-8 text-center">
+        <h2 className="text-2xl font-medium font-sans text-red-700 mb-2">Không có quyền truy cập</h2>
+        <p className="text-sm font-medium text-red-600">Trang này chỉ dành cho admin.</p>
       </div>
     );
   }
@@ -145,24 +145,24 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
   const deletingUser = deleteUserId ? users.find((u) => u.id === deleteUserId) : null;
 
   return (
-    <div className="space-y-4 mt-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+    <div className="space-y-6 mt-6">
+      <div className="flex items-center justify-between gap-4 flex-wrap pb-4 border-b border-slate-200">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">Quản lý tài khoản</h2>
-          <p className="text-xs text-slate-500">Tạo, sửa, xóa và phân quyền tài khoản người dùng.</p>
+          <h2 className="text-3xl font-sans font-medium text-slate-800">Quản lý tài khoản</h2>
+          <p className="text-slate-500 font-medium mt-1 text-sm">Tạo, sửa, xóa và phân quyền tài khoản người dùng.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={fetchUsers}
-            className="px-3 py-2 text-xs font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-700"
+            className="px-4 py-2 text-sm font-medium bg-white border-slate-200 text-slate-800 shadow-sm rounded-xl transition-all active:bg-slate-50 border"
           >
             Làm mới
           </button>
           <button
             type="button"
             onClick={() => setShowCreate(true)}
-            className="px-3 py-2 text-xs font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+            className="px-4 py-2 text-sm font-medium bg-indigo-600 border-slate-200 text-white shadow-sm rounded-xl hover:bg-indigo-700 transition-all active:bg-indigo-800 border"
           >
             + Tạo tài khoản
           </button>
@@ -170,48 +170,48 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
       </div>
 
       {/* Bảng danh sách user */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+      <div className="bg-white border-slate-200 shadow-sm rounded-xl overflow-x-auto border">
         {isLoading ? (
-          <div className="py-16 text-center text-sm text-slate-500">Đang tải...</div>
+          <div className="py-16 text-center text-slate-500 font-medium text-sm">Đang tải...</div>
         ) : error ? (
-          <div className="py-16 text-center text-sm text-red-500">{error}</div>
+          <div className="py-16 text-center text-red-600 font-medium text-sm">{error}</div>
         ) : users.length === 0 ? (
-          <div className="py-16 text-center text-sm text-slate-500">Chưa có tài khoản nào.</div>
+          <div className="py-16 text-center text-slate-500 font-medium text-sm">Chưa có tài khoản nào.</div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
+          <table className="w-full text-base whitespace-nowrap">
+            <thead className="bg-indigo-900 text-white border-b border-slate-200">
               <tr>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">Email</th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600">Role</th>
-                <th className="text-left px-4 py-3 font-semibold text-slate-600 hidden sm:table-cell">Ngày tạo</th>
-                <th className="px-4 py-3 text-right font-semibold text-slate-600">Thao tác</th>
+                <th className="text-left px-5 py-4 font-medium text-sm">Email</th>
+                <th className="text-left px-5 py-4 font-medium text-sm">Role</th>
+                <th className="text-left px-5 py-4 font-medium text-sm hidden sm:table-cell">Ngày tạo</th>
+                <th className="px-5 py-4 text-right font-medium text-sm">Thao tác</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y-2 divide-slate-100 bg-white rounded-2xl">
               {users.map((u) => (
                 <tr key={u.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3 text-slate-800 font-medium">
+                  <td className="px-5 py-4 text-slate-800 font-medium text-sm">
                     {u.email}
                     {u.id === currentUserId && (
-                      <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">Bạn</span>
+                      <span className="ml-3 text-xs bg-indigo-600 border-slate-200 text-white font-black px-2 py-1 align-middle border rounded-2xl">BẠN</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-4">
                     <select
                       value={u.role}
                       disabled={u.id === currentUserId}
                       onChange={(e) => handleChangeRole(u.id, e.target.value as 'user' | 'admin')}
-                      className="text-xs border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="text-sm font-medium border-slate-200 px-3 py-1.5 bg-white text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:bg-slate-50 cursor-pointer border rounded-xl"
                     >
-                      <option value="user">user</option>
-                      <option value="admin">admin</option>
+                      <option value="user">USER</option>
+                      <option value="admin">ADMIN</option>
                     </select>
                   </td>
-                  <td className="px-4 py-3 text-slate-500 text-xs hidden sm:table-cell">
+                  <td className="px-5 py-4 text-slate-500 text-sm font-medium hidden sm:table-cell">
                     {new Date(u.created_at).toLocaleDateString('vi-VN')}
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
+                  <td className="px-5 py-4 text-right">
+                    <div className="flex items-center justify-end gap-3">
                       <button
                         type="button"
                         onClick={() => {
@@ -219,15 +219,15 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
                           setNewPassword('');
                           setPwError(null);
                         }}
-                        className="text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                        className="text-xs font-medium px-3 py-2 border-slate-200 bg-white text-slate-800 shadow-sm rounded-xl hover:bg-slate-100 transition-all active:bg-slate-200 whitespace-nowrap border"
                       >
-                        Đổi mật khẩu
+                        Đổi MK
                       </button>
                       {u.id !== currentUserId && (
                         <button
                           type="button"
                           onClick={() => setDeleteUserId(u.id)}
-                          className="text-xs px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50"
+                          className="text-xs font-medium px-3 py-2 border-red-900 bg-white text-red-600 shadow-sm rounded-xl hover:bg-red-50 hover:text-red-700 transition-all active:bg-red-100 whitespace-nowrap"
                         >
                           Xóa
                         </button>
@@ -243,26 +243,26 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
 
       {/* Modal tạo tài khoản */}
       {showCreate && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
-            <div>
-              <h3 className="text-lg font-bold text-slate-800">Tạo tài khoản mới</h3>
-              <p className="text-sm text-slate-500 mt-0.5">Điền thông tin để tạo tài khoản cho người dùng.</p>
+        <div className="fixed inset-0 bg-indigo-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200 rounded-2xl">
+          <div className="bg-white border-slate-200 shadow-sm rounded-xl max-w-md w-full p-8 space-y-6 border">
+            <div className="border-b border-slate-200 pb-4">
+              <h3 className="text-2xl font-sans font-medium text-slate-800">Tạo tài khoản mới</h3>
+              <p className="text-sm font-medium text-slate-500 mt-2">Điền thông tin để tạo tài khoản cho người dùng.</p>
             </div>
-            <form onSubmit={handleCreateUser} className="space-y-3">
+            <form onSubmit={handleCreateUser} className="space-y-5">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Email</label>
+                <label className="block text-xs font-medium text-slate-800 mb-2">Email</label>
                 <input
                   type="email"
                   required
                   value={createEmail}
                   onChange={(e) => setCreateEmail(e.target.value)}
                   placeholder="user@example.com"
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-slate-200 bg-slate-50 focus:bg-white font-medium transition-colors border rounded-xl"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Mật khẩu</label>
+                <label className="block text-xs font-medium text-slate-800 mb-2">Mật khẩu</label>
                 <input
                   type="password"
                   required
@@ -270,35 +270,35 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
                   value={createPassword}
                   onChange={(e) => setCreatePassword(e.target.value)}
                   placeholder="Ít nhất 6 ký tự"
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-slate-200 bg-slate-50 focus:bg-white font-medium transition-colors border rounded-xl"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Role</label>
+                <label className="block text-xs font-medium text-slate-800 mb-2">Role</label>
                 <select
                   value={createRole}
                   onChange={(e) => setCreateRole(e.target.value as 'user' | 'admin')}
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  className="w-full border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-slate-200 bg-slate-50 focus:bg-white font-medium transition-colors border rounded-xl"
                 >
-                  <option value="user">user</option>
-                  <option value="admin">admin</option>
+                  <option value="user">USER</option>
+                  <option value="admin">ADMIN</option>
                 </select>
               </div>
-              {createError && <p className="text-xs text-red-500">{createError}</p>}
-              <div className="flex gap-2 pt-1">
+              {createError && <p className="text-xs font-medium text-red-600 p-3 bg-red-50 border-red-200 rounded-2xl">{createError}</p>}
+              <div className="flex gap-4 pt-4">
                 <button
                   type="button"
                   onClick={() => { setShowCreate(false); setCreateError(null); }}
-                  className="flex-1 py-2 text-sm font-semibold rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  className="flex-1 py-3 text-sm font-medium bg-white border-slate-200 text-slate-800 shadow-sm rounded-xl transition-all border"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={createLoading}
-                  className="flex-1 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="flex-1 py-3 text-sm font-medium bg-indigo-600 border-slate-200 text-white shadow-sm rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50 border"
                 >
-                  {createLoading ? 'Đang tạo...' : 'Tạo tài khoản'}
+                  {createLoading ? 'ĐANG TẠO...' : 'TẠO TÀI KHOẢN'}
                 </button>
               </div>
             </form>
@@ -308,15 +308,15 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
 
       {/* Modal đổi mật khẩu */}
       {editPasswordUserId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4">
-            <div>
-              <h3 className="text-lg font-bold text-slate-800">Đổi mật khẩu</h3>
-              <p className="text-sm text-slate-500 mt-0.5">{editingUser?.email}</p>
+        <div className="fixed inset-0 bg-indigo-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200 rounded-2xl">
+          <div className="bg-white border-slate-200 shadow-sm rounded-xl max-w-md w-full p-8 space-y-6 border">
+            <div className="border-b border-slate-200 pb-4">
+              <h3 className="text-2xl font-sans font-medium text-slate-800">Đổi mật khẩu</h3>
+              <p className="text-sm font-medium text-slate-500 mt-2">{editingUser?.email}</p>
             </div>
-            <form onSubmit={handleChangePassword} className="space-y-3">
+            <form onSubmit={handleChangePassword} className="space-y-5">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Mật khẩu mới</label>
+                <label className="block text-xs font-medium text-slate-800 mb-2">Mật khẩu mới</label>
                 <input
                   type="password"
                   required
@@ -324,25 +324,25 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Ít nhất 6 ký tự"
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-slate-200 bg-slate-50 focus:bg-white font-medium transition-colors border rounded-xl"
                   autoFocus
                 />
               </div>
-              {pwError && <p className="text-xs text-red-500">{pwError}</p>}
-              <div className="flex gap-2 pt-1">
+              {pwError && <p className="text-xs font-medium text-red-600 p-3 bg-red-50 border-red-200 rounded-2xl">{pwError}</p>}
+              <div className="flex gap-4 pt-4">
                 <button
                   type="button"
                   onClick={() => { setEditPasswordUserId(null); setPwError(null); }}
-                  className="flex-1 py-2 text-sm font-semibold rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                  className="flex-1 py-3 text-sm font-medium bg-white border-slate-200 text-slate-800 shadow-sm rounded-xl transition-all border"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={pwLoading}
-                  className="flex-1 py-2 text-sm font-semibold rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="flex-1 py-3 text-sm font-medium bg-indigo-600 border-slate-200 text-white shadow-sm rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50 border"
                 >
-                  {pwLoading ? 'Đang lưu...' : 'Lưu mật khẩu'}
+                  {pwLoading ? 'ĐANG LƯU...' : 'LƯU MẬT KHẨU'}
                 </button>
               </div>
             </form>
@@ -352,19 +352,21 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
 
       {/* Modal xác nhận xóa */}
       {deleteUserId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-slate-800">Xác nhận xóa</h3>
-            <p className="text-sm text-slate-600">
+        <div className="fixed inset-0 bg-indigo-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200 rounded-2xl">
+          <div className="bg-white border-red-600 shadow-sm rounded-xl max-w-sm w-full p-8 space-y-6">
+            <div className="border-b border-red-600 pb-4">
+              <h3 className="text-2xl font-sans font-medium text-red-600">Xác nhận xóa</h3>
+            </div>
+            <p className="text-base font-medium text-slate-800">
               Bạn có chắc muốn xóa tài khoản{' '}
-              <span className="font-semibold text-slate-800">{deletingUser?.email}</span>?
-              Thao tác này không thể hoàn tác.
+              <span className="font-medium border-b border-red-600">{deletingUser?.email}</span>?
+              <br/><br/><span className="text-xs text-red-600 font-medium">Thao tác này không thể hoàn tác.</span>
             </p>
-            <div className="flex gap-2">
+            <div className="flex gap-4 pt-4">
               <button
                 type="button"
                 onClick={() => setDeleteUserId(null)}
-                className="flex-1 py-2 text-sm font-semibold rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                className="flex-1 py-3 text-sm font-medium bg-white border-slate-200 text-slate-800 shadow-sm rounded-xl transition-all border"
               >
                 Hủy
               </button>
@@ -372,9 +374,9 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
                 type="button"
                 onClick={handleDelete}
                 disabled={deleteLoading}
-                className="flex-1 py-2 text-sm font-semibold rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                className="flex-1 py-3 text-sm font-medium bg-red-500 border-red-600 text-white shadow-sm rounded-xl hover:bg-red-600 transition-all disabled:opacity-50"
               >
-                {deleteLoading ? 'Đang xóa...' : 'Xóa tài khoản'}
+                {deleteLoading ? 'ĐANG XÓA...' : 'XÓA LUÔN'}
               </button>
             </div>
           </div>

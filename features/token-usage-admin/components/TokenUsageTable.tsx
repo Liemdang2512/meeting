@@ -29,48 +29,48 @@ export const TokenUsageTable: React.FC<TokenUsageTableProps> = ({
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl shadow-sm">
-      <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-        <p className="text-sm font-semibold text-slate-700">Chi tiết token usage</p>
-        <div className="flex items-center gap-2 text-xs text-slate-500">
+    <div className="bg-white border-slate-200 shadow-sm rounded-xl border">
+      <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+        <p className="text-lg font-medium font-sans text-slate-800">Chi tiết token usage</p>
+        <div className="flex items-center gap-3 text-sm font-medium text-slate-500">
           <span>Trang {page}</span>
           <span className="text-slate-300">•</span>
           <span>{logs.length} dòng</span>
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="min-w-full text-xs">
-          <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
+        <table className="min-w-full text-sm whitespace-nowrap">
+          <thead className="bg-indigo-900 text-white border-b border-slate-200">
             <tr>
-              <th className="px-3 py-2 text-left font-semibold">Time</th>
-              <th className="px-3 py-2 text-left font-semibold">User</th>
-              <th className="px-3 py-2 text-left font-semibold">Feature</th>
-              <th className="px-3 py-2 text-left font-semibold">Action</th>
-              <th className="px-3 py-2 text-left font-semibold">Model</th>
-              <th className="px-3 py-2 text-right font-semibold">Input</th>
-              <th className="px-3 py-2 text-right font-semibold">Output</th>
-              <th className="px-3 py-2 text-right font-semibold">Total</th>
-              <th className="px-3 py-2 text-left font-semibold">Metadata</th>
+              <th className="px-4 py-3 text-left font-medium">Time</th>
+              <th className="px-4 py-3 text-left font-medium">User</th>
+              <th className="px-4 py-3 text-left font-medium">Feature</th>
+              <th className="px-4 py-3 text-left font-medium">Action</th>
+              <th className="px-4 py-3 text-left font-medium hidden sm:table-cell">Model</th>
+              <th className="px-4 py-3 text-right font-medium">Input</th>
+              <th className="px-4 py-3 text-right font-medium">Output</th>
+              <th className="px-4 py-3 text-right font-medium">Total</th>
+              <th className="px-4 py-3 text-left font-medium hidden md:table-cell">Metadata</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y-2 divide-slate-100">
             {isLoading && (
               <tr>
-                <td colSpan={9} className="px-3 py-6 text-center text-slate-400">
+                <td colSpan={9} className="px-4 py-8 text-center text-slate-500 font-medium">
                   Đang tải dữ liệu...
                 </td>
               </tr>
             )}
             {!isLoading && error && (
               <tr>
-                <td colSpan={9} className="px-3 py-6 text-center text-red-500">
+                <td colSpan={9} className="px-4 py-8 text-center text-red-600 font-medium">
                   {error}
                 </td>
               </tr>
             )}
             {!isLoading && !error && logs.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-3 py-6 text-center text-slate-400">
+                <td colSpan={9} className="px-4 py-8 text-center text-slate-500 font-medium">
                   Chưa có log nào trong khoảng thời gian này.
                 </td>
               </tr>
@@ -78,24 +78,24 @@ export const TokenUsageTable: React.FC<TokenUsageTableProps> = ({
             {!isLoading &&
               !error &&
               logs.map((log) => (
-                <tr key={log.id} className="border-t border-slate-100 hover:bg-slate-50/60">
-                  <td className="px-3 py-2 whitespace-nowrap text-slate-600">
+                <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-4 py-3 text-slate-800 font-medium font-mono text-xs">
                     {new Date(log.createdAt).toLocaleString('vi-VN')}
                   </td>
-                  <td className="px-3 py-2 text-slate-600 max-w-[160px] truncate">{log.userId}</td>
-                  <td className="px-3 py-2 text-slate-600">{log.feature}</td>
-                  <td className="px-3 py-2 text-slate-600">{log.actionType}</td>
-                  <td className="px-3 py-2 text-slate-600">{log.model}</td>
-                  <td className="px-3 py-2 text-right text-slate-600">
+                  <td className="px-4 py-3 text-slate-800 font-medium max-w-[160px] truncate">{log.userId}</td>
+                  <td className="px-4 py-3 text-slate-600 font-medium text-xs">{log.feature}</td>
+                  <td className="px-4 py-3 text-slate-600 font-medium text-xs">{log.actionType}</td>
+                  <td className="px-4 py-3 text-slate-500 font-mono text-xs hidden sm:table-cell max-w-[120px] truncate">{log.model}</td>
+                  <td className="px-4 py-3 text-right text-slate-800 font-mono text-xs">
                     {log.inputTokens !== null ? log.inputTokens.toLocaleString('vi-VN') : '—'}
                   </td>
-                  <td className="px-3 py-2 text-right text-slate-600">
+                  <td className="px-4 py-3 text-right text-slate-800 font-mono text-xs">
                     {log.outputTokens !== null ? log.outputTokens.toLocaleString('vi-VN') : '—'}
                   </td>
-                  <td className="px-3 py-2 text-right font-semibold text-slate-900">
+                  <td className="px-4 py-3 text-right font-medium text-slate-800 text-base">
                     {log.totalTokens !== null ? log.totalTokens.toLocaleString('vi-VN') : '—'}
                   </td>
-                  <td className="px-3 py-2 text-slate-500 max-w-[220px] truncate">
+                  <td className="px-4 py-3 text-slate-400 font-mono text-xs max-w-[220px] truncate hidden md:table-cell">
                     {log.metadata ? JSON.stringify(log.metadata) : '—'}
                   </td>
                 </tr>
@@ -103,12 +103,12 @@ export const TokenUsageTable: React.FC<TokenUsageTableProps> = ({
           </tbody>
         </table>
       </div>
-      <div className="p-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+      <div className="p-4 border-t border-slate-200 flex items-center justify-between bg-slate-50">
         <button
           type="button"
           onClick={handlePrev}
           disabled={page <= 1}
-          className="px-3 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40"
+          className="px-4 py-2 font-medium text-sm bg-white border-slate-200 text-slate-800 shadow-sm rounded-xl hover:bg-slate-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed border"
         >
           Trang trước
         </button>
@@ -116,7 +116,7 @@ export const TokenUsageTable: React.FC<TokenUsageTableProps> = ({
           type="button"
           onClick={handleNext}
           disabled={logs.length < pageSize}
-          className="px-3 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40"
+          className="px-4 py-2 font-medium text-sm bg-white border-slate-200 text-slate-800 shadow-sm rounded-xl hover:bg-slate-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed border"
         >
           Trang sau
         </button>

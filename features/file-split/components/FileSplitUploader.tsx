@@ -19,7 +19,7 @@ export function FileSplitUploader({ file, fileSizeMB, error, onSelectFile }: Pro
   return (
     <div className="space-y-3">
       <div
-        className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+        className="border-dashed border-slate-300 bg-slate-50 p-8 text-center cursor-pointer hover:bg-slate-100 hover:border-slate-200 transition-all group rounded-2xl"
         onClick={() => inputRef.current?.click()}
       >
         <input
@@ -29,24 +29,24 @@ export function FileSplitUploader({ file, fileSizeMB, error, onSelectFile }: Pro
           className="hidden"
           onChange={handleChange}
         />
-        <div className="text-4xl mb-3">🎵</div>
-        <p className="text-slate-600 font-medium">Nhấn để chọn file audio hoặc video</p>
-        <p className="text-slate-400 text-sm mt-1">Dung lượng tối đa cho Cắt file: {MAX_SPLIT_FILE_SIZE_MB}MB</p>
+        <div className="text-4xl mb-4 group- transition-transform">🎵</div>
+        <p className="text-slate-800 font-medium text-lg">Nhấn để chọn file audio hoặc video</p>
+        <p className="text-slate-500 font-medium text-sm mt-2">Dung lượng tối đa cho Cắt file: {MAX_SPLIT_FILE_SIZE_MB}MB</p>
       </div>
 
       {file && (
-        <div className="bg-slate-50 rounded-lg p-3 flex items-center gap-3">
-          <div className="text-2xl">📄</div>
+        <div className="bg-slate-50 border-slate-200 p-4 flex items-center gap-4 shadow-sm rounded-xl border">
+          <div className="text-3xl bg-white border-slate-200 p-2 shadow-sm rounded-xl border">📄</div>
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-slate-800 truncate">{file.name}</p>
-            <p className="text-slate-500 text-sm">{fileSizeMB?.toFixed(2)} MB</p>
+            <p className="font-medium text-slate-800 text-lg truncate">{file.name}</p>
+            <p className="text-slate-500 font-medium text-sm mt-1">{fileSizeMB?.toFixed(2)} MB</p>
           </div>
         </div>
       )}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-          <p className="text-red-700 text-sm font-medium">{error}</p>
+        <div className="bg-white border-red-500 shadow-sm rounded-xl p-4 text-center">
+          <p className="text-red-700 font-medium">⚠ {error}</p>
         </div>
       )}
     </div>
