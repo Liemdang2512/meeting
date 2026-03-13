@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import * as XLSX from 'xlsx';
-import { TranscriptionStatus, FileMetadata } from './types';
-import { transcribeBasic, transcribeDeep, summarizeTranscript, synthesizeTranscriptions, type DeepProgressCallback } from './services/geminiService';
-import { supabase, isSupabaseConfigured, getInitialAuthState, signOut, loadApiKeyFromAccount, saveApiKeyToAccount, type AuthState } from './lib/supabase';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
+import { TranscriptionStatus, FileMetadata, type TokenLoggingContext } from './types';
+import { transcribeBasic, transcribeDeep, summarizeTranscript, synthesizeTranscriptions, type DeepProgressCallback, type AudioLanguage } from './services/geminiService';
+import { getMe, logout as signOut, loadApiKeyFromAccount, saveApiKeyToAccount } from './lib/auth';
+import type { AuthUser } from './lib/auth';
+import { authFetch } from './lib/api';
 import { FileUpload } from './components/FileUpload';
 import { TranscriptionView } from './components/TranscriptionView';
 import { Spinner } from './components/Spinner';
@@ -12,7 +13,11 @@ import type { MeetingInfo } from './features/minutes/types';
 import { loadMeetingInfoDraft, clearMeetingInfoDraft } from './features/minutes/storage';
 import { buildMinutesCustomPrompt } from './features/minutes/prompt';
 import { MeetingInfoForm } from './features/minutes/components/MeetingInfoForm';
-import { FileSplitPage } from './features/file-split';
+
+// Lazy load các route pages - chỉ tải khi user navigate đến
+const FileSplitPage = lazy(() => import('./features/file-split').then(m => ({ default: m.FileSplitPage })));
+const TokenUsageAdminPage = lazy(() => import('./features/token-usage-admin/TokenUsageAdminPage').then(m => ({ default: m.TokenUsageAdminPage })));
+const MyTokenUsagePage = lazy(() => import('./features/token-usage-user/MyTokenUsagePage').then(m => ({ default: m.MyTokenUsagePage })));
 
 declare global {
   interface AIStudio {
@@ -97,7 +102,7 @@ Tóm tắt các nội dung chính đã thảo luận, chia theo từng chủ đ�
 - Nội dung trao đổi phải được chia thành các MỤC rõ ràng (Nội dung 01, 02, 03...).`;
 
 function App() {
-  const [authState, setAuthState] = useState<AuthState>({ session: null, user: null });
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [status, setStatus] = useState<TranscriptionStatus>(TranscriptionStatus.IDLE);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
@@ -130,10 +135,16 @@ function App() {
   // Chế độ phiên âm
   const [transcribeMode, setTranscribeMode] = useState<'basic' | 'deep'>('basic');
 
+  // Ngôn ngữ audio
+  const [audioLanguage, setAudioLanguage] = useState<AudioLanguage>('vi');
+  const [customLanguage, setCustomLanguage] = useState('');
+
   // Progress cho chế độ chuyên sâu (3 bước)
   const [deepProgress, setDeepProgress] = useState<{ step: number; label: string } | null>(null);
 
   const [mode, setMode] = useState<'notes' | 'splitter'>('notes');
+  const [route, setRoute] = useState<string>(() => window.location.pathname || '/');
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   const [meetingInfo, setMeetingInfo] = useState<MeetingInfo>(() => (
     loadMeetingInfoDraft() ?? {
@@ -160,39 +171,22 @@ function App() {
         setShowApiKeyInput(true);
       }
 
-      // Khởi tạo trạng thái đăng nhập
-      const initialAuth = await getInitialAuthState();
-      setAuthState(initialAuth);
+      // Khoi tao trang thai dang nhap tu JWT trong localStorage
+      const currentUser = await getMe();
+      setUser(currentUser);
       setAuthLoading(false);
 
-      // Nếu đã đăng nhập, tải API key từ tài khoản Supabase
-      if (initialAuth.user) {
-        const accountKey = await loadApiKeyFromAccount(initialAuth.user.id);
+      // Neu da dang nhap, tai API key tu server
+      if (currentUser) {
+        const accountKey = await loadApiKeyFromAccount(currentUser.userId);
         if (accountKey) {
           setUserApiKey(accountKey);
           localStorage.setItem('gemini_api_key', accountKey);
           setHasApiKey(true);
           setShowApiKeyInput(false);
         }
-      }
-
-      if (supabase) {
-        supabase.auth.onAuthStateChange(async (_event, session) => {
-          setAuthState({
-            session: session,
-            user: session?.user ?? null,
-          });
-          // Khi đăng nhập trên thiết bị mới, tự động tải API key
-          if (_event === 'SIGNED_IN' && session?.user) {
-            const accountKey = await loadApiKeyFromAccount(session.user.id);
-            if (accountKey) {
-              setUserApiKey(accountKey);
-              localStorage.setItem('gemini_api_key', accountKey);
-              setHasApiKey(true);
-              setShowApiKeyInput(false);
-            }
-          }
-        });
+        // Kiem tra admin tu role trong JWT
+        setIsAdmin(currentUser.role === 'admin');
       }
     };
 
@@ -212,6 +206,22 @@ function App() {
     }
   };
 
+  useEffect(() => {
+    const handlePopState = () => {
+      setRoute(window.location.pathname || '/');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
+
+  const navigate = (path: string) => {
+    if (path === route) return;
+    window.history.pushState({}, '', path);
+    setRoute(path);
+  };
+
   const handleOpenKeySelector = async () => {
     if (window.aistudio) {
       await window.aistudio.openSelectKey();
@@ -229,9 +239,9 @@ function App() {
       setHasApiKey(true);
       setShowApiKeyInput(false);
 
-      // Lưu API key vào tài khoản Supabase (đồng bộ qua các thiết bị)
-      if (authState.user) {
-        const saved = await saveApiKeyToAccount(authState.user.id, trimmedKey);
+      // Luu API key len server (dong bo qua cac thiet bi)
+      if (user) {
+        const saved = await saveApiKeyToAccount(user.userId, trimmedKey);
         if (saved) {
           console.log('API key đã được lưu vào tài khoản.');
         }
@@ -289,14 +299,36 @@ function App() {
     await Promise.all(
       files.map(async (file, i) => {
         try {
+          const loggingContext: TokenLoggingContext = {
+            feature: 'minutes',
+            actionType: transcribeMode === 'deep' ? 'transcribe-deep' : 'transcribe-basic',
+            metadata: {
+              fileName: file.name,
+              mode: transcribeMode,
+            },
+          };
+
           let resultText: string;
           if (transcribeMode === 'deep') {
-            resultText = await transcribeDeep(file, (step, label) => {
-              setDeepProgress({ step, label });
-            });
+            resultText = await transcribeDeep(
+              file,
+              (step, label) => {
+                setDeepProgress({ step, label });
+              },
+              audioLanguage,
+              customLanguage,
+              loggingContext,
+              user?.userId ?? null,
+            );
             setDeepProgress(null);
           } else {
-            resultText = await transcribeBasic(file);
+            resultText = await transcribeBasic(
+              file,
+              audioLanguage,
+              customLanguage,
+              loggingContext,
+              user?.userId ?? null,
+            );
           }
           orderedResults[i] = resultText;
 
@@ -360,23 +392,23 @@ function App() {
     const combined = allTranscriptions.join('\n\n---\n\n');
     setTranscription(combined);
 
-    // Save to Supabase in background (không block bước chuyển tiếp)
-    if (isSupabaseConfigured() && supabase && files[0]) {
+    // Save transcription to backend in background (khong block buoc chuyen tiep)
+    if (files[0]) {
       void (async () => {
         try {
-          const { data, error } = await supabase
-            .from('transcriptions')
-            .insert({
+          const res = await authFetch('/transcriptions', {
+            method: 'POST',
+            body: JSON.stringify({
               file_name: files.length > 1 ? `${files[0].name} (+${files.length - 1} files)` : files[0].name,
               file_size: files.reduce((sum, f) => sum + f.size, 0),
-              transcription_text: combined
-            } as any)
-            .select()
-            .single();
-          if (error) {
-            console.error('Error saving to Supabase:', error);
-          } else if (data) {
-            setTranscriptionId((data as any).id);
+              transcription_text: combined,
+            }),
+          });
+          if (!res.ok) {
+            console.error('Error saving transcription:', await res.text());
+          } else {
+            const row = await res.json();
+            setTranscriptionId(row.id);
           }
         } catch (dbError) {
           console.error('Database error:', dbError);
@@ -391,7 +423,16 @@ function App() {
     if (files.length > 1) {
       setStatus(TranscriptionStatus.SYNTHESIZING);
       try {
-        const synthesized = await synthesizeTranscriptions(completedList);
+        const synthLoggingContext: TokenLoggingContext = {
+          feature: 'minutes',
+          actionType: 'other',
+          metadata: { fileName: 'Synthesize Combined', mode: 'synthesize', fileCount: completedList.length },
+        };
+        const synthesized = await synthesizeTranscriptions(
+          completedList,
+          synthLoggingContext,
+          user?.userId ?? null
+        );
         setSynthesizedTranscription(synthesized);
         setStatus(TranscriptionStatus.SYNTHESIZED);
         setViewStep(3); // Hiển thị bước tổng hợp
@@ -416,22 +457,32 @@ function App() {
 
     try {
       const customPrompt = buildMinutesCustomPrompt({ meetingInfo, templatePrompt: summaryPrompt });
-      const resultSummary = await summarizeTranscript(sourceText, customPrompt);
+      const sumLoggingContext: TokenLoggingContext = {
+        feature: 'minutes',
+        actionType: 'minutes-generate',
+        metadata: { fileName: fileMeta?.name || 'Combined', mode: 'summarize' },
+      };
+      const resultSummary = await summarizeTranscript(
+        sourceText,
+        customPrompt,
+        sumLoggingContext,
+        user?.userId ?? null
+      );
       setSummary(resultSummary);
 
-      // Save summary to Supabase if configured and we have a transcription ID
-      if (isSupabaseConfigured() && supabase && transcriptionId) {
+      // Save summary to backend if we have a transcription ID
+      if (transcriptionId) {
         try {
-          const { error } = await supabase
-            .from('summaries')
-            .insert({
+          const res = await authFetch('/summaries', {
+            method: 'POST',
+            body: JSON.stringify({
               transcription_id: transcriptionId,
               summary_text: resultSummary,
-              prompt_used: customPrompt
-            } as any);
-
-          if (error) {
-            console.error('Error saving summary to Supabase:', error);
+              prompt_used: customPrompt,
+            }),
+          });
+          if (!res.ok) {
+            console.error('Error saving summary:', await res.text());
           }
         } catch (dbError) {
           console.error('Database error:', dbError);
@@ -460,9 +511,11 @@ function App() {
       .trim();
   };
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     if (!summary) return;
 
+    // Dynamic import - chỉ tải XLSX (~200KB) khi user thực sự click Export Excel
+    const XLSX = await import('xlsx');
     const wb = XLSX.utils.book_new();
 
     // Prepare data
@@ -551,8 +604,8 @@ function App() {
 
   const handleLogout = async () => {
     await signOut();
-    // Reset toàn bộ state để quay lại trang đăng nhập ngay
-    setAuthState({ session: null, user: null });
+    // Reset toan bo state de quay lai trang dang nhap ngay
+    setUser(null);
     setStatus(TranscriptionStatus.IDLE);
     setPendingFiles([]);
     setFileMeta(null);
@@ -580,8 +633,22 @@ function App() {
     );
   }
 
-  if (!authState.user) {
-    return <LoginPage onLoginSuccess={() => { /* session listener sẽ cập nhật state */ }} />;
+  if (!user) {
+    return <LoginPage onLoginSuccess={async () => {
+      // Sau khi dang nhap thanh cong, lay user info va cap nhat state
+      const loggedInUser = await getMe();
+      setUser(loggedInUser);
+      if (loggedInUser) {
+        setIsAdmin(loggedInUser.role === 'admin');
+        const accountKey = await loadApiKeyFromAccount(loggedInUser.userId);
+        if (accountKey) {
+          setUserApiKey(accountKey);
+          localStorage.setItem('gemini_api_key', accountKey);
+          setHasApiKey(true);
+          setShowApiKeyInput(false);
+        }
+      }
+    }} />;
   }
 
   // Tính bước hiện tại cho step indicator
@@ -622,6 +689,10 @@ function App() {
     { n: 5, label: 'Hoàn thành' },
   ];
 
+  const isNotesRoute = route === '/' || route === '';
+  const isAdminRoute = route === '/admin/token-usage';
+  const isMyUsageRoute = route === '/me/token-usage';
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Header — dark blue như mẫu */}
@@ -651,17 +722,43 @@ function App() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-white/10">
           <div className="flex gap-1">
             <button
-              onClick={() => setMode('notes')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${mode === 'notes' ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'}`}
+              onClick={() => {
+                navigate('/');
+                setMode('notes');
+              }}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${isNotesRoute ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'
+                }`}
             >
               Ghi chép
             </button>
             <button
-              onClick={() => setMode('splitter')}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${mode === 'splitter' ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'}`}
+              onClick={() => {
+                navigate('/');
+                setMode('splitter');
+              }}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${isNotesRoute && mode === 'splitter'
+                  ? 'text-white border-b-2 border-white'
+                  : 'text-blue-300 hover:text-white'
+                }`}
             >
               Cắt file
             </button>
+            <button
+              onClick={() => navigate('/me/token-usage')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${isMyUsageRoute ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'
+                }`}
+            >
+              My token usage
+            </button>
+            {isAdmin && (
+              <button
+                onClick={() => navigate('/admin/token-usage')}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${isAdminRoute ? 'text-white border-b-2 border-white' : 'text-blue-300 hover:text-white'
+                  }`}
+              >
+                Admin token usage
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -711,461 +808,508 @@ function App() {
       </div>
 
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {mode === 'splitter' && <FileSplitPage />}
-      {mode === 'notes' && <>
+        <Suspense fallback={<div className="flex justify-center items-center h-64"><Spinner /></div>}>
+          {isAdminRoute && user && (
+            <TokenUsageAdminPage currentUserId={user.userId} isAdmin={isAdmin} />
+          )}
+          {isMyUsageRoute && user && (
+            <MyTokenUsagePage currentUserId={user.userId} />
+          )}
+          {isNotesRoute && mode === 'splitter' && (
+            <FileSplitPage
+              onSendToTranscription={(files) => {
+                handleAddFiles(files);
+                setMode('notes');
+              }}
+            />
+          )}
+        </Suspense>
+        {isNotesRoute && mode === 'notes' && <>
 
-        {/* API Key Input Modal */}
-        {showApiKeyInput && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in duration-200">
-              <div className="text-center">
-                <h3 className="text-2xl font-bold text-slate-800 mb-2">
-                  {localStorage.getItem('gemini_api_key') ? 'Thay đổi' : 'Cấu hình'} Gemini API Key
-                </h3>
-                <p className="text-slate-500 text-sm">
-                  {localStorage.getItem('gemini_api_key') ? (
-                    <>Cập nhật API key mới của bạn</>
-                  ) : (
-                    <>
-                      Nhập API key của bạn từ{' '}
-                      <a
-                        href="https://aistudio.google.com/apikey"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline font-medium"
-                      >
-                        Google AI Studio
-                      </a>
-                    </>
-                  )}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-bold text-slate-700">API Key</label>
-                <input
-                  type="password"
-                  value={userApiKey}
-                  onChange={(e) => setUserApiKey(e.target.value)}
-                  placeholder="AIza..."
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none font-mono text-sm"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      handleSaveApiKey();
-                    }
-                  }}
-                />
-                <p className="text-xs text-slate-400">
-                  API key sẽ được lưu trong trình duyệt của bạn (localStorage)
-                </p>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowApiKeyInput(false)}
-                  className="flex-1 px-4 py-3 border-2 border-slate-200 text-slate-600 font-bold rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  Hủy
-                </button>
-                <button
-                  onClick={handleSaveApiKey}
-                  className="flex-1 px-4 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200"
-                >
-                  Lưu API Key
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* BƯỚC 1: Tải lên file */}
-        {status === TranscriptionStatus.IDLE && (
-          <div className="max-w-2xl mx-auto space-y-5 animate-in fade-in duration-300">
-            <div>
-              <h2 className="text-xl font-bold text-slate-800">Bước 1: Tải lên file Audio hoặc Video</h2>
-              <p className="text-slate-500 text-sm mt-1">Tải lên một hoặc nhiều file cần ghi chép. Hỗ trợ MP3, MP4, WAV, M4A, OGG — tối đa 100MB/file.</p>
-            </div>
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-              <FileUpload
-                pendingFiles={pendingFiles}
-                onAddFiles={handleAddFiles}
-                onRemoveFile={handleRemoveFile}
-                onStartConvert={handleStartConvert}
-                fileStatuses={[]}
-                disabled={false}
-              />
-            </div>
-
-            {/* Chọn chế độ phiên âm */}
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
-              <p className="text-sm font-semibold text-slate-700">Chế độ phiên âm</p>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => setTranscribeMode('basic')}
-                  className={`flex flex-col items-start gap-1 p-4 rounded-xl border-2 transition-all text-left ${
-                    transcribeMode === 'basic'
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-slate-200 hover:border-slate-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">⚡</span>
-                    <span className="font-semibold text-slate-800 text-sm">Cơ bản</span>
-                    {transcribeMode === 'basic' && (
-                      <span className="ml-auto text-xs font-medium text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">Đang chọn</span>
+          {/* API Key Input Modal */}
+          {showApiKeyInput && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 animate-in fade-in zoom-in duration-200">
+                <div className="text-center">
+                  <h3 className="text-2xl font-bold text-slate-800 mb-2">
+                    {localStorage.getItem('gemini_api_key') ? 'Thay đổi' : 'Cấu hình'} Gemini API Key
+                  </h3>
+                  <p className="text-slate-500 text-sm">
+                    {localStorage.getItem('gemini_api_key') ? (
+                      <>Cập nhật API key mới của bạn</>
+                    ) : (
+                      <>
+                        Nhập API key của bạn từ{' '}
+                        <a
+                          href="https://aistudio.google.com/apikey"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline font-medium"
+                        >
+                          Google AI Studio
+                        </a>
+                      </>
                     )}
-                  </div>
-                  <p className="text-xs text-slate-500">1 bước · Nhanh hơn</p>
-                  <p className="text-xs text-slate-400">Phù hợp họp nội bộ, nội dung đơn giản</p>
-                </button>
-                <button
-                  onClick={() => setTranscribeMode('deep')}
-                  className={`flex flex-col items-start gap-1 p-4 rounded-xl border-2 transition-all text-left ${
-                    transcribeMode === 'deep'
-                      ? 'border-purple-500 bg-purple-50'
-                      : 'border-slate-200 hover:border-slate-300'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">🔍</span>
-                    <span className="font-semibold text-slate-800 text-sm">Chuyên sâu</span>
-                    {transcribeMode === 'deep' && (
-                      <span className="ml-auto text-xs font-medium text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">Đang chọn</span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500">3 bước · Chính xác hơn</p>
-                  <p className="text-xs text-slate-400">Họp quan trọng, đa ngôn ngữ, thuật ngữ chuyên ngành</p>
-                </button>
-              </div>
-            </div>
+                  </p>
+                </div>
 
-            <p className="text-xs text-slate-400 text-center">Vui lòng hoàn thành bước 1 trước khi chuyển sang các bước tiếp theo.</p>
-          </div>
-        )}
-
-        {/* BƯỚC 2: Ghi chép — split layout cố định */}
-        {(status === TranscriptionStatus.PROCESSING || status === TranscriptionStatus.READING_FILE) && (
-          <div className="animate-in fade-in duration-300 space-y-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-800">Bước 2: Chuyển đổi âm thanh thành văn bản</h2>
-              <p className="text-slate-500 text-sm mt-1">AI đang lắng nghe và ghi chép từng file. Kết quả hiện ngay khi mỗi file hoàn thành.</p>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Trái: File queue với trạng thái */}
-              <div className="space-y-3">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Danh sách file</p>
-                <div className="bg-white p-4 rounded-2xl shadow-xl border border-slate-200">
-                  <FileUpload
-                    pendingFiles={pendingFiles}
-                    onAddFiles={handleAddFiles}
-                    onRemoveFile={handleRemoveFile}
-                    onStartConvert={handleStartConvert}
-                    fileStatuses={fileStatuses}
-                    disabled={true}
+                <div className="space-y-2">
+                  <label className="block text-sm font-bold text-slate-700">API Key</label>
+                  <input
+                    type="password"
+                    value={userApiKey}
+                    onChange={(e) => setUserApiKey(e.target.value)}
+                    placeholder="AIza..."
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none font-mono text-sm"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSaveApiKey();
+                      }
+                    }}
                   />
+                  <p className="text-xs text-slate-400">
+                    API key sẽ được lưu trong trình duyệt của bạn (localStorage)
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowApiKeyInput(false)}
+                    className="flex-1 px-4 py-3 border-2 border-slate-200 text-slate-600 font-bold rounded-lg hover:bg-slate-50 transition-colors"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    onClick={handleSaveApiKey}
+                    className="flex-1 px-4 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-200"
+                  >
+                    Lưu API Key
+                  </button>
                 </div>
               </div>
+            </div>
+          )}
 
-              {/* Phải: Kết quả từng file khi xong */}
-              <div className="space-y-3 flex flex-col h-[calc(100vh-260px)]">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Văn bản ghi chép</p>
-                  {completedTranscriptions.length > 1 && (
-                    <div className="flex gap-1 flex-wrap justify-end">
-                      {completedTranscriptions.map((t, i) => (
-                        <button key={i} onClick={() => setViewingIndex(i)}
-                          className={`text-xs font-bold px-2.5 py-1 rounded-full border transition-colors ${i === viewingIndex ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300'}`}>
-                          {t.name.length > 15 ? t.name.substring(0, 15) + '…' : t.name}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  {completedTranscriptions.length === 0 ? (
-                    <div className="h-full bg-white rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-3 text-center p-8">
-                      <Spinner size="lg" className={transcribeMode === 'deep' ? 'text-purple-400' : 'text-blue-400'} />
-                      <p className="text-slate-500 font-medium">Đã xong {currentFileIndex}/{totalFiles} file...</p>
-                      {transcribeMode === 'deep' && deepProgress ? (
-                        <div className="w-full max-w-xs space-y-2">
-                          <p className="text-purple-600 text-sm font-medium">{deepProgress.label}</p>
-                          <div className="flex gap-1.5 justify-center">
-                            {[1, 2, 3].map(s => (
-                              <div key={s} className={`h-1.5 flex-1 rounded-full transition-all ${
-                                s < deepProgress.step ? 'bg-purple-500' :
-                                s === deepProgress.step ? 'bg-purple-400 animate-pulse' :
-                                'bg-slate-200'
-                              }`} />
-                            ))}
-                          </div>
-                          <p className="text-xs text-slate-400">Bước {deepProgress.step}/3</p>
-                        </div>
-                      ) : (
-                        <p className="text-slate-400 text-sm italic">Kết quả sẽ hiện tại đây khi file xong</p>
+          {/* BƯỚC 1: Tải lên file */}
+          {status === TranscriptionStatus.IDLE && (
+            <div className="max-w-2xl mx-auto space-y-5 animate-in fade-in duration-300">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">Bước 1: Tải lên file Audio hoặc Video</h2>
+                <p className="text-slate-500 text-sm mt-1">Tải lên một hoặc nhiều file cần ghi chép. Hỗ trợ MP3, MP4, WAV, M4A, OGG — tối đa 100MB/file.</p>
+              </div>
+              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <FileUpload
+                  pendingFiles={pendingFiles}
+                  onAddFiles={handleAddFiles}
+                  onRemoveFile={handleRemoveFile}
+                  onStartConvert={handleStartConvert}
+                  fileStatuses={[]}
+                  disabled={false}
+                />
+              </div>
+
+              {/* Chọn chế độ phiên âm */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                <p className="text-sm font-semibold text-slate-700">Chế độ phiên âm</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setTranscribeMode('basic')}
+                    className={`flex flex-col items-start gap-1 p-4 rounded-xl border-2 transition-all text-left ${transcribeMode === 'basic'
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">⚡</span>
+                      <span className="font-semibold text-slate-800 text-sm">Cơ bản</span>
+                      {transcribeMode === 'basic' && (
+                        <span className="ml-auto text-xs font-medium text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">Đang chọn</span>
                       )}
                     </div>
-                  ) : (
-                    <TranscriptionView text={completedTranscriptions[viewingIndex]?.text || ''} />
-                  )}
+                    <p className="text-xs text-slate-500">1 bước · Nhanh hơn</p>
+                    <p className="text-xs text-slate-400">Phù hợp họp nội bộ, nội dung đơn giản</p>
+                  </button>
+                  <button
+                    onClick={() => setTranscribeMode('deep')}
+                    className={`flex flex-col items-start gap-1 p-4 rounded-xl border-2 transition-all text-left ${transcribeMode === 'deep'
+                        ? 'border-purple-500 bg-purple-50'
+                        : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">🔍</span>
+                      <span className="font-semibold text-slate-800 text-sm">Chuyên sâu</span>
+                      {transcribeMode === 'deep' && (
+                        <span className="ml-auto text-xs font-medium text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">Đang chọn</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500">3 bước · Chính xác hơn</p>
+                    <p className="text-xs text-slate-400">Họp quan trọng, đa ngôn ngữ, thuật ngữ chuyên ngành</p>
+                  </button>
                 </div>
               </div>
-            </div>{/* end grid */}
-          </div>
-        )}
 
-        {status === TranscriptionStatus.ERROR && (
-          <div className="max-w-xl mx-auto pt-10">
-            <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center space-y-4">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto text-red-600">
-                <AlertCircleIcon className="w-6 h-6" />
+              {/* Chọn ngôn ngữ audio */}
+              <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                <p className="text-sm font-semibold text-slate-700">Ngôn ngữ trong file audio</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {([
+                    { value: 'vi', label: '🇻🇳 Tiếng Việt' },
+                    { value: 'en', label: '🇬🇧 Tiếng Anh' },
+                    { value: 'zh', label: '🇨🇳 Tiếng Trung' },
+                    { value: 'ko', label: '🇰🇷 Tiếng Hàn' },
+                    { value: 'ja', label: '🇯🇵 Tiếng Nhật' },
+                    { value: 'other', label: '🌐 Ngôn ngữ khác' },
+                  ] as { value: AudioLanguage; label: string }[]).map((lang) => (
+                    <button
+                      key={lang.value}
+                      onClick={() => setAudioLanguage(lang.value)}
+                      className={`px-3 py-2 rounded-xl border-2 text-xs font-medium transition-all text-left ${audioLanguage === lang.value
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                        }`}
+                    >
+                      {lang.label}
+                    </button>
+                  ))}
+                </div>
+                {audioLanguage === 'other' && (
+                  <input
+                    type="text"
+                    value={customLanguage}
+                    onChange={(e) => setCustomLanguage(e.target.value)}
+                    placeholder="Nhập tên ngôn ngữ (ví dụ: Tiếng Thái, Tiếng Pháp...)"
+                    className="w-full px-3 py-2 border-2 border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  />
+                )}
               </div>
+
+              <p className="text-xs text-slate-400 text-center">Vui lòng hoàn thành bước 1 trước khi chuyển sang các bước tiếp theo.</p>
+            </div>
+          )}
+
+          {/* BƯỚC 2: Ghi chép — split layout cố định */}
+          {(status === TranscriptionStatus.PROCESSING || status === TranscriptionStatus.READING_FILE) && (
+            <div className="animate-in fade-in duration-300 space-y-4">
               <div>
-                <h3 className="text-lg font-semibold text-red-800">Lỗi hệ thống</h3>
-                <p className="text-red-600 mt-1">{errorMsg}</p>
+                <h2 className="text-xl font-bold text-slate-800">Bước 2: Chuyển đổi âm thanh thành văn bản</h2>
+                <p className="text-slate-500 text-sm mt-1">AI đang lắng nghe và ghi chép từng file. Kết quả hiện ngay khi mỗi file hoàn thành.</p>
               </div>
-              <button onClick={resetApp} className="px-6 py-2 bg-white border border-red-200 text-red-700 font-bold rounded-lg hover:bg-red-50 transition-colors">Tải lại</button>
-            </div>
-          </div>
-        )}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Trái: File queue với trạng thái */}
+                <div className="space-y-3">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Danh sách file</p>
+                  <div className="bg-white p-4 rounded-2xl shadow-xl border border-slate-200">
+                    <FileUpload
+                      pendingFiles={pendingFiles}
+                      onAddFiles={handleAddFiles}
+                      onRemoveFile={handleRemoveFile}
+                      onStartConvert={handleStartConvert}
+                      fileStatuses={fileStatuses}
+                      disabled={true}
+                    />
+                  </div>
+                </div>
 
-        {/* BƯỚC 3 (multi-file): Đang tổng hợp */}
-        {status === TranscriptionStatus.SYNTHESIZING && (
-          <div className="max-w-xl mx-auto pt-16 text-center space-y-5 animate-in fade-in duration-300">
-            <Spinner size="lg" className="text-blue-600" />
-            <div>
-              <h2 className="text-xl font-bold text-slate-800">Đang tổng hợp nội dung cuộc họp...</h2>
-              <p className="text-slate-500 text-sm mt-2">AI đang gộp {totalFiles} file ghi âm thành một văn bản liền mạch, không bỏ sót nội dung nào.</p>
+                {/* Phải: Kết quả từng file khi xong */}
+                <div className="space-y-3 flex flex-col h-[calc(100vh-260px)]">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Văn bản ghi chép</p>
+                    {completedTranscriptions.length > 1 && (
+                      <div className="flex gap-1 flex-wrap justify-end">
+                        {completedTranscriptions.map((t, i) => (
+                          <button key={i} onClick={() => setViewingIndex(i)}
+                            className={`text-xs font-bold px-2.5 py-1 rounded-full border transition-colors ${i === viewingIndex ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300'}`}>
+                            {t.name.length > 15 ? t.name.substring(0, 15) + '…' : t.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    {completedTranscriptions.length === 0 ? (
+                      <div className="h-full bg-white rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-3 text-center p-8">
+                        <Spinner size="lg" className={transcribeMode === 'deep' ? 'text-purple-400' : 'text-blue-400'} />
+                        <p className="text-slate-500 font-medium">Đã xong {currentFileIndex}/{totalFiles} file...</p>
+                        {transcribeMode === 'deep' && deepProgress ? (
+                          <div className="w-full max-w-xs space-y-2">
+                            <p className="text-purple-600 text-sm font-medium">{deepProgress.label}</p>
+                            <div className="flex gap-1.5 justify-center">
+                              {[1, 2, 3].map(s => (
+                                <div key={s} className={`h-1.5 flex-1 rounded-full transition-all ${s < deepProgress.step ? 'bg-purple-500' :
+                                    s === deepProgress.step ? 'bg-purple-400 animate-pulse' :
+                                      'bg-slate-200'
+                                  }`} />
+                              ))}
+                            </div>
+                            <p className="text-xs text-slate-400">Bước {deepProgress.step}/3</p>
+                          </div>
+                        ) : (
+                          <p className="text-slate-400 text-sm italic">Kết quả sẽ hiện tại đây khi file xong</p>
+                        )}
+                      </div>
+                    ) : (
+                      <TranscriptionView text={completedTranscriptions[viewingIndex]?.text || ''} />
+                    )}
+                  </div>
+                </div>
+              </div>{/* end grid */}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Navigate back: Xem lại ghi chép từng file (bước 2) */}
-        {isNavigableState && viewStep === 2 && completedTranscriptions.length > 0 && (
-          <div className="animate-in fade-in duration-300 space-y-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-800">Bước 2: Văn bản ghi chép từng file</h2>
-              <p className="text-slate-500 text-sm mt-1">Xem lại nội dung ghi chép của từng file ghi âm.</p>
+          {status === TranscriptionStatus.ERROR && (
+            <div className="max-w-xl mx-auto pt-10">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center space-y-4">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto text-red-600">
+                  <AlertCircleIcon className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-red-800">Lỗi hệ thống</h3>
+                  <p className="text-red-600 mt-1">{errorMsg}</p>
+                </div>
+                <button onClick={resetApp} className="px-6 py-2 bg-white border border-red-200 text-red-700 font-bold rounded-lg hover:bg-red-50 transition-colors">Tải lại</button>
+              </div>
             </div>
-            {completedTranscriptions.length > 1 && (
-              <div className="flex gap-1 flex-wrap">
-                {completedTranscriptions.map((t, i) => (
-                  <button key={i} onClick={() => setViewingIndex(i)}
-                    className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${i === viewingIndex ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300'}`}>
-                    {t.name.length > 20 ? t.name.substring(0, 20) + '…' : t.name}
+          )}
+
+          {/* BƯỚC 3 (multi-file): Đang tổng hợp */}
+          {status === TranscriptionStatus.SYNTHESIZING && (
+            <div className="max-w-xl mx-auto pt-16 text-center space-y-5 animate-in fade-in duration-300">
+              <Spinner size="lg" className="text-blue-600" />
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">Đang tổng hợp nội dung cuộc họp...</h2>
+                <p className="text-slate-500 text-sm mt-2">AI đang gộp {totalFiles} file ghi âm thành một văn bản liền mạch, không bỏ sót nội dung nào.</p>
+              </div>
+            </div>
+          )}
+
+          {/* Navigate back: Xem lại ghi chép từng file (bước 2) */}
+          {isNavigableState && viewStep === 2 && completedTranscriptions.length > 0 && (
+            <div className="animate-in fade-in duration-300 space-y-4">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">Bước 2: Văn bản ghi chép từng file</h2>
+                <p className="text-slate-500 text-sm mt-1">Xem lại nội dung ghi chép của từng file ghi âm.</p>
+              </div>
+              {completedTranscriptions.length > 1 && (
+                <div className="flex gap-1 flex-wrap">
+                  {completedTranscriptions.map((t, i) => (
+                    <button key={i} onClick={() => setViewingIndex(i)}
+                      className={`text-xs font-bold px-3 py-1.5 rounded-full border transition-colors ${i === viewingIndex ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300'}`}>
+                      {t.name.length > 20 ? t.name.substring(0, 20) + '…' : t.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <div className="h-[calc(100vh-300px)]">
+                <TranscriptionView text={completedTranscriptions[viewingIndex]?.text || ''} />
+              </div>
+            </div>
+          )}
+
+          {/* Xem lại bản tổng hợp (bước 3, multi-file) */}
+          {isNavigableState && isMultiFile && viewStep === 3 && synthesizedTranscription && (
+            <div className="animate-in fade-in duration-300 space-y-4">
+              <div className="flex items-start justify-between flex-wrap gap-3">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-800">Bước 3: Tổng hợp nội dung cuộc họp</h2>
+                  <p className="text-slate-500 text-sm mt-1">
+                    AI đã gộp {totalFiles} file ghi âm thành một văn bản liên tục. Xem lại nội dung bên dưới trước khi tạo biên bản.
+                  </p>
+                </div>
+                {status !== TranscriptionStatus.COMPLETED && (
+                  <button
+                    onClick={() => { setStatus(TranscriptionStatus.COMPLETED); setViewStep(meetingInfoStep); }}
+                    className="bg-blue-600 text-white font-black px-8 py-3 rounded-xl shadow-blue-200 shadow-lg hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:translate-y-0 whitespace-nowrap"
+                  >
+                    Nhập thông tin cuộc họp →
                   </button>
-                ))}
+                )}
+                {status === TranscriptionStatus.COMPLETED && (
+                  <button
+                    onClick={() => setViewStep(meetingInfoStep)}
+                    className="bg-blue-600 text-white font-black px-8 py-3 rounded-xl shadow-blue-200 shadow-lg hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:translate-y-0 whitespace-nowrap"
+                  >
+                    Nhập thông tin cuộc họp →
+                  </button>
+                )}
               </div>
-            )}
-            <div className="h-[calc(100vh-300px)]">
-              <TranscriptionView text={completedTranscriptions[viewingIndex]?.text || ''} />
+              <div className="h-[calc(100vh-280px)]">
+                <TranscriptionView text={synthesizedTranscription} />
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Xem lại bản tổng hợp (bước 3, multi-file) */}
-        {isNavigableState && isMultiFile && viewStep === 3 && synthesizedTranscription && (
-          <div className="animate-in fade-in duration-300 space-y-4">
-            <div className="flex items-start justify-between flex-wrap gap-3">
+          {/* BƯỚC 3/4: Thông tin cuộc họp */}
+          {isNavigableState && viewStep === meetingInfoStep && transcription && (
+            <div className="animate-in fade-in duration-300 space-y-4">
               <div>
-                <h2 className="text-xl font-bold text-slate-800">Bước 3: Tổng hợp nội dung cuộc họp</h2>
+                <h2 className="text-xl font-bold text-slate-800">
+                  {`Bước ${meetingInfoStep}: Thông tin cuộc họp`}
+                </h2>
                 <p className="text-slate-500 text-sm mt-1">
-                  AI đã gộp {totalFiles} file ghi âm thành một văn bản liên tục. Xem lại nội dung bên dưới trước khi tạo biên bản.
+                  Nhập thông tin cơ bản để biên bản chính xác hơn. Bạn có thể bỏ qua nếu không cần.
                 </p>
               </div>
-              {status !== TranscriptionStatus.COMPLETED && (
-                <button
-                  onClick={() => { setStatus(TranscriptionStatus.COMPLETED); setViewStep(meetingInfoStep); }}
-                  className="bg-blue-600 text-white font-black px-8 py-3 rounded-xl shadow-blue-200 shadow-lg hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:translate-y-0 whitespace-nowrap"
-                >
-                  Nhập thông tin cuộc họp →
-                </button>
-              )}
-              {status === TranscriptionStatus.COMPLETED && (
-                <button
-                  onClick={() => setViewStep(meetingInfoStep)}
-                  className="bg-blue-600 text-white font-black px-8 py-3 rounded-xl shadow-blue-200 shadow-lg hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:translate-y-0 whitespace-nowrap"
-                >
-                  Nhập thông tin cuộc họp →
-                </button>
-              )}
-            </div>
-            <div className="h-[calc(100vh-280px)]">
-              <TranscriptionView text={synthesizedTranscription} />
-            </div>
-          </div>
-        )}
 
-        {/* BƯỚC 3/4: Thông tin cuộc họp */}
-        {isNavigableState && viewStep === meetingInfoStep && transcription && (
-          <div className="animate-in fade-in duration-300 space-y-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-800">
-                {`Bước ${meetingInfoStep}: Thông tin cuộc họp`}
-              </h2>
-              <p className="text-slate-500 text-sm mt-1">
-                Nhập thông tin cơ bản để biên bản chính xác hơn. Bạn có thể bỏ qua nếu không cần.
-              </p>
+              <MeetingInfoForm
+                initialValue={meetingInfo}
+                onChange={setMeetingInfo}
+                onSkip={() => setViewStep(biênBảnStep)}
+                onContinue={() => setViewStep(biênBảnStep)}
+              />
             </div>
+          )}
 
-            <MeetingInfoForm
-              initialValue={meetingInfo}
-              onChange={setMeetingInfo}
-              onSkip={() => setViewStep(biênBảnStep)}
-              onContinue={() => setViewStep(biênBảnStep)}
-            />
-          </div>
-        )}
+          {/* BƯỚC: Biên bản — COMPLETED / SUMMARIZING */}
+          {((isNavigableState && viewStep === biênBảnStep) || status === TranscriptionStatus.SUMMARIZING) && transcription && (
+            <div className="animate-in fade-in duration-300 space-y-4">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">
+                  {summary
+                    ? `Bước ${biênBảnStep}: Biên bản hoàn thành`
+                    : `Bước ${biênBảnStep}: Tạo biên bản cuộc họp`}
+                </h2>
+                <p className="text-slate-500 text-sm mt-1">
+                  {summary ? 'Biên bản đã được tạo. Bạn có thể tạo lại hoặc xuất file Excel.' : 'Văn bản đã sẵn sàng. Nhấn tạo biên bản để AI tổng hợp nội dung cuộc họp.'}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-        {/* BƯỚC: Biên bản — COMPLETED / SUMMARIZING */}
-        {((isNavigableState && viewStep === biênBảnStep) || status === TranscriptionStatus.SUMMARIZING) && transcription && (
-          <div className="animate-in fade-in duration-300 space-y-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-800">
-                {summary
-                  ? `Bước ${biênBảnStep}: Biên bản hoàn thành`
-                  : `Bước ${biênBảnStep}: Tạo biên bản cuộc họp`}
-              </h2>
-              <p className="text-slate-500 text-sm mt-1">
-                {summary ? 'Biên bản đã được tạo. Bạn có thể tạo lại hoặc xuất file Excel.' : 'Văn bản đã sẵn sàng. Nhấn tạo biên bản để AI tổng hợp nội dung cuộc họp.'}
-              </p>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-              {/* Cột 1: Văn bản tổng hợp (multi-file) hoặc văn bản thô (single file) */}
-              <div className="space-y-4 flex flex-col h-[calc(100vh-280px)]">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="bg-blue-600 text-white text-xs font-black w-5 h-5 flex items-center justify-center rounded-full">1</span>
-                    <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
-                      {synthesizedTranscription ? 'Nội dung tổng hợp' : 'Văn bản thô'}
-                    </h2>
-                    {synthesizedTranscription && (
-                      <span className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-full font-bold">
-                        {totalFiles} files đã gộp
-                      </span>
+                {/* Cột 1: Văn bản tổng hợp (multi-file) hoặc văn bản thô (single file) */}
+                <div className="space-y-4 flex flex-col h-[calc(100vh-280px)]">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-blue-600 text-white text-xs font-black w-5 h-5 flex items-center justify-center rounded-full">1</span>
+                      <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
+                        {synthesizedTranscription ? 'Nội dung tổng hợp' : 'Văn bản thô'}
+                      </h2>
+                      {synthesizedTranscription && (
+                        <span className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-full font-bold">
+                          {totalFiles} files đã gộp
+                        </span>
+                      )}
+                    </div>
+                    {!synthesizedTranscription && completedTranscriptions.length > 1 && (
+                      <div className="flex gap-1 flex-wrap">
+                        {completedTranscriptions.map((t, i) => (
+                          <button key={i} onClick={() => setViewingIndex(i)}
+                            className={`text-xs font-bold px-2.5 py-1 rounded-full border transition-colors ${i === viewingIndex ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300'}`}>
+                            {t.name.length > 12 ? t.name.substring(0, 12) + '…' : t.name}
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
-                  {!synthesizedTranscription && completedTranscriptions.length > 1 && (
-                    <div className="flex gap-1 flex-wrap">
-                      {completedTranscriptions.map((t, i) => (
-                        <button key={i} onClick={() => setViewingIndex(i)}
-                          className={`text-xs font-bold px-2.5 py-1 rounded-full border transition-colors ${i === viewingIndex ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-200 hover:border-blue-300'}`}>
-                          {t.name.length > 12 ? t.name.substring(0, 12) + '…' : t.name}
+                  <div className="flex-1 overflow-hidden">
+                    <TranscriptionView text={
+                      synthesizedTranscription
+                        ? synthesizedTranscription
+                        : completedTranscriptions.length > 1
+                          ? completedTranscriptions[viewingIndex]?.text || ''
+                          : transcription
+                    } />
+                  </div>
+                </div>
+
+                {/* Cột 2: Biên bản — luôn dùng toàn bộ transcription (combined) */}
+                <div className="space-y-4 flex flex-col h-[calc(100vh-280px)]">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-blue-600 text-white text-xs font-black w-5 h-5 flex items-center justify-center rounded-full">2</span>
+                      <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">Biên bản cuộc họp</h2>
+                      {totalFiles > 1 && (
+                        <span className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-full font-bold">
+                          {totalFiles} files
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setShowPromptEditor(!showPromptEditor)}
+                      className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors underline decoration-2 underline-offset-4"
+                    >
+                      {showPromptEditor ? "Đóng tùy chỉnh" : "Sửa lại yêu cầu biên bản"}
+                    </button>
+                  </div>
+
+                  {/* Prompt Editor (Toggleable) */}
+                  {showPromptEditor && (
+                    <div className="bg-white border-2 border-blue-100 rounded-xl p-4 shadow-lg animate-in fade-in zoom-in duration-200">
+                      <label className="block text-xs font-bold text-blue-900 uppercase mb-2">Cấu hình Prompt tóm tắt:</label>
+                      <textarea
+                        value={summaryPrompt}
+                        onChange={(e) => setSummaryPrompt(e.target.value)}
+                        className="w-full h-40 text-sm p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none font-mono"
+                        placeholder="Nhập yêu cầu tóm tắt tại đây..."
+                      />
+                      <div className="mt-3 flex justify-end gap-2">
+                        <button
+                          onClick={() => setSummaryPrompt(DEFAULT_SUMMARY_PROMPT)}
+                          className="text-xs text-slate-400 hover:text-slate-600"
+                        >
+                          Khôi phục mặc định
                         </button>
-                      ))}
+                        <button
+                          onClick={() => setShowPromptEditor(false)}
+                          className="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-blue-700"
+                        >
+                          Lưu cấu hình
+                        </button>
+                      </div>
                     </div>
                   )}
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  <TranscriptionView text={
-                    synthesizedTranscription
-                      ? synthesizedTranscription
-                      : completedTranscriptions.length > 1
-                        ? completedTranscriptions[viewingIndex]?.text || ''
-                        : transcription
-                  } />
-                </div>
-              </div>
 
-              {/* Cột 2: Biên bản — luôn dùng toàn bộ transcription (combined) */}
-              <div className="space-y-4 flex flex-col h-[calc(100vh-280px)]">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="bg-blue-600 text-white text-xs font-black w-5 h-5 flex items-center justify-center rounded-full">2</span>
-                    <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">Biên bản cuộc họp</h2>
-                    {totalFiles > 1 && (
-                      <span className="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded-full font-bold">
-                        {totalFiles} files
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => setShowPromptEditor(!showPromptEditor)}
-                    className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors underline decoration-2 underline-offset-4"
-                  >
-                    {showPromptEditor ? "Đóng tùy chỉnh" : "Sửa lại yêu cầu biên bản"}
-                  </button>
-                </div>
-
-                {/* Prompt Editor (Toggleable) */}
-                {showPromptEditor && (
-                  <div className="bg-white border-2 border-blue-100 rounded-xl p-4 shadow-lg animate-in fade-in zoom-in duration-200">
-                    <label className="block text-xs font-bold text-blue-900 uppercase mb-2">Cấu hình Prompt tóm tắt:</label>
-                    <textarea
-                      value={summaryPrompt}
-                      onChange={(e) => setSummaryPrompt(e.target.value)}
-                      className="w-full h-40 text-sm p-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none font-mono"
-                      placeholder="Nhập yêu cầu tóm tắt tại đây..."
-                    />
-                    <div className="mt-3 flex justify-end gap-2">
-                      <button
-                        onClick={() => setSummaryPrompt(DEFAULT_SUMMARY_PROMPT)}
-                        className="text-xs text-slate-400 hover:text-slate-600"
-                      >
-                        Khôi phục mặc định
-                      </button>
-                      <button
-                        onClick={() => setShowPromptEditor(false)}
-                        className="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-blue-700"
-                      >
-                        Lưu cấu hình
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex-1 flex flex-col min-h-0">
-                  {!summary ? (
-                    <div className="flex-1 bg-white rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center p-8 text-center space-y-4">
-                      <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
-                        <DownloadIcon className="w-8 h-8 opacity-20" />
-                      </div>
-                      <div>
-                        <h3 className="text-slate-700 font-bold">Chưa tạo biên bản</h3>
-                        <p className="text-slate-400 text-sm mt-1">Sử dụng Gemini 3 Pro để tự động hóa biên bản từ văn bản thô.</p>
-                      </div>
-                      <button
-                        onClick={handleGenerateSummary}
-                        disabled={status === TranscriptionStatus.SUMMARIZING}
-                        className="bg-blue-600 text-white font-black px-8 py-3 rounded-xl shadow-blue-200 shadow-xl hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-50"
-                      >
-                        {status === TranscriptionStatus.SUMMARIZING
-                          ? "ĐANG XỬ LÝ..."
-                          : totalFiles > 1
-                            ? `TẠO BIÊN BẢN (${totalFiles} FILES)`
-                            : "TẠO BIÊN BẢN NGAY"}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-4 duration-500">
-                      <TranscriptionView text={summary} />
-                      <div className="mt-4 flex gap-4">
+                  <div className="flex-1 flex flex-col min-h-0">
+                    {!summary ? (
+                      <div className="flex-1 bg-white rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center p-8 text-center space-y-4">
+                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
+                          <DownloadIcon className="w-8 h-8 opacity-20" />
+                        </div>
+                        <div>
+                          <h3 className="text-slate-700 font-bold">Chưa tạo biên bản</h3>
+                          <p className="text-slate-400 text-sm mt-1">Sử dụng Gemini 3 Pro để tự động hóa biên bản từ văn bản thô.</p>
+                        </div>
                         <button
                           onClick={handleGenerateSummary}
-                          className="flex-1 border-2 border-blue-600 text-blue-600 font-bold py-3 rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+                          disabled={status === TranscriptionStatus.SUMMARIZING}
+                          className="bg-blue-600 text-white font-black px-8 py-3 rounded-xl shadow-blue-200 shadow-xl hover:bg-blue-700 hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-50"
                         >
-                          <RefreshIcon className="w-4 h-4" />
-                          Tạo lại bản khác
-                        </button>
-
-                        <button
-                          onClick={handleExportExcel}
-                          className="flex-1 bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-green-100"
-                        >
-                          <DownloadIcon className="w-4 h-4" />
-                          Xuất Excel
+                          {status === TranscriptionStatus.SUMMARIZING
+                            ? "ĐANG XỬ LÝ..."
+                            : totalFiles > 1
+                              ? `TẠO BIÊN BẢN (${totalFiles} FILES)`
+                              : "TẠO BIÊN BẢN NGAY"}
                         </button>
                       </div>
-                    </div>
-                  )}
+                    ) : (
+                      <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in slide-in-from-right-4 duration-500">
+                        <TranscriptionView text={summary} />
+                        <div className="mt-4 flex gap-4">
+                          <button
+                            onClick={handleGenerateSummary}
+                            className="flex-1 border-2 border-blue-600 text-blue-600 font-bold py-3 rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+                          >
+                            <RefreshIcon className="w-4 h-4" />
+                            Tạo lại bản khác
+                          </button>
+
+                          <button
+                            onClick={handleExportExcel}
+                            className="flex-1 bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition-colors flex items-center justify-center gap-2 shadow-lg shadow-green-100"
+                          >
+                            <DownloadIcon className="w-4 h-4" />
+                            Xuất Excel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
               </div>
-
             </div>
-          </div>
-        )}
+          )}
 
-      </>}
+        </>}
       </main>
 
 

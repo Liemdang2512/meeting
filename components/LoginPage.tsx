@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { signInWithEmail } from '../lib/supabase';
+import { login } from '../lib/auth';
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
@@ -16,7 +16,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     setError(null);
     setLoading(true);
     try {
-      await signInWithEmail(email.trim(), password);
+      await login(email.trim(), password);
       onLoginSuccess();
     } catch (err: any) {
       if (err?.message === 'Invalid login credentials') {
@@ -99,7 +99,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         </form>
 
         <p className="text-xs text-slate-400 text-center">
-          Tài khoản được tạo bởi admin trong Supabase Dashboard.
+          Tài khoản được tạo bởi admin.
         </p>
       </div>
     </div>
