@@ -1,5 +1,6 @@
 const TOKEN_KEY = 'auth_token';
-const API_BASE = '/api'; // Vite proxy /api -> localhost:3001
+// Dev: Vite proxy /api -> localhost:3001 | Production: VITE_API_URL = Railway URL
+const API_BASE = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api';
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
