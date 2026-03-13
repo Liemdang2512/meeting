@@ -8,14 +8,11 @@ export default defineConfig({
     setupFiles: ['./tests/integration/helpers/setup.ts'],
     testTimeout: 30000,
     hookTimeout: 30000,
-    // singleFork: all integration tests run in one process serially.
+    // fileParallelism: false = all integration tests run serially in one process.
     // Required because tests share a postgres.js client with reserved connections.
     // Parallel workers would create transaction conflicts.
+    // (Vitest 4: poolOptions.forks.singleFork was replaced by top-level fileParallelism)
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
+    fileParallelism: false,
   },
 });
