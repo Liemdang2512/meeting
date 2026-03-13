@@ -17,7 +17,6 @@ import { MeetingInfoForm } from './features/minutes/components/MeetingInfoForm';
 // Lazy load các route pages - chỉ tải khi user navigate đến
 const FileSplitPage = lazy(() => import('./features/file-split').then(m => ({ default: m.FileSplitPage })));
 const TokenUsageAdminPage = lazy(() => import('./features/token-usage-admin/TokenUsageAdminPage').then(m => ({ default: m.TokenUsageAdminPage })));
-const MyTokenUsagePage = lazy(() => import('./features/token-usage-user/MyTokenUsagePage').then(m => ({ default: m.MyTokenUsagePage })));
 const UserManagementPage = lazy(() => import('./features/user-management/UserManagementPage').then(m => ({ default: m.UserManagementPage })));
 
 declare global {
@@ -693,7 +692,6 @@ function App() {
 
   const isNotesRoute = route === '/' || route === '';
   const isAdminRoute = route === '/admin/token-usage';
-  const isMyUsageRoute = route === '/me/token-usage';
   const isUserMgmtRoute = route === '/admin/users';
 
   return (
@@ -743,12 +741,6 @@ function App() {
               className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isNotesRoute && mode === 'splitter' ? 'bg-indigo-900 text-white' : 'text-slate-600 hover:bg-slate-200 hover:text-slate-800' }`}
             >
               Cắt file
-            </button>
-            <button
-              onClick={() => navigate('/me/token-usage')}
-              className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isMyUsageRoute ? 'bg-indigo-900 text-white' : 'text-slate-600 hover:bg-slate-200 hover:text-slate-800' }`}
-            >
-              My token usage
             </button>
             {isAdmin && (
               <button
@@ -809,9 +801,6 @@ function App() {
         <Suspense fallback={<div className="flex justify-center items-center h-64"><Spinner /></div>}>
           {isAdminRoute && user && (
             <TokenUsageAdminPage currentUserId={user.userId} isAdmin={isAdmin} />
-          )}
-          {isMyUsageRoute && user && (
-            <MyTokenUsagePage currentUserId={user.userId} />
           )}
           {isUserMgmtRoute && user && (
             <UserManagementPage currentUserId={user.userId} isAdmin={isAdmin} />
