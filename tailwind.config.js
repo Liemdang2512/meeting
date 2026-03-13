@@ -6,6 +6,9 @@ export default {
     '!./node_modules/**',
     '!./dist/**',
   ],
+  corePlugins: {
+    preflight: false, // Tắt CSS reset để không vỡ UI cũ
+  },
   theme: {
     extend: {},
   },
