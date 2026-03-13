@@ -1,8 +1,7 @@
 import postgres from 'postgres';
 
-const ssl = process.env.DATABASE_URL?.includes('sslmode=disable') ? false : { rejectUnauthorized: false };
 const sql = process.env.DATABASE_URL
-  ? postgres(process.env.DATABASE_URL, { ssl })
+  ? postgres(process.env.DATABASE_URL, { ssl: false })
   : postgres({
       host: process.env.DB_HOST ?? 'localhost',
       port: Number(process.env.DB_PORT ?? 5433),
