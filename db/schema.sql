@@ -12,6 +12,7 @@ CREATE SCHEMA IF NOT EXISTS auth;
 CREATE TABLE IF NOT EXISTS auth.users (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     email text,
+    password_hash text,
     created_at timestamptz DEFAULT now() NOT NULL
 );
 
