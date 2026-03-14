@@ -28,6 +28,7 @@ export type TokenUsageFeature =
   | 'file-split'
   | 'token-usage-admin'
   | 'my-token-usage'
+  | 'mindmap'
   | 'other';
 
 export type TokenUsageActionType =
@@ -37,6 +38,8 @@ export type TokenUsageActionType =
   | 'file-split-analyze'
   | 'admin-view'
   | 'my-usage-view'
+  | 'mindmap-generate'
+  | 'checklist-generate'
   | 'other';
 
 export type TokenUsageMetadataValue = string | number | boolean | null;

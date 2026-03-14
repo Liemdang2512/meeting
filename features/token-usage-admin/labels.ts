@@ -6,6 +6,7 @@ export const FEATURE_LABELS: Record<TokenUsageFeature | 'unknown', string> = {
   'file-split': 'Cắt file',
   'token-usage-admin': 'Admin token',
   'my-token-usage': 'Token của tôi',
+  mindmap: 'Mindmap & Checklist',
   other: 'Khác',
   unknown: 'Khác',
 };
@@ -18,6 +19,8 @@ export const ACTION_LABELS: Record<TokenUsageActionType, string> = {
   'file-split-analyze': 'Phân tích cắt file',
   'admin-view': 'Xem admin',
   'my-usage-view': 'Xem token của tôi',
+  'mindmap-generate': 'Tạo mindmap',
+  'checklist-generate': 'Tạo checklist',
   other: 'Khác',
 };
 
