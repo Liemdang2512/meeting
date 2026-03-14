@@ -1,5 +1,7 @@
 
 import { GoogleGenAI } from "@google/genai";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import { logTokenUsage } from "./tokenUsageService";
 import type { TokenLoggingContext } from "../types";
 
@@ -560,5 +562,80 @@ export const summarizeTranscript = async (
   } catch (error: any) {
     if (error.message?.includes("Requested entity was not found")) throw new Error("API_KEY_EXPIRED");
     throw new Error(error.message || "Lỗi khi tạo biên bản.");
+  }
+};
+
+/**
+ * Calls Gemini with structured JSON output enforced via responseMimeType and responseJsonSchema.
+ * Uses Zod schema as the single source of truth for both schema generation and response validation.
+ * Logs token usage the same way as runTextAgent.
+ */
+export const generateStructured = async <T>(
+  prompt: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  schema: any,
+  loggingContext?: TokenLoggingContext,
+  userId?: string | null,
+): Promise<T> => {
+  const apiKey = getApiKey();
+  const ai = new GoogleGenAI({ apiKey });
+
+  const jsonSchema = zodToJsonSchema(schema, { target: 'openApi3' });
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: prompt,
+      config: {
+        temperature: 0.1,
+        responseMimeType: 'application/json',
+        responseSchema: jsonSchema as any,
+      },
+    });
+
+    if (!response.text) throw new Error("Không nhận được phản hồi từ Gemini.");
+
+    // Strip markdown code block wrapper if Gemini returns it despite instructions
+    let rawText = response.text.trim();
+    const jsonBlockMatch = rawText.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+    if (jsonBlockMatch) {
+      rawText = jsonBlockMatch[1].trim();
+    }
+
+    const parsed = JSON.parse(rawText);
+    const validated = schema.parse(parsed);
+
+    const usage = (response as any).usageMetadata as
+      | {
+        promptTokenCount?: number;
+        candidatesTokenCount?: number;
+        totalTokenCount?: number;
+      }
+      | undefined;
+
+    if (userId && loggingContext) {
+      void logTokenUsage({
+        userId,
+        feature: loggingContext.feature,
+        actionType: loggingContext.actionType,
+        model: 'gemini-2.0-flash',
+        inputTokens: usage?.promptTokenCount ?? null,
+        outputTokens: usage?.candidatesTokenCount ?? null,
+        totalTokens:
+          usage?.totalTokenCount ??
+          (typeof usage?.promptTokenCount === 'number' && typeof usage?.candidatesTokenCount === 'number'
+            ? usage.promptTokenCount + usage.candidatesTokenCount
+            : null),
+        metadata: loggingContext.metadata,
+      });
+    }
+
+    return validated;
+  } catch (error: any) {
+    if (error.message?.includes("Requested entity was not found")) throw new Error("API_KEY_EXPIRED");
+    if (error instanceof z.ZodError) {
+      throw new Error(`Gemini trả về dữ liệu không đúng định dạng: ${error.message}`);
+    }
+    throw new Error(error.message || "Lỗi khi gọi Gemini structured output.");
   }
 };
