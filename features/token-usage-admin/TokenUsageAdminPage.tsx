@@ -124,9 +124,9 @@ export const TokenUsageAdminPage: React.FC<TokenUsageAdminPageProps> = ({
     <div className="space-y-6 mt-6">
       <div className="flex items-center justify-between gap-4 flex-wrap pb-4 border-b border-slate-200">
         <div>
-          <h2 className="text-3xl font-sans font-medium text-slate-800">Admin Token Usage</h2>
+          <h2 className="text-3xl font-sans font-medium text-slate-800">Sử dụng token (Admin)</h2>
           <p className="text-slate-500 font-medium mt-1 text-sm">
-            Xem và export log token usage theo user, feature và thời gian.
+            Xem và xuất log sử dụng token theo người dùng, tính năng và thời gian.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -143,7 +143,7 @@ export const TokenUsageAdminPage: React.FC<TokenUsageAdminPageProps> = ({
             disabled={logs.length === 0}
             className="px-4 py-2 text-sm font-medium bg-indigo-600 border-slate-200 text-white shadow-sm rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50 border"
           >
-            Export CSV
+            Xuất CSV
           </button>
         </div>
       </div>
@@ -170,22 +170,23 @@ export const TokenUsageAdminPage: React.FC<TokenUsageAdminPageProps> = ({
           ))}
         </div>
         <div className="flex items-center gap-2">
-          <span className="font-medium text-slate-800">Feature:</span>
-          {(['all', 'minutes', 'file-split', 'token-usage-admin', 'my-token-usage', 'other'] as const).map(
-            (feature) => (
-              <button
-                key={feature}
-                type="button"
-                onClick={() => {
-                  setFeatureFilter(feature === 'all' ? 'all' : feature);
-                  setPage(1);
-                }}
-                className={`px-3 py-1.5 border text-xs font-medium transition-all ${ featureFilter === feature ? 'border-slate-200 bg-indigo-900 text-white shadow-sm rounded-xl translate-y-px' : 'border-slate-200 text-slate-800 bg-white hover:bg-slate-50 shadow-sm rounded-xl' }`}
-              >
-                {feature === 'all' ? 'Tất cả' : feature}
-              </button>
-            ),
-          )}
+          <span className="font-medium text-slate-800">Tính năng:</span>
+          {([
+            { value: 'all' as const, label: 'Tất cả' },
+            { value: 'minutes' as const, label: 'Biên bản họp' },
+          ]).map(({ value, label }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => {
+                setFeatureFilter(value);
+                setPage(1);
+              }}
+              className={`px-3 py-1.5 border text-xs font-medium transition-all ${ featureFilter === value ? 'border-slate-200 bg-indigo-900 text-white shadow-sm rounded-xl translate-y-px' : 'border-slate-200 text-slate-800 bg-white hover:bg-slate-50 shadow-sm rounded-xl' }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
         <div className="flex items-center gap-2">
           <span className="font-medium text-slate-800">Email:</span>

@@ -1,5 +1,6 @@
 import React from 'react';
 import type { TokenUsageLog } from '../../../types';
+import { getFeatureLabel, getActionLabel } from '../labels';
 
 interface TokenUsageTableProps {
   logs: TokenUsageLog[];
@@ -31,7 +32,7 @@ export const TokenUsageTable: React.FC<TokenUsageTableProps> = ({
   return (
     <div className="bg-white border-slate-200 shadow-sm rounded-xl border">
       <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-        <p className="text-lg font-medium font-sans text-slate-800">Chi tiết token usage</p>
+        <p className="text-lg font-medium font-sans text-slate-800">Chi tiết sử dụng token</p>
         <div className="flex items-center gap-3 text-sm font-medium text-slate-500">
           <span>Trang {page}</span>
           <span className="text-slate-300">•</span>
@@ -42,36 +43,36 @@ export const TokenUsageTable: React.FC<TokenUsageTableProps> = ({
         <table className="min-w-full text-sm whitespace-nowrap">
           <thead className="bg-indigo-900 text-white border-b border-slate-200">
             <tr>
-              <th className="px-4 py-3 text-left font-medium">Time</th>
+              <th className="px-4 py-3 text-left font-medium">Thời gian</th>
               <th className="px-4 py-3 text-left font-medium">Email</th>
-              <th className="px-4 py-3 text-left font-medium">User ID</th>
-              <th className="px-4 py-3 text-left font-medium">Feature</th>
-              <th className="px-4 py-3 text-left font-medium">Action</th>
+              <th className="px-4 py-3 text-left font-medium">Mã user</th>
+              <th className="px-4 py-3 text-left font-medium">Tính năng</th>
+              <th className="px-4 py-3 text-left font-medium">Hành động</th>
               <th className="px-4 py-3 text-left font-medium hidden sm:table-cell">Model</th>
-              <th className="px-4 py-3 text-right font-medium">Input</th>
-              <th className="px-4 py-3 text-right font-medium">Output</th>
-              <th className="px-4 py-3 text-right font-medium">Total</th>
-              <th className="px-4 py-3 text-left font-medium hidden md:table-cell">Metadata</th>
+              <th className="px-4 py-3 text-right font-medium">Đầu vào</th>
+              <th className="px-4 py-3 text-right font-medium">Đầu ra</th>
+              <th className="px-4 py-3 text-right font-medium">Tổng</th>
+              <th className="px-4 py-3 text-left font-medium hidden md:table-cell">Dữ liệu kèm theo</th>
             </tr>
           </thead>
           <tbody className="divide-y-2 divide-slate-100">
             {isLoading && (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-slate-500 font-medium">
+                <td colSpan={10} className="px-4 py-8 text-center text-slate-500 font-medium">
                   Đang tải dữ liệu...
                 </td>
               </tr>
             )}
             {!isLoading && error && (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-red-600 font-medium">
+                <td colSpan={10} className="px-4 py-8 text-center text-red-600 font-medium">
                   {error}
                 </td>
               </tr>
             )}
             {!isLoading && !error && logs.length === 0 && (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-slate-500 font-medium">
+                <td colSpan={10} className="px-4 py-8 text-center text-slate-500 font-medium">
                   Chưa có log nào trong khoảng thời gian này.
                 </td>
               </tr>
@@ -87,8 +88,8 @@ export const TokenUsageTable: React.FC<TokenUsageTableProps> = ({
                     {log.userEmail ?? '—'}
                   </td>
                   <td className="px-4 py-3 text-slate-800 font-medium max-w-[160px] truncate">{log.userId}</td>
-                  <td className="px-4 py-3 text-slate-600 font-medium text-xs">{log.feature}</td>
-                  <td className="px-4 py-3 text-slate-600 font-medium text-xs">{log.actionType}</td>
+                  <td className="px-4 py-3 text-slate-600 font-medium text-xs">{getFeatureLabel(log.feature)}</td>
+                  <td className="px-4 py-3 text-slate-600 font-medium text-xs">{getActionLabel(log.actionType)}</td>
                   <td className="px-4 py-3 text-slate-500 font-mono text-xs hidden sm:table-cell max-w-[120px] truncate">{log.model}</td>
                   <td className="px-4 py-3 text-right text-slate-800 font-mono text-xs">
                     {log.inputTokens !== null ? log.inputTokens.toLocaleString('vi-VN') : '—'}

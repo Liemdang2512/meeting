@@ -747,7 +747,7 @@ function App() {
                 onClick={() => navigate('/admin/token-usage')}
                 className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isAdminRoute ? 'bg-indigo-700 text-white rounded-xl' : 'text-slate-600 hover:bg-slate-200 hover:text-slate-800 rounded-xl' }`}
               >
-                Admin token usage
+                Sử dụng token (Admin)
               </button>
             )}
             {isAdmin && (

@@ -1,5 +1,6 @@
 import React from 'react';
 import type { TokenUsageSummary } from '../hooks/useTokenUsageLogs';
+import { getFeatureLabel } from '../labels';
 
 interface TokenUsageOverviewProps {
   summary: TokenUsageSummary;
@@ -26,7 +27,7 @@ export const TokenUsageOverview: React.FC<TokenUsageOverviewProps> = ({ summary 
       </div>
       <div className="bg-white border-slate-200 p-6 shadow-sm rounded-xl border">
         <p className="text-xs font-medium text-slate-800 mb-4">
-          Top user theo tokens
+          Người dùng dùng nhiều token nhất
         </p>
         {topUsers.length === 0 ? (
           <p className="text-sm font-medium text-slate-400">Chưa có dữ liệu.</p>
@@ -45,7 +46,7 @@ export const TokenUsageOverview: React.FC<TokenUsageOverviewProps> = ({ summary 
       </div>
       <div className="bg-slate-50 border-slate-200 p-6 shadow-sm rounded-xl border">
         <p className="text-xs font-medium text-slate-800 mb-4">
-          Tokens theo feature
+          Token theo tính năng
         </p>
         {topFeatures.length === 0 ? (
           <p className="text-sm font-medium text-slate-400">Chưa có dữ liệu.</p>
@@ -53,7 +54,7 @@ export const TokenUsageOverview: React.FC<TokenUsageOverviewProps> = ({ summary 
           <ul className="space-y-3">
             {topFeatures.map((f) => (
               <li key={f.feature} className="flex justify-between text-sm items-center">
-                <span className="text-slate-500 font-medium">{f.feature}</span>
+                <span className="text-slate-500 font-medium">{getFeatureLabel(f.feature)}</span>
                 <span className="font-sans font-medium text-slate-800 text-lg">
                   {f.totalTokens.toLocaleString('vi-VN')}
                 </span>
