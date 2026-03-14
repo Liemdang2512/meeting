@@ -18,6 +18,7 @@ import { MeetingInfoForm } from './features/minutes/components/MeetingInfoForm';
 const FileSplitPage = lazy(() => import('./features/file-split').then(m => ({ default: m.FileSplitPage })));
 const TokenUsageAdminPage = lazy(() => import('./features/token-usage-admin/TokenUsageAdminPage').then(m => ({ default: m.TokenUsageAdminPage })));
 const UserManagementPage = lazy(() => import('./features/user-management/UserManagementPage').then(m => ({ default: m.UserManagementPage })));
+const MindmapPage = lazy(() => import('./features/mindmap/MindmapPage').then(m => ({ default: m.MindmapPage })));
 
 declare global {
   interface AIStudio {
@@ -693,6 +694,7 @@ function App() {
   const isNotesRoute = route === '/' || route === '';
   const isAdminRoute = route === '/admin/token-usage';
   const isUserMgmtRoute = route === '/admin/users';
+  const isMindmapRoute = route === '/mindmap';
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -741,6 +743,12 @@ function App() {
               className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isNotesRoute && mode === 'splitter' ? 'bg-indigo-900 text-white' : 'text-slate-600 hover:bg-slate-200 hover:text-slate-800' }`}
             >
               Cắt file
+            </button>
+            <button
+              onClick={() => navigate('/mindmap')}
+              className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isMindmapRoute ? 'bg-indigo-900 text-white' : 'text-slate-600 hover:bg-slate-200 hover:text-slate-800' }`}
+            >
+              Sơ đồ tư duy
             </button>
             {isAdmin && (
               <button
@@ -804,6 +812,9 @@ function App() {
           )}
           {isUserMgmtRoute && user && (
             <UserManagementPage currentUserId={user.userId} isAdmin={isAdmin} />
+          )}
+          {isMindmapRoute && (
+            <MindmapPage user={user} />
           )}
           {isNotesRoute && mode === 'splitter' && (
             <FileSplitPage
