@@ -40,8 +40,8 @@ router.post('/users', requireAuth, requireAdmin, async (req, res) => {
   if (!email || !password) {
     return res.status(400).json({ error: 'Email và mật khẩu là bắt buộc' });
   }
-  if (!['user', 'admin'].includes(role)) {
-    return res.status(400).json({ error: 'Role không hợp lệ (user hoặc admin)' });
+  if (!['free', 'user', 'admin'].includes(role)) {
+    return res.status(400).json({ error: 'Role không hợp lệ (free, user hoặc admin)' });
   }
   try {
     // Kiểm tra email đã tồn tại chưa
@@ -93,8 +93,8 @@ router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
     }
 
     if (role) {
-      if (!['user', 'admin'].includes(role)) {
-        return res.status(400).json({ error: 'Role không hợp lệ' });
+      if (!['free', 'user', 'admin'].includes(role)) {
+        return res.status(400).json({ error: 'Role không hợp lệ (free, user hoặc admin)' });
       }
       await sql`
         INSERT INTO public.profiles (user_id, role, created_at, updated_at)
