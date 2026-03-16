@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 current_plan: 06-04 (complete, awaiting human-verify checkpoint)
 status: executing
-stopped_at: "Completed 06-04-PLAN.md — checkpoint:human-verify pending"
-last_updated: "2026-03-16T11:04:53.200Z"
+stopped_at: Completed 06-05-PLAN.md
+last_updated: "2026-03-16T11:04:59.784Z"
 progress:
   total_phases: 6
   completed_phases: 3
@@ -23,7 +23,7 @@ progress:
 
 ## Last Session
 
-- **Stopped At:** Completed 06-04-PLAN.md — checkpoint:human-verify pending
+- **Stopped At:** Completed 06-05-PLAN.md
 - **Timestamp:** 2026-03-16T11:05:00Z
 
 ## Decisions
@@ -43,6 +43,7 @@ progress:
 - [Phase 06-free-registration-daily-limit-payment-ui]: quota-updated custom DOM event for badge refresh — avoids prop-drilling state through component tree
 - [Phase 06-free-registration-daily-limit-payment-ui]: onQuotaExhausted callback on QuotaBadge so App controls modal visibility (separation of concerns)
 - [Phase 06-free-registration-daily-limit-payment-ui]: 429 handler only on DB save call, not Gemini AI call — quota enforcement is server-side on save endpoint only
+- [Phase 06-free-registration-daily-limit-payment-ui]: vi.useFakeTimers() + act(async) pattern for processing state assertion; vi.runAllTimers() in act() for 2s setTimeout advancement
 
 ## Performance Metrics
 
