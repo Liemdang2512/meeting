@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_plan: 06-03 (complete)
+current_plan: 06-04 (complete, awaiting human-verify checkpoint)
 status: executing
-stopped_at: Completed 06-03-PLAN.md
-last_updated: "2026-03-16T10:56:30.000Z"
+stopped_at: "Completed 06-04-PLAN.md — checkpoint:human-verify pending"
+last_updated: "2026-03-16T11:04:53.200Z"
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 13
-  completed_plans: 10
+  completed_plans: 12
 ---
 
 # Project State
@@ -18,13 +18,13 @@ progress:
 ## Current Position
 
 - **Phase:** 06-free-registration-daily-limit-payment-ui
-- **Current Plan:** 06-03 (complete)
-- **Status:** In progress (06-04 next)
+- **Current Plan:** 06-04 (complete, awaiting human-verify checkpoint)
+- **Status:** In progress (06-05 next after checkpoint approval)
 
 ## Last Session
 
-- **Stopped At:** Completed 06-03-PLAN.md
-- **Timestamp:** 2026-03-16T10:56:30Z
+- **Stopped At:** Completed 06-04-PLAN.md — checkpoint:human-verify pending
+- **Timestamp:** 2026-03-16T11:05:00Z
 
 ## Decisions
 
@@ -40,6 +40,9 @@ progress:
 - [Phase 06-free-registration-daily-limit-payment-ui]: Wrap lazy RegisterPage in Suspense inside !user guard to prevent boundary error
 - [Phase 06-free-registration-daily-limit-payment-ui]: Atomic UPSERT increment-then-check with undo-decrement on 429 prevents race condition for free-tier quota
 - [Phase 06-free-registration-daily-limit-payment-ui]: CURRENT_DATE AT TIME ZONE 'UTC' in SQL only — quota date boundary never computed in JS
+- [Phase 06-free-registration-daily-limit-payment-ui]: quota-updated custom DOM event for badge refresh — avoids prop-drilling state through component tree
+- [Phase 06-free-registration-daily-limit-payment-ui]: onQuotaExhausted callback on QuotaBadge so App controls modal visibility (separation of concerns)
+- [Phase 06-free-registration-daily-limit-payment-ui]: 429 handler only on DB save call, not Gemini AI call — quota enforcement is server-side on save endpoint only
 
 ## Performance Metrics
 
@@ -50,7 +53,9 @@ progress:
 | Phase 06-free-registration-daily-limit-payment-ui P01 | 4min | 3 tasks | 3 files |
 | Phase 06-free-registration-daily-limit-payment-ui P03 | 8min | 2 tasks | 5 files |
 | Phase 06-free-registration-daily-limit-payment-ui P02 | 4min | 2 tasks | 5 files |
+| Phase 06-free-registration-daily-limit-payment-ui P04 | 8min | 2 tasks | 4 files |
+| Phase 06-free-registration-daily-limit-payment-ui P05 | 7min | 2 tasks | 5 files |
 
 ## Progress
 
-Phases 01–05 complete. Phase 06 in progress (plans 06-00 through 06-03 done, 06-04 through 06-05 remaining).
+Phases 01–05 complete. Phase 06 in progress (plans 06-00 through 06-04 done, 06-05 remaining).
