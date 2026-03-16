@@ -14,6 +14,8 @@ import { loadMeetingInfoDraft, clearMeetingInfoDraft } from './features/minutes/
 import { buildMinutesCustomPrompt } from './features/minutes/prompt';
 import { MeetingInfoForm } from './features/minutes/components/MeetingInfoForm';
 import { useMindmapFromText } from './features/mindmap/hooks/useMindmapFromText';
+import { QuotaBadge } from './features/pricing/QuotaBadge';
+import { QuotaUpgradeModal } from './features/pricing/QuotaUpgradeModal';
 
 // Lazy load các route pages - chỉ tải khi user navigate đến
 const FileSplitPage = lazy(() => import('./features/file-split').then(m => ({ default: m.FileSplitPage })));
@@ -22,6 +24,7 @@ const UserManagementPage = lazy(() => import('./features/user-management/UserMan
 const MindmapPage = lazy(() => import('./features/mindmap/MindmapPage').then(m => ({ default: m.MindmapPage })));
 const MindmapCanvas = lazy(() => import('./features/mindmap/components/MindmapCanvas').then(m => ({ default: m.MindmapCanvas })));
 const RegisterPage = lazy(() => import('./components/RegisterPage').then(m => ({ default: m.RegisterPage })));
+const PricingPage = lazy(() => import('./features/pricing/PricingPage').then(m => ({ default: m.PricingPage })));
 
 declare global {
   interface AIStudio {
@@ -152,6 +155,7 @@ function App() {
   const [mode, setMode] = useState<'notes' | 'splitter'>('notes');
   const [route, setRoute] = useState<string>(() => window.location.pathname || '/');
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [showQuotaModal, setShowQuotaModal] = useState(false);
 
   const [meetingInfo, setMeetingInfo] = useState<MeetingInfo>(() => (
     loadMeetingInfoDraft() ?? {
@@ -411,11 +415,19 @@ function App() {
               transcription_text: combined,
             }),
           });
+          if (res.status === 429) {
+            const errData = await res.json().catch(() => ({}));
+            if (errData.upgradeRequired) {
+              setShowQuotaModal(true);
+              return;
+            }
+          }
           if (!res.ok) {
             console.error('Error saving transcription:', await res.text());
           } else {
             const row = await res.json();
             setTranscriptionId(row.id);
+            window.dispatchEvent(new Event('quota-updated'));
           }
         } catch (dbError) {
           console.error('Database error:', dbError);
@@ -732,6 +744,7 @@ function App() {
   const isAdminRoute = route === '/admin/token-usage';
   const isUserMgmtRoute = route === '/admin/users';
   const isMindmapRoute = route === '/mindmap';
+  const isPricingRoute = route === '/pricing';
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -753,6 +766,11 @@ function App() {
                 <RefreshIcon className="w-3.5 h-3.5" />
                 Phiên mới
               </button>
+            )}
+            {user && (
+              <QuotaBadge
+                onQuotaExhausted={() => setShowQuotaModal(true)}
+              />
             )}
             <button onClick={handleLogout} className="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors px-3 py-2">
               Đăng xuất
@@ -1403,6 +1421,14 @@ function App() {
         </>}
       </main>
 
+      <QuotaUpgradeModal
+        isOpen={showQuotaModal}
+        onClose={() => setShowQuotaModal(false)}
+        onViewPlans={() => {
+          setShowQuotaModal(false);
+          navigate('/pricing');
+        }}
+      />
 
     </div>
   );
