@@ -1,17 +1,153 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 
 vi.mock('../../lib/auth', () => ({
   register: vi.fn(),
 }));
 
+import { RegisterPage } from '../RegisterPage';
+import { register } from '../../lib/auth';
+
 describe('RegisterPage', () => {
-  it.todo('hiển thị form đăng ký với 3 trường: Email, Mật khẩu, Xác nhận mật khẩu');
-  it.todo('hiển thị lỗi khi mật khẩu ngắn hơn 8 ký tự (client-side, trước khi gọi API)');
-  it.todo('hiển thị lỗi khi mật khẩu xác nhận không khớp (client-side)');
-  it.todo('gọi register() và onRegisterSuccess khi form hợp lệ');
-  it.todo('hiển thị "Đang đăng ký..." và disable nút submit khi đang loading');
-  it.todo('hiển thị lỗi từ server khi register() throw');
-  it.todo('có link "Đã có tài khoản? Đăng nhập" gọi onGoToLogin');
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('hien thi form dang ky voi 3 truong', () => {
+    render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
+
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^mật khẩu$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/xác nhận mật khẩu/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /tạo tài khoản/i })).toBeInTheDocument();
+  });
+
+  it('hien thi loi khi mat khau ngan hon 8 ky tu (truoc khi goi API)', async () => {
+    render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
+
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: 'user@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/^mật khẩu$/i), {
+      target: { value: 'short' },
+    });
+    fireEvent.change(screen.getByLabelText(/xác nhận mật khẩu/i), {
+      target: { value: 'short' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /tạo tài khoản/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/ít nhất 8 ký tự/i)).toBeInTheDocument();
+    });
+    expect(register).not.toHaveBeenCalled();
+  });
+
+  it('hien thi loi khi mat khau khong khop (truoc khi goi API)', async () => {
+    render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
+
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: 'user@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/^mật khẩu$/i), {
+      target: { value: 'password123' },
+    });
+    fireEvent.change(screen.getByLabelText(/xác nhận mật khẩu/i), {
+      target: { value: 'different123' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /tạo tài khoản/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/không khớp/i)).toBeInTheDocument();
+    });
+    expect(register).not.toHaveBeenCalled();
+  });
+
+  it('goi register va onRegisterSuccess khi form hop le', async () => {
+    const mockedRegister = register as unknown as ReturnType<typeof vi.fn>;
+    mockedRegister.mockResolvedValueOnce(undefined);
+    const onRegisterSuccess = vi.fn();
+
+    render(<RegisterPage onRegisterSuccess={onRegisterSuccess} onGoToLogin={() => {}} />);
+
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: 'newuser@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/^mật khẩu$/i), {
+      target: { value: 'securepass123' },
+    });
+    fireEvent.change(screen.getByLabelText(/xác nhận mật khẩu/i), {
+      target: { value: 'securepass123' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /tạo tài khoản/i }));
+
+    await waitFor(() => {
+      expect(mockedRegister).toHaveBeenCalledWith(
+        'newuser@example.com',
+        'securepass123',
+        'securepass123',
+      );
+      expect(onRegisterSuccess).toHaveBeenCalled();
+    });
+  });
+
+  it('hien thi "Dang dang ky..." va disable nut submit khi dang loading', async () => {
+    const mockedRegister = register as unknown as ReturnType<typeof vi.fn>;
+    mockedRegister.mockImplementation(
+      () => new Promise((resolve) => setTimeout(resolve, 200)),
+    );
+
+    render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
+
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: 'user@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/^mật khẩu$/i), {
+      target: { value: 'password123' },
+    });
+    fireEvent.change(screen.getByLabelText(/xác nhận mật khẩu/i), {
+      target: { value: 'password123' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /tạo tài khoản/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/đang đăng ký/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /đang đăng ký/i })).toBeDisabled();
+    });
+  });
+
+  it('hien thi loi tu server khi dang ky that bai', async () => {
+    const mockedRegister = register as unknown as ReturnType<typeof vi.fn>;
+    mockedRegister.mockRejectedValueOnce(new Error('Email đã được sử dụng'));
+
+    render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
+
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: 'existing@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/^mật khẩu$/i), {
+      target: { value: 'password123' },
+    });
+    fireEvent.change(screen.getByLabelText(/xác nhận mật khẩu/i), {
+      target: { value: 'password123' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /tạo tài khoản/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/email đã được sử dụng/i)).toBeInTheDocument();
+    });
+  });
+
+  it('co link "Da co tai khoan? Dang nhap" goi onGoToLogin', () => {
+    const onGoToLogin = vi.fn();
+    render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={onGoToLogin} />);
+
+    fireEvent.click(screen.getByText(/đã có tài khoản/i));
+    expect(onGoToLogin).toHaveBeenCalled();
+  });
 });

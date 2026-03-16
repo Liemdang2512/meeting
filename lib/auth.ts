@@ -60,6 +60,20 @@ export async function loadApiKeyFromAccount(_userId: string): Promise<string | n
   }
 }
 
+// Dang ky tai khoan moi: lay JWT, luu vao localStorage
+export async function register(email: string, password: string, confirmPassword: string): Promise<void> {
+  const res = await authFetch('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ email, password, confirmPassword }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Đăng ký thất bại' }));
+    throw new Error(err.error ?? 'Đăng ký thất bại');
+  }
+  const data = await res.json();
+  setToken(data.token);
+}
+
 // Save API key len server
 export async function saveApiKeyToAccount(_userId: string, apiKey: string): Promise<boolean> {
   try {
