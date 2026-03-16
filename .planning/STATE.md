@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-current_plan: 06-01 (complete)
+current_plan: 06-03 (complete)
 status: executing
-stopped_at: Completed 06-01-PLAN.md
-last_updated: "2026-03-16T10:48:21.325Z"
+stopped_at: Completed 06-03-PLAN.md
+last_updated: "2026-03-16T10:56:30.000Z"
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 13
-  completed_plans: 8
+  completed_plans: 10
 ---
 
 # Project State
@@ -18,13 +18,13 @@ progress:
 ## Current Position
 
 - **Phase:** 06-free-registration-daily-limit-payment-ui
-- **Current Plan:** 06-01 (complete)
-- **Status:** In progress (06-02 next)
+- **Current Plan:** 06-03 (complete)
+- **Status:** In progress (06-04 next)
 
 ## Last Session
 
-- **Stopped At:** Completed 06-01-PLAN.md
-- **Timestamp:** 2026-03-14T13:45:00Z
+- **Stopped At:** Completed 06-03-PLAN.md
+- **Timestamp:** 2026-03-16T10:56:30Z
 
 ## Decisions
 
@@ -36,6 +36,10 @@ progress:
 - [Phase 06-free-registration-daily-limit-payment-ui]: vi.mock() lib/auth and lib/api in stubs to prevent import errors when implementations arrive
 - [Phase 06-free-registration-daily-limit-payment-ui]: Use tx: any cast for postgres.js TransactionSql — TypeScript Omit<> drops call signatures
 - [Phase 06-free-registration-daily-limit-payment-ui]: Zod v4 .issues not .errors on ZodError — auto-fixed registration handler
+- [Phase 06-free-registration-daily-limit-payment-ui]: Use window.dispatchEvent(new PopStateEvent) from LoginPage to trigger App route state — LoginPage has no navigate prop
+- [Phase 06-free-registration-daily-limit-payment-ui]: Wrap lazy RegisterPage in Suspense inside !user guard to prevent boundary error
+- [Phase 06-free-registration-daily-limit-payment-ui]: Atomic UPSERT increment-then-check with undo-decrement on 429 prevents race condition for free-tier quota
+- [Phase 06-free-registration-daily-limit-payment-ui]: CURRENT_DATE AT TIME ZONE 'UTC' in SQL only — quota date boundary never computed in JS
 
 ## Performance Metrics
 
@@ -44,7 +48,9 @@ progress:
 | 05-text-mindmap-checklist | 05 | 45min | 13 | 14 |
 | Phase 06-free-registration-daily-limit-payment-ui P00 | 5min | 2 tasks | 4 files |
 | Phase 06-free-registration-daily-limit-payment-ui P01 | 4min | 3 tasks | 3 files |
+| Phase 06-free-registration-daily-limit-payment-ui P03 | 8min | 2 tasks | 5 files |
+| Phase 06-free-registration-daily-limit-payment-ui P02 | 4min | 2 tasks | 5 files |
 
 ## Progress
 
-Phases 01–05 complete. Phase 06 in progress (plan 06-00 done, 06-01 through 06-05 remaining).
+Phases 01–05 complete. Phase 06 in progress (plans 06-00 through 06-03 done, 06-04 through 06-05 remaining).
