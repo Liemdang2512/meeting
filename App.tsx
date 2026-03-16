@@ -13,12 +13,15 @@ import type { MeetingInfo } from './features/minutes/types';
 import { loadMeetingInfoDraft, clearMeetingInfoDraft } from './features/minutes/storage';
 import { buildMinutesCustomPrompt } from './features/minutes/prompt';
 import { MeetingInfoForm } from './features/minutes/components/MeetingInfoForm';
+import { useMindmapFromText } from './features/mindmap/hooks/useMindmapFromText';
 
 // Lazy load các route pages - chỉ tải khi user navigate đến
 const FileSplitPage = lazy(() => import('./features/file-split').then(m => ({ default: m.FileSplitPage })));
 const TokenUsageAdminPage = lazy(() => import('./features/token-usage-admin/TokenUsageAdminPage').then(m => ({ default: m.TokenUsageAdminPage })));
 const UserManagementPage = lazy(() => import('./features/user-management/UserManagementPage').then(m => ({ default: m.UserManagementPage })));
 const MindmapPage = lazy(() => import('./features/mindmap/MindmapPage').then(m => ({ default: m.MindmapPage })));
+const MindmapCanvas = lazy(() => import('./features/mindmap/components/MindmapCanvas').then(m => ({ default: m.MindmapCanvas })));
+const RegisterPage = lazy(() => import('./components/RegisterPage').then(m => ({ default: m.RegisterPage })));
 
 declare global {
   interface AIStudio {
@@ -126,6 +129,9 @@ function App() {
 
   // Synthesized transcription (multi-file only)
   const [synthesizedTranscription, setSynthesizedTranscription] = useState<string | null>(null);
+
+  // Mindmap từ transcription
+  const { tree: mindmapTree, loading: mindmapLoading, error: mindmapError, generate: generateMindmap, reset: resetMindmap } = useMindmapFromText();
 
   // Step navigation — controls which step's content is displayed
   const [viewStep, setViewStep] = useState(1);
@@ -497,6 +503,12 @@ function App() {
     }
   };
 
+  const handleGenerateMindmap = async () => {
+    const sourceText = synthesizedTranscription || transcription;
+    if (!sourceText) return;
+    await generateMindmap(sourceText, user?.userId ?? null);
+  };
+
   // Helper to remove markdown syntax for cleaner Excel output
   const cleanMarkdownText = (text: string): string => {
     if (!text) return "";
@@ -590,6 +602,7 @@ function App() {
     setTranscription(null);
     setSynthesizedTranscription(null);
     setSummary(null);
+    resetMindmap();
     setErrorMsg(null);
     setViewStep(1);
     setFileStatuses([]);
@@ -636,6 +649,30 @@ function App() {
   }
 
   if (!user) {
+    if (route === '/register') {
+      return (
+        <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><Spinner /></div>}>
+          <RegisterPage
+            onRegisterSuccess={async () => {
+              const loggedInUser = await getMe();
+              setUser(loggedInUser);
+              navigate('/');
+              if (loggedInUser) {
+                setIsAdmin(loggedInUser.role === 'admin');
+                const accountKey = await loadApiKeyFromAccount(loggedInUser.userId);
+                if (accountKey) {
+                  setUserApiKey(accountKey);
+                  localStorage.setItem('gemini_api_key', accountKey);
+                  setHasApiKey(true);
+                  setShowApiKeyInput(false);
+                }
+              }
+            }}
+            onGoToLogin={() => navigate('/login')}
+          />
+        </Suspense>
+      );
+    }
     return <LoginPage onLoginSuccess={async () => {
       // Sau khi dang nhap thanh cong, lay user info va cap nhat state
       const loggedInUser = await getMe();
@@ -1257,30 +1294,57 @@ function App() {
                           <h3 className="text-slate-800 font-medium text-lg">Chưa tạo biên bản</h3>
                           <p className="text-slate-500 font-medium text-sm mt-2">Sử dụng AI để tự động hóa biên bản từ nội dung ghi chép.</p>
                         </div>
-                        <button
-                          onClick={handleGenerateSummary}
-                          disabled={status === TranscriptionStatus.SUMMARIZING}
-                          className="bg-indigo-600 text-white font-sans font-medium px-8 py-4 border-slate-200 shadow-sm rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50 border"
-                        >
-                          {status === TranscriptionStatus.SUMMARIZING
-                            ? "ĐANG XỬ LÝ..."
-                            : totalFiles > 1
-                              ? `TẠO BIÊN BẢN (${totalFiles} FILES)`
-                              : "TẠO BIÊN BẢN NGAY"}
-                        </button>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                          <button
+                            onClick={handleGenerateSummary}
+                            disabled={status === TranscriptionStatus.SUMMARIZING || mindmapLoading}
+                            className="bg-indigo-600 text-white font-sans font-medium px-8 py-4 border-slate-200 shadow-sm rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50 border"
+                          >
+                            {status === TranscriptionStatus.SUMMARIZING
+                              ? "ĐANG XỬ LÝ..."
+                              : totalFiles > 1
+                                ? `TẠO BIÊN BẢN (${totalFiles} FILES)`
+                                : "TẠO BIÊN BẢN NGAY"}
+                          </button>
+                          <button
+                            onClick={handleGenerateMindmap}
+                            disabled={mindmapLoading || status === TranscriptionStatus.SUMMARIZING}
+                            className="bg-white text-indigo-700 font-sans font-medium px-8 py-4 border-indigo-300 shadow-sm rounded-xl hover:bg-indigo-50 transition-all disabled:opacity-50 border"
+                          >
+                            {mindmapLoading ? "ĐANG TẠO MIND MAP..." : "TẠO MIND MAP"}
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-300">
                         <div className="flex-1 border-transparent overflow-hidden rounded-2xl">
                           <TranscriptionView text={summary} />
                         </div>
-                        <div className="mt-4 flex flex-col sm:flex-row gap-4">
+                        <div className="mt-4 flex flex-col sm:flex-row gap-3">
                           <button
                             onClick={handleGenerateSummary}
                             className="flex-1 border-slate-200 bg-white text-slate-800 font-medium py-3.5 hover:bg-slate-100 transition-colors flex items-center justify-center gap-2 shadow-sm rounded-xl border"
                           >
                             <RefreshIcon className="w-5 h-5" />
                             Tạo lại
+                          </button>
+
+                          <button
+                            onClick={handleGenerateMindmap}
+                            disabled={mindmapLoading}
+                            className="flex-1 border-indigo-300 bg-white text-indigo-700 font-medium py-3.5 hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2 shadow-sm rounded-xl border disabled:opacity-50"
+                          >
+                            {mindmapLoading ? (
+                              <>
+                                <span className="animate-spin inline-block w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full" />
+                                Đang tạo...
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-base">🗺</span>
+                                Tạo mind map
+                              </>
+                            )}
                           </button>
 
                           <button
@@ -1297,6 +1361,42 @@ function App() {
                 </div>
 
               </div>
+
+              {/* Mind Map section */}
+              {(mindmapLoading || mindmapTree || mindmapError) && (
+                <div className="animate-in fade-in duration-300 space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-base">🗺</span>
+                    <h2 className="text-lg font-medium text-slate-800">Sơ đồ tư duy</h2>
+                    {mindmapTree && (
+                      <button
+                        onClick={resetMindmap}
+                        className="text-xs text-slate-400 hover:text-slate-600 transition-colors ml-auto"
+                      >
+                        Đóng
+                      </button>
+                    )}
+                  </div>
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                    {mindmapLoading && (
+                      <div className="flex items-center justify-center h-48 text-slate-500 text-sm gap-2">
+                        <span className="animate-spin inline-block w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full" />
+                        Đang phân tích và tạo sơ đồ tư duy...
+                      </div>
+                    )}
+                    {mindmapError && !mindmapLoading && (
+                      <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+                        {mindmapError}
+                      </div>
+                    )}
+                    {!mindmapLoading && !mindmapError && mindmapTree && (
+                      <Suspense fallback={<div className="h-48 flex items-center justify-center text-slate-400 text-sm">Đang tải...</div>}>
+                        <MindmapCanvas tree={mindmapTree} />
+                      </Suspense>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

@@ -98,9 +98,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           </button>
         </form>
 
-        <div className="pt-4 border-t border-slate-200">
+        <div className="pt-4 border-t border-slate-200 space-y-3">
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => {
+                window.history.pushState({}, '', '/register');
+                window.dispatchEvent(new PopStateEvent('popstate'));
+              }}
+              className="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
+            >
+              Chưa có tài khoản? Đăng ký miễn phí
+            </button>
+          </div>
           <p className="text-xs text-slate-400 text-center font-medium">
-            Liên hệ quản trị viên để cấp quyền truy cập
+            Tài khoản admin: liên hệ quản trị viên
           </p>
         </div>
       </div>
