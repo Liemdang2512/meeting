@@ -805,6 +805,12 @@ function App() {
             >
               Sơ đồ tư duy
             </button>
+            <button
+              onClick={() => navigate("/pricing")}
+              className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isPricingRoute ? "bg-indigo-900 text-white" : "text-slate-600 hover:bg-slate-200 hover:text-slate-800"}`}
+            >
+              Nâng cấp
+            </button>
             {isAdmin && (
               <button
                 onClick={() => navigate('/admin/token-usage')}
@@ -870,6 +876,9 @@ function App() {
           )}
           {isMindmapRoute && (
             <MindmapPage user={user} />
+          )}
+          {isPricingRoute && (
+            <PricingPage currentUserRole={user?.role} />
           )}
           {isNotesRoute && mode === 'splitter' && (
             <FileSplitPage
