@@ -1,81 +1,148 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import {
   ReactFlow,
   Node,
   Edge,
   Controls,
-  Background,
   Handle,
   Position,
   NodeProps,
   useNodesState,
   useEdgesState,
   ReactFlowProvider,
+  useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { toPng } from 'html-to-image';
+import jsPDF from 'jspdf';
 import type { MindmapNode } from '../lib/mindmapSchema';
 
 // ============================================================
-// Custom mindmap node
+// Branch color palette — one color per top-level branch
+// ============================================================
+
+const BRANCH_PALETTE = [
+  { edge: '#c8607a', bg: '#fce8ed', border: '#dea0b0', text: '#7a1a3a' },
+  { edge: '#7b5cb8', bg: '#f0e8ff', border: '#a890d8', text: '#3a1070' },
+  { edge: '#3a84c0', bg: '#e4f0fa', border: '#78b0e0', text: '#1a3a6a' },
+  { edge: '#2ea880', bg: '#e0f5ee', border: '#68c4a0', text: '#0a3a28' },
+  { edge: '#c87030', bg: '#fef0e0', border: '#e0a860', text: '#6a3500' },
+  { edge: '#b04848', bg: '#fde8e4', border: '#d08080', text: '#6a1010' },
+  { edge: '#4878b8', bg: '#e8f0fc', border: '#80a8e0', text: '#18326a' },
+];
+
+// ============================================================
+// Node component
 // ============================================================
 
 interface MindmapNodeData {
   label: string;
+  depth: number;
+  side: 'left' | 'right' | 'center';
+  colorIdx: number;
   hasChildren: boolean;
   expanded: boolean;
-  depth: number;
   onToggle: (id: string) => void;
 }
 
-const NODE_COLORS: Record<number, { bg: string; border: string; text: string }> = {
-  0: { bg: '#4f46e5', border: '#3730a3', text: '#ffffff' },  // root — indigo
-  1: { bg: '#0ea5e9', border: '#0284c7', text: '#ffffff' },  // branch — sky
-  2: { bg: '#f1f5f9', border: '#cbd5e1', text: '#1e293b' },  // leaf — slate
+const hiddenHandle: React.CSSProperties = {
+  visibility: 'hidden',
+  width: 0,
+  height: 0,
+  minWidth: 0,
+  minHeight: 0,
+  padding: 0,
 };
-
-function getNodeColor(depth: number) {
-  return NODE_COLORS[depth] ?? NODE_COLORS[2];
-}
 
 const MindmapNodeComponent: React.FC<NodeProps> = ({ id, data }) => {
   const d = data as unknown as MindmapNodeData;
-  const colors = getNodeColor(d.depth);
+  const isCenter = d.side === 'center';
+  const isLeft = d.side === 'left';
+  const palette = BRANCH_PALETTE[d.colorIdx % BRANCH_PALETTE.length];
+
+  let style: React.CSSProperties;
+  if (isCenter) {
+    style = {
+      background: '#1e2240',
+      color: '#ffffff',
+      fontSize: 13,
+      fontWeight: 700,
+      borderRadius: 14,
+      padding: '10px 22px',
+      maxWidth: 260,
+      boxShadow: '0 3px 10px rgba(0,0,0,0.22)',
+      lineHeight: 1.5,
+      textAlign: 'center',
+      cursor: 'default',
+      userSelect: 'none',
+    };
+  } else if (d.depth === 1) {
+    style = {
+      background: palette.bg,
+      border: `1.5px solid ${palette.border}`,
+      color: palette.text,
+      fontSize: 12,
+      fontWeight: 600,
+      borderRadius: 20,
+      padding: '6px 16px',
+      maxWidth: 250,
+      boxShadow: '0 1px 4px rgba(0,0,0,0.10)',
+      lineHeight: 1.4,
+      cursor: d.hasChildren ? 'pointer' : 'default',
+      userSelect: 'none',
+    };
+  } else {
+    style = {
+      background: '#ffffff',
+      border: `1px solid ${palette.border}`,
+      color: '#374151',
+      fontSize: 11,
+      fontWeight: 400,
+      borderRadius: 8,
+      padding: '4px 10px',
+      maxWidth: 230,
+      lineHeight: 1.4,
+      cursor: d.hasChildren ? 'pointer' : 'default',
+      userSelect: 'none',
+    };
+  }
 
   return (
     <div
-      style={{
-        background: colors.bg,
-        border: `2px solid ${colors.border}`,
-        color: colors.text,
-        borderRadius: 10,
-        padding: '8px 14px',
-        minWidth: 100,
-        maxWidth: 200,
-        fontSize: d.depth === 0 ? 15 : 13,
-        fontWeight: d.depth === 0 ? 700 : 500,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6,
-        cursor: d.hasChildren ? 'pointer' : 'default',
-      }}
+      style={{ ...style, display: 'flex', alignItems: 'center', gap: 4, wordBreak: 'break-word' }}
       onClick={() => d.hasChildren && d.onToggle(id)}
     >
-      <Handle type="target" position={Position.Left} style={{ visibility: 'hidden' }} />
-      <span style={{ flex: 1, lineHeight: 1.4, wordBreak: 'break-word' }}>{d.label}</span>
-      {d.hasChildren && (
-        <span
-          style={{
-            fontSize: 11,
-            opacity: 0.8,
-            marginLeft: 4,
-            flexShrink: 0,
-          }}
-        >
-          {d.expanded ? '▾' : '▸'}
+      {/* ROOT: two source handles, one per side */}
+      {isCenter && (
+        <>
+          <Handle id="src-left"  type="source" position={Position.Left}  style={hiddenHandle} />
+          <Handle id="src-right" type="source" position={Position.Right} style={hiddenHandle} />
+        </>
+      )}
+
+      {/* LEFT-side nodes: target on right, source on left */}
+      {isLeft && !isCenter && (
+        <>
+          <Handle type="target" position={Position.Right} style={hiddenHandle} />
+          <Handle type="source" position={Position.Left}  style={hiddenHandle} />
+        </>
+      )}
+
+      {/* RIGHT-side nodes: target on left, source on right */}
+      {!isLeft && !isCenter && (
+        <>
+          <Handle type="target" position={Position.Left}  style={hiddenHandle} />
+          <Handle type="source" position={Position.Right} style={hiddenHandle} />
+        </>
+      )}
+
+      <span style={{ flex: 1 }}>{d.label}</span>
+
+      {d.hasChildren && !isCenter && (
+        <span style={{ fontSize: 8, opacity: 0.45, flexShrink: 0, marginLeft: 2 }}>
+          {d.expanded ? (isLeft ? '►' : '◄') : (isLeft ? '◄' : '►')}
         </span>
       )}
-      <Handle type="source" position={Position.Right} style={{ visibility: 'hidden' }} />
     </div>
   );
 };
@@ -83,98 +150,209 @@ const MindmapNodeComponent: React.FC<NodeProps> = ({ id, data }) => {
 const nodeTypes = { mindmap: MindmapNodeComponent };
 
 // ============================================================
-// Tree → nodes + edges layout
+// Layout — bidirectional (branches on both left and right)
 // ============================================================
 
-const H_SPACING = 250;
-const V_SPACING = 60;
+const NODE_HEIGHT = 36;
+const NODE_V_GAP   = 16;
+const H_SPACING    = 290;
 
-interface LayoutNode {
-  id: string;
-  label: string;
-  depth: number;
-  parent?: string;
-  children: string[];
+function countLeaves(node: MindmapNode, collapsed: Set<string>): number {
+  if (collapsed.has(node.id) || node.children.length === 0) return 1;
+  return node.children.reduce((sum, c) => sum + countLeaves(c, collapsed), 0);
 }
 
-function flattenTree(
-  node: MindmapNode,
-  depth: number,
-  parent: string | undefined,
-  result: LayoutNode[]
-) {
-  result.push({
-    id: node.id,
-    label: node.label,
-    depth,
-    parent,
-    children: node.children.map(c => c.id),
-  });
-  node.children.forEach(child => flattenTree(child, depth + 1, node.id, result));
+function subtreeHeight(node: MindmapNode, collapsed: Set<string>): number {
+  const leaves = countLeaves(node, collapsed);
+  return leaves * NODE_HEIGHT + (leaves - 1) * NODE_V_GAP;
 }
 
-function buildLayout(
+function sideHeight(children: MindmapNode[], collapsed: Set<string>): number {
+  if (children.length === 0) return 0;
+  return children.reduce((s, c) => s + subtreeHeight(c, collapsed) + NODE_V_GAP, -NODE_V_GAP);
+}
+
+function buildBidirectionalLayout(
   tree: MindmapNode,
-  collapsed: Set<string>
+  collapsed: Set<string>,
 ): { nodes: Node[]; edges: Edge[] } {
-  const flat: LayoutNode[] = [];
-  flattenTree(tree, 0, undefined, flat);
+  const rfNodes: Node[] = [];
+  const rfEdges: Edge[] = [];
 
-  const byId = new Map(flat.map(n => [n.id, n]));
+  const children = collapsed.has(tree.id) ? [] : tree.children;
+  const splitAt   = Math.ceil(children.length / 2);
+  const rightKids = children.slice(0, splitAt);
+  const leftKids  = children.slice(splitAt);
 
-  // Determine visible nodes
-  const visible = new Set<string>();
-  function visit(id: string) {
-    visible.add(id);
-    const node = byId.get(id);
-    if (node && !collapsed.has(id)) {
-      node.children.forEach(c => visit(c));
+  const rightH = sideHeight(rightKids, collapsed);
+  const leftH  = sideHeight(leftKids,  collapsed);
+  const rootCY = Math.max(rightH, leftH, NODE_HEIGHT) / 2;
+
+  // Root node
+  rfNodes.push({
+    id: tree.id,
+    type: 'mindmap',
+    position: { x: 0, y: rootCY - NODE_HEIGHT / 2 },
+    data: {
+      label:       tree.label,
+      depth:       0,
+      side:        'center',
+      colorIdx:    0,
+      hasChildren: children.length > 0,
+      expanded:    !collapsed.has(tree.id),
+      onToggle:    () => {},
+    } as unknown as Record<string, unknown>,
+  });
+
+  function layoutSubtree(
+    node:      MindmapNode,
+    depth:     number,
+    parentId:  string,
+    startY:    number,
+    side:      'left' | 'right',
+    colorIdx:  number,
+  ): void {
+    const bh = subtreeHeight(node, collapsed);
+    const cy = startY + bh / 2 - NODE_HEIGHT / 2;
+    const x  = side === 'right' ? depth * H_SPACING : -(depth * H_SPACING);
+
+    rfNodes.push({
+      id: node.id,
+      type: 'mindmap',
+      position: { x, y: cy },
+      data: {
+        label:       node.label,
+        depth,
+        side,
+        colorIdx,
+        hasChildren: node.children.length > 0,
+        expanded:    !collapsed.has(node.id),
+        onToggle:    () => {},
+      } as unknown as Record<string, unknown>,
+    });
+
+    const palette = BRANCH_PALETTE[colorIdx % BRANCH_PALETTE.length];
+    rfEdges.push({
+      id:     `e-${parentId}-${node.id}`,
+      source: parentId,
+      target: node.id,
+      // From root: pick the correct side handle
+      ...(depth === 1 ? { sourceHandle: side === 'right' ? 'src-right' : 'src-left' } : {}),
+      type:   'default', // bezier curve
+      style:  { stroke: palette.edge, strokeWidth: 1.8 },
+      // No arrow markers
+      markerEnd: undefined,
+    });
+
+    if (!collapsed.has(node.id) && node.children.length > 0) {
+      let childY = startY;
+      node.children.forEach(child => {
+        layoutSubtree(child, depth + 1, node.id, childY, side, colorIdx);
+        const cl = countLeaves(child, collapsed);
+        childY += cl * NODE_HEIGHT + (cl - 1) * NODE_V_GAP + NODE_V_GAP;
+      });
     }
   }
-  visit(tree.id);
 
-  const visibleNodes = flat.filter(n => visible.has(n.id));
-
-  // Position: x = depth * H_SPACING; y = index * V_SPACING within same parent
-  const yByParent = new Map<string | undefined, number>();
-  const positions = new Map<string, { x: number; y: number }>();
-
-  visibleNodes.forEach(n => {
-    const key = n.parent;
-    const currentY = yByParent.get(key) ?? 0;
-    positions.set(n.id, { x: n.depth * H_SPACING, y: currentY });
-    yByParent.set(key, currentY + V_SPACING);
+  // Place right-side branches
+  let rY = rootCY - rightH / 2;
+  rightKids.forEach((child, i) => {
+    layoutSubtree(child, 1, tree.id, rY, 'right', i);
+    rY += subtreeHeight(child, collapsed) + NODE_V_GAP;
   });
 
-  const nodes: Node[] = visibleNodes.map(n => ({
-    id: n.id,
-    type: 'mindmap',
-    position: positions.get(n.id) ?? { x: 0, y: 0 },
-    data: {
-      label: n.label,
-      hasChildren: n.children.length > 0,
-      expanded: !collapsed.has(n.id),
-      depth: n.depth,
-      onToggle: () => {},  // Will be replaced by callback
-    } as unknown as Record<string, unknown>,
-  }));
+  // Place left-side branches
+  let lY = rootCY - leftH / 2;
+  leftKids.forEach((child, i) => {
+    layoutSubtree(child, 1, tree.id, lY, 'left', splitAt + i);
+    lY += subtreeHeight(child, collapsed) + NODE_V_GAP;
+  });
 
-  const edges: Edge[] = visibleNodes
-    .filter(n => n.parent && visible.has(n.parent))
-    .map(n => ({
-      id: `e-${n.parent}-${n.id}`,
-      source: n.parent!,
-      target: n.id,
-      type: 'smoothstep',
-      style: { stroke: '#94a3b8', strokeWidth: 1.5 },
-      animated: false,
-    }));
-
-  return { nodes, edges };
+  return { nodes: rfNodes, edges: rfEdges };
 }
 
 // ============================================================
-// Main canvas component
+// Export buttons
+// ============================================================
+
+interface ExportButtonsProps {
+  containerRef: React.RefObject<HTMLDivElement | null>;
+}
+
+const ExportButtons: React.FC<ExportButtonsProps> = ({ containerRef }) => {
+  const { fitView } = useReactFlow();
+  const [busy, setBusy] = useState(false);
+
+  const capture = useCallback(async (): Promise<string | null> => {
+    fitView({ padding: 0.1, duration: 0 });
+    await new Promise(r => setTimeout(r, 160));
+    if (!containerRef.current) return null;
+    return toPng(containerRef.current, {
+      backgroundColor: '#ffffff',
+      pixelRatio: 3,
+      cacheBust: true,
+    });
+  }, [fitView, containerRef]);
+
+  const handlePNG = useCallback(async () => {
+    setBusy(true);
+    try {
+      const url = await capture();
+      if (!url) return;
+      const a = document.createElement('a');
+      a.download = 'mindmap.png';
+      a.href = url;
+      a.click();
+    } finally {
+      setBusy(false);
+    }
+  }, [capture]);
+
+  const handlePDF = useCallback(async () => {
+    setBusy(true);
+    try {
+      const url = await capture();
+      if (!url) return;
+      const img = new Image();
+      img.src = url;
+      await new Promise(r => { img.onload = r; });
+      const w = img.width;
+      const h = img.height;
+      const pdf = new jsPDF({ orientation: w > h ? 'landscape' : 'portrait', unit: 'px', format: [w, h] });
+      pdf.addImage(url, 'PNG', 0, 0, w, h);
+      pdf.save('mindmap.pdf');
+    } finally {
+      setBusy(false);
+    }
+  }, [capture]);
+
+  return (
+    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginBottom: 6 }}>
+      {(['PNG', 'PDF'] as const).map(fmt => (
+        <button
+          key={fmt}
+          onClick={fmt === 'PNG' ? handlePNG : handlePDF}
+          disabled={busy}
+          style={{
+            fontSize: 12,
+            padding: '5px 14px',
+            borderRadius: 8,
+            border: '1px solid #d1d5db',
+            background: busy ? '#f3f4f6' : '#f9fafb',
+            cursor: busy ? 'not-allowed' : 'pointer',
+            color: '#374151',
+            fontWeight: 500,
+          }}
+        >
+          {busy ? '...' : `⬇ ${fmt}`}
+        </button>
+      ))}
+    </div>
+  );
+};
+
+// ============================================================
+// Canvas inner
 // ============================================================
 
 interface MindmapCanvasProps {
@@ -183,70 +361,65 @@ interface MindmapCanvasProps {
 
 const MindmapCanvasInner: React.FC<MindmapCanvasProps> = ({ tree }) => {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleToggle = useCallback((id: string) => {
     setCollapsed(prev => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   }, []);
 
   const { nodes: rawNodes, edges } = useMemo(
-    () => buildLayout(tree, collapsed),
-    [tree, collapsed]
+    () => buildBidirectionalLayout(tree, collapsed),
+    [tree, collapsed],
   );
 
-  // Inject the toggle callback into each node's data
   const nodes = useMemo(
     () => rawNodes.map(n => ({
       ...n,
-      data: {
-        ...(n.data as object),
-        onToggle: handleToggle,
-      } as unknown as Record<string, unknown>,
+      data: { ...(n.data as object), onToggle: handleToggle } as unknown as Record<string, unknown>,
     })),
-    [rawNodes, handleToggle]
+    [rawNodes, handleToggle],
   );
 
   const [rfNodes, , onNodesChange] = useNodesState(nodes);
   const [rfEdges, , onEdgesChange] = useEdgesState(edges);
 
-  // Sync external state to ReactFlow nodes/edges
-  const syncedNodes = useMemo(
-    () => rfNodes.map(n => {
-      const updated = nodes.find(x => x.id === n.id);
-      return updated ?? n;
-    }),
-    [nodes, rfNodes]
-  );
-
-  const syncedEdges = useMemo(
-    () => rfEdges.length !== edges.length ? edges : rfEdges,
-    [edges, rfEdges]
-  );
+  const syncedNodes = useMemo(() => rfNodes.map(n => nodes.find(x => x.id === n.id) ?? n), [nodes, rfNodes]);
+  const syncedEdges = useMemo(() => (rfEdges.length !== edges.length ? edges : rfEdges), [edges, rfEdges]);
 
   return (
-    <div style={{ width: '100%', height: 520, border: '1px solid #e2e8f0', borderRadius: 12, overflow: 'hidden', background: '#f8fafc' }}>
-      <ReactFlow
-        nodes={syncedNodes}
-        edges={syncedEdges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        nodeTypes={nodeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.3 }}
-        minZoom={0.3}
-        maxZoom={2}
-        proOptions={{ hideAttribution: true }}
+    <div>
+      <ExportButtons containerRef={containerRef} />
+      <div
+        ref={containerRef}
+        style={{
+          width: '100%',
+          height: 640,
+          border: '1px solid #e5e7eb',
+          borderRadius: 12,
+          overflow: 'hidden',
+          background: '#fafbfc',
+        }}
       >
-        <Controls />
-        <Background color="#e2e8f0" gap={24} />
-      </ReactFlow>
+        <ReactFlow
+          nodes={syncedNodes}
+          edges={syncedEdges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          nodeTypes={nodeTypes}
+          defaultEdgeOptions={{ markerEnd: undefined }}
+          fitView
+          fitViewOptions={{ padding: 0.1 }}
+          minZoom={0.1}
+          maxZoom={2}
+          proOptions={{ hideAttribution: true }}
+        >
+          <Controls />
+        </ReactFlow>
+      </div>
     </div>
   );
 };

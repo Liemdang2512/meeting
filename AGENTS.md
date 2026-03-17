@@ -8,6 +8,7 @@ React 19 + TypeScript + Vite. SPA không có backend riêng — dùng Supabase l
 /
 ├── features/                  # Tính năng độc lập, mỗi feature là 1 thư mục
 │   ├── minutes/               # Tạo biên bản họp từ transcript
+│   ├── mindmap/               # Sơ đồ tư duy từ văn bản (route /mindmap + tích hợp vào flow biên bản)
 │   ├── file-split/            # Tách file audio/video thành nhiều phần (ffmpeg.wasm + WebAudio)
 │   ├── token-usage-admin/     # Trang admin xem log token usage toàn hệ thống
 │   └── token-usage-user/      # Trang user xem lịch sử token của bản thân
@@ -23,6 +24,24 @@ React 19 + TypeScript + Vite. SPA không có backend riêng — dùng Supabase l
 ### `features/minutes/`
 Tạo biên bản họp từ transcript bằng Gemini API. Gồm form nhập thông tin cuộc họp, prompt builder, và storage (local + Supabase).
 
+### `features/mindmap/`
+Tạo sơ đồ tư duy và checklist từ văn bản. Có 2 điểm truy cập:
+- Route `/mindmap` — trang độc lập, user nhập/upload văn bản thủ công
+- Tích hợp trong bước Biên bản của flow ghi chép — nút "Tạo mind map" dùng trực tiếp transcript
+
+**Cấu trúc:**
+- `MindmapPage.tsx` — trang `/mindmap`
+- `components/MindmapCanvas.tsx` — render cây bằng `@xyflow/react`, hỗ trợ export PNG/PDF
+- `hooks/useMindmapFromText.ts` — gọi Gemini (`generateStructured`), trả về `MindmapNode` tree
+- `hooks/useChecklistFromText.ts` — gọi Gemini, trả về `ChecklistItem[]` flat list
+- `hooks/useChecklistStorage.ts` — quản lý checklist trong localStorage
+- `lib/mindmapSchema.ts` — Zod schema cho Gemini structured output
+
+**Lưu ý:**
+- `MindmapCanvas` lazy-loaded ở cả `App.tsx` lẫn `MindmapPage` để không tăng main bundle
+- Logging token dùng `feature: 'mindmap'`, `actionType: 'mindmap-generate'` hoặc `'checklist-generate'`
+- Logging chỉ hoạt động khi `userId` được truyền vào (user đã đăng nhập)
+
 ### `features/file-split/`
 Tách file audio/video thành nhiều đoạn. Có 2 engine:
 - `lib/ffmpegClient.ts` — dùng `@ffmpeg/ffmpeg` (WASM), cần SharedArrayBuffer/COOP headers
@@ -33,6 +52,14 @@ Admin dashboard xem log token của tất cả user. Dùng hook `useTokenUsageLo
 
 ### `features/token-usage-user/`
 Trang user xem lịch sử sử dụng token của chính mình.
+
+## Components dùng chung
+
+### `components/TranscriptionView.tsx`
+Hiển thị văn bản markdown với 3 nút hành động:
+- **Sao chép** — copy text vào clipboard
+- **PDF** — xuất PDF khổ A4 bằng `html2canvas` + `jspdf`, tự động phân trang, tên file `bien-ban-YYYY-MM-DD.pdf`
+- **Word** — xuất file `.docx` bằng `docx`, tên file `ghi-chep-YYYY-MM-DD.docx`
 
 ## Services
 
@@ -84,7 +111,10 @@ VITE_SUPABASE_ANON_KEY=
 | `@ffmpeg/ffmpeg` | Tách audio/video bằng WASM |
 | `@google/genai` | Gemini API client |
 | `@supabase/supabase-js` | DB + Auth |
+| `@xyflow/react` | Render sơ đồ tư duy (mindmap canvas) |
 | `docx` | Xuất biên bản ra file .docx |
+| `html2canvas` | Chụp DOM để xuất PDF/PNG |
+| `jspdf` | Tạo file PDF từ canvas |
 | `xlsx` | Xuất dữ liệu token usage ra Excel |
 | `react-markdown` | Render markdown trong UI |
 

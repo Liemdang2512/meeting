@@ -7,18 +7,23 @@ import type { TokenLoggingContext } from '../../../types';
 const MAX_TEXT_LENGTH = 50_000;
 
 function buildMindmapPrompt(text: string): string {
-  return `Bạn là chuyên gia phân tích nội dung. Đọc đoạn văn bản dưới đây và tạo một sơ đồ tư duy (mindmap) phân cấp rõ ràng.
+  return `Bạn là chuyên gia phân tích nội dung. Hãy đọc kỹ văn bản dưới đây và tạo một sơ đồ tư duy (mindmap) thể hiện cấu trúc thông tin một cách rõ ràng, logic.
 
-YÊU CẦU QUAN TRỌNG:
-- Chỉ trả về JSON, không thêm text, không thêm markdown hay giải thích nào khác.
-- Tối đa 3 cấp: trung tâm (root) → nhánh chính (branch) → nhánh con (sub-branch).
-- Root là chủ đề tổng quát của toàn bộ văn bản.
-- Mỗi nhánh chính là một ý lớn hoặc chủ đề con quan trọng.
-- Mỗi nhánh con là chi tiết, ví dụ, hoặc điểm phụ của nhánh chính đó.
-- Tối đa 8 nhánh chính, mỗi nhánh chính tối đa 6 nhánh con.
-- Nhãn (label) ngắn gọn, rõ ràng, tiếng Việt hoặc ngôn ngữ phù hợp với văn bản.
+NHIỆM VỤ:
+- Xác định chủ đề trung tâm của toàn bộ văn bản → đặt làm root
+- Nhóm nội dung thành các nhánh chính theo các chủ đề/khía cạnh quan trọng nhất — số lượng nhánh tùy theo độ phong phú của nội dung (văn bản ngắn: 3–5 nhánh, văn bản dài/nhiều chủ đề: có thể 8–12 nhánh hoặc hơn)
+- Mỗi nhánh chính có thể có nhiều nhánh con tùy mức độ chi tiết của nội dung (không giới hạn cứng, ưu tiên phản ánh đúng thực tế văn bản)
+- Label phải ngắn gọn, súc tích (tối đa 10 từ), trích xuất từ nội dung thực tế — KHÔNG tự đặt tiêu đề chung chung như "Nội dung 1"
 
-Văn bản:
+NGUYÊN TẮC PHÂN NHÁNH:
+- Nếu là biên bản/ghi chép cuộc họp: nhánh theo chủ đề thảo luận, quyết định, công việc cần làm
+- Nếu là tài liệu kỹ thuật/báo cáo: nhánh theo các mục chính của tài liệu
+- Nếu là văn bản tổng hợp: nhánh theo các chủ đề/vấn đề nổi bật
+
+CHỈ trả về JSON theo định dạng sau, không thêm bất kỳ nội dung nào khác:
+{"root":{"label":"Chủ đề trung tâm","children":[{"label":"Nhánh chính 1","children":[{"label":"Chi tiết 1.1"},{"label":"Chi tiết 1.2"}]},{"label":"Nhánh chính 2","children":[{"label":"Chi tiết 2.1"}]}]}}
+
+Văn bản cần phân tích:
 ${text}`;
 }
 

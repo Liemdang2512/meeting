@@ -7,14 +7,12 @@ import type { ChecklistItem } from './useChecklistStorage';
 const MAX_TEXT_LENGTH = 50_000;
 
 function buildChecklistPrompt(input: string): string {
-  return `Bạn là chuyên gia phân tích nội dung và lập kế hoạch. Đọc đoạn văn bản dưới đây và tạo một danh sách công việc (checklist) phân cấp rõ ràng.
+  return `Tạo checklist công việc từ văn bản. Chỉ trả về JSON hợp lệ, không thêm gì khác.
 
-YÊU CẦU QUAN TRỌNG:
-- Chỉ trả về JSON, không thêm text, không thêm markdown hay giải thích nào.
-- Mỗi mục (item) có nhãn (label) ngắn gọn, là một công việc hoặc hành động cụ thể.
-- Tối đa 2 cấp: mục cha → mục con. Mỗi mục cha tối đa 8 mục con.
-- Tổng số mục không quá 50.
-- Ngôn ngữ phù hợp với văn bản (tiếng Việt nếu văn bản tiếng Việt).
+Định dạng JSON bắt buộc:
+{"items":[{"label":"Công việc 1","children":[{"label":"Việc con 1.1"},{"label":"Việc con 1.2"}]},{"label":"Công việc 2","children":[]}]}
+
+Quy tắc: tối đa 2 cấp, mỗi mục cha tối đa 8 mục con, tổng không quá 50 mục. Label ngắn gọn.
 
 Văn bản:
 ${input}`;
