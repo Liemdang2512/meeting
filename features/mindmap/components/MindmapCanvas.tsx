@@ -16,6 +16,13 @@ import '@xyflow/react/dist/style.css';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 import type { MindmapNode } from '../lib/mindmapSchema';
+import type { LucideIcon } from 'lucide-react';
+import {
+  Briefcase, AlertTriangle, DollarSign, CheckCircle, Users, Target, Clock,
+  FileText, Settings, Zap, Shield, TrendingUp, Map, List, MessageCircle,
+  Calendar, Database, Lock, Star, Flag, Package, Wrench, Globe, Heart, Eye,
+  BarChart, Layers, Link, Search, Upload, Circle,
+} from 'lucide-react';
 
 // ============================================================
 // Branch color palette — one color per top-level branch
@@ -32,6 +39,45 @@ const BRANCH_PALETTE = [
 ];
 
 // ============================================================
+// Icon map — lucide-react icons keyed by whitelist string
+// ============================================================
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  'briefcase': Briefcase,
+  'alert-triangle': AlertTriangle,
+  'dollar-sign': DollarSign,
+  'check-circle': CheckCircle,
+  'users': Users,
+  'target': Target,
+  'clock': Clock,
+  'file-text': FileText,
+  'settings': Settings,
+  'zap': Zap,
+  'shield': Shield,
+  'trending-up': TrendingUp,
+  'map': Map,
+  'list': List,
+  'message-circle': MessageCircle,
+  'calendar': Calendar,
+  'database': Database,
+  'lock': Lock,
+  'star': Star,
+  'flag': Flag,
+  'package': Package,
+  'tool': Wrench,
+  'globe': Globe,
+  'heart': Heart,
+  'eye': Eye,
+  'bar-chart': BarChart,
+  'layers': Layers,
+  'link': Link,
+  'search': Search,
+  'upload': Upload,
+};
+
+const DEFAULT_ICON: LucideIcon = Circle;
+
+// ============================================================
 // Node component
 // ============================================================
 
@@ -43,6 +89,7 @@ interface MindmapNodeData {
   hasChildren: boolean;
   expanded: boolean;
   onToggle: (id: string) => void;
+  iconKey?: string;
 }
 
 const hiddenHandle: React.CSSProperties = {
@@ -59,6 +106,9 @@ const MindmapNodeComponent: React.FC<NodeProps> = ({ id, data }) => {
   const isCenter = d.side === 'center';
   const isLeft = d.side === 'left';
   const palette = BRANCH_PALETTE[d.colorIdx % BRANCH_PALETTE.length];
+  const IconComponent = !isCenter && d.iconKey
+    ? (ICON_MAP[d.iconKey] ?? DEFAULT_ICON)
+    : null;
 
   let style: React.CSSProperties;
   if (isCenter) {
@@ -109,9 +159,26 @@ const MindmapNodeComponent: React.FC<NodeProps> = ({ id, data }) => {
 
   return (
     <div
-      style={{ ...style, display: 'flex', alignItems: 'center', gap: 4, wordBreak: 'break-word' }}
+      style={{ ...style, display: 'flex', alignItems: 'center', gap: 4, wordBreak: 'break-word', position: 'relative', overflow: 'hidden' }}
       onClick={() => d.hasChildren && d.onToggle(id)}
     >
+      {/* Icon background — only for non-root nodes */}
+      {IconComponent && (
+        <div style={{
+          position: 'absolute',
+          right: 6,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          opacity: 0.15,
+          pointerEvents: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <IconComponent size={40} />
+        </div>
+      )}
+
       {/* ROOT: two source handles, one per side */}
       {isCenter && (
         <>
@@ -228,6 +295,7 @@ function buildBidirectionalLayout(
         hasChildren: node.children.length > 0,
         expanded:    !collapsed.has(node.id),
         onToggle:    () => {},
+        iconKey:     node.iconKey,
       } as unknown as Record<string, unknown>,
     });
 
