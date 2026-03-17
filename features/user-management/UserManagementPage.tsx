@@ -4,7 +4,8 @@ import { authFetch } from '../../lib/api';
 interface UserRow {
   id: string;
   email: string;
-  role: 'user' | 'admin';
+  role: 'free' | 'pro' | 'enterprise' | 'admin';
+  daily_limit: number | null;
   created_at: string;
 }
 
@@ -22,7 +23,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
   const [showCreate, setShowCreate] = useState(false);
   const [createEmail, setCreateEmail] = useState('');
   const [createPassword, setCreatePassword] = useState('');
-  const [createRole, setCreateRole] = useState<'user' | 'admin'>('user');
+  const [createRole, setCreateRole] = useState<'free' | 'pro' | 'enterprise' | 'admin'>('free');
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
@@ -64,7 +65,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
     );
   }
 
-  const handleChangeRole = async (userId: string, newRole: 'user' | 'admin') => {
+  const handleChangeRole = async (userId: string, newRole: 'free' | 'pro' | 'enterprise' | 'admin') => {
     try {
       const res = await authFetch(`/admin/users/${userId}`, {
         method: 'PUT',
@@ -74,6 +75,23 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Cập nhật thất bại');
       setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u)));
+    } catch (e: any) {
+      alert(`Lỗi: ${e.message}`);
+    }
+  };
+
+  const handleChangeDailyLimit = async (userId: string, value: string) => {
+    const daily_limit = value === '' ? null : parseInt(value, 10);
+    if (daily_limit !== null && (isNaN(daily_limit) || daily_limit < 1)) return;
+    try {
+      const res = await authFetch(`/admin/users/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ daily_limit }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Cập nhật thất bại');
+      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, daily_limit } : u)));
     } catch (e: any) {
       alert(`Lỗi: ${e.message}`);
     }
@@ -95,7 +113,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
       setShowCreate(false);
       setCreateEmail('');
       setCreatePassword('');
-      setCreateRole('user');
+      setCreateRole('free');
     } catch (e: any) {
       setCreateError(e.message);
     } finally {
@@ -183,6 +201,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
               <tr>
                 <th className="text-left px-5 py-4 font-medium text-sm">Email</th>
                 <th className="text-left px-5 py-4 font-medium text-sm">Role</th>
+                <th className="text-left px-5 py-4 font-medium text-sm">Lần/ngày</th>
                 <th className="text-left px-5 py-4 font-medium text-sm hidden sm:table-cell">Ngày tạo</th>
                 <th className="px-5 py-4 text-right font-medium text-sm">Thao tác</th>
               </tr>
@@ -200,12 +219,27 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
                     <select
                       value={u.role}
                       disabled={u.id === currentUserId}
-                      onChange={(e) => handleChangeRole(u.id, e.target.value as 'user' | 'admin')}
+                      onChange={(e) => handleChangeRole(u.id, e.target.value as 'free' | 'pro' | 'enterprise' | 'admin')}
                       className="text-sm font-medium border-slate-200 px-3 py-1.5 bg-white text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:bg-slate-50 cursor-pointer border rounded-xl"
                     >
-                      <option value="user">USER</option>
+                      <option value="free">FREE</option>
+                      <option value="pro">PRO</option>
+                      <option value="enterprise">ENTERPRISE</option>
                       <option value="admin">ADMIN</option>
                     </select>
+                  </td>
+                  <td className="px-5 py-4">
+                    {u.role === 'free' ? (
+                      <input
+                        type="number"
+                        min={1}
+                        value={u.daily_limit ?? 1}
+                        onChange={(e) => handleChangeDailyLimit(u.id, e.target.value)}
+                        className="w-16 text-sm font-medium border border-slate-200 px-2 py-1.5 bg-white text-slate-800 focus:outline-none focus:bg-slate-50 rounded-xl text-center"
+                      />
+                    ) : (
+                      <span className="text-xs text-slate-400 font-medium">—</span>
+                    )}
                   </td>
                   <td className="px-5 py-4 text-slate-500 text-sm font-medium hidden sm:table-cell">
                     {new Date(u.created_at).toLocaleDateString('vi-VN')}
@@ -277,10 +311,12 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
                 <label className="block text-xs font-medium text-slate-800 mb-2">Role</label>
                 <select
                   value={createRole}
-                  onChange={(e) => setCreateRole(e.target.value as 'user' | 'admin')}
+                  onChange={(e) => setCreateRole(e.target.value as 'free' | 'pro' | 'enterprise' | 'admin')}
                   className="w-full border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-slate-200 bg-slate-50 focus:bg-white font-medium transition-colors border rounded-xl"
                 >
-                  <option value="user">USER</option>
+                  <option value="free">FREE</option>
+                  <option value="pro">PRO</option>
+                  <option value="enterprise">ENTERPRISE</option>
                   <option value="admin">ADMIN</option>
                 </select>
               </div>

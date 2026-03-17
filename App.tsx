@@ -155,7 +155,18 @@ function App() {
   const [mode, setMode] = useState<'notes' | 'splitter'>('notes');
   const [route, setRoute] = useState<string>(() => window.location.pathname || '/');
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const QUOTA_DISMISS_KEY = 'quota_modal_dismissed_date';
+  const todayStr = () => new Date().toISOString().slice(0, 10);
+  const isQuotaModalDismissedToday = () => localStorage.getItem(QUOTA_DISMISS_KEY) === todayStr();
   const [showQuotaModal, setShowQuotaModal] = useState(false);
+  const [quotaToast, setQuotaToast] = useState(false);
+  const showQuotaModalIfNotDismissed = () => {
+    if (!isQuotaModalDismissedToday()) setShowQuotaModal(true);
+  };
+  const showQuotaToast = () => {
+    setQuotaToast(true);
+    setTimeout(() => setQuotaToast(false), 4000);
+  };
 
   const [meetingInfo, setMeetingInfo] = useState<MeetingInfo>(() => (
     loadMeetingInfoDraft() ?? {
@@ -285,6 +296,22 @@ function App() {
       setShowApiKeyInput(true);
       setErrorMsg('Vui lòng nhập Gemini API Key trước khi tải file lên.');
       return;
+    }
+
+    // Kiểm tra quota trước khi gọi Gemini (tránh lãng phí API call)
+    if (user) {
+      try {
+        const quotaRes = await authFetch('/quota');
+        if (quotaRes.ok) {
+          const quotaData = await quotaRes.json();
+          if (quotaData.remaining === 0) {
+            showQuotaToast();
+            return;
+          }
+        }
+      } catch {
+        // Nếu không check được quota thì cho qua, server sẽ chặn sau
+      }
     }
 
     setTranscription(null);
@@ -418,7 +445,7 @@ function App() {
           if (res.status === 429) {
             const errData = await res.json().catch(() => ({}));
             if (errData.upgradeRequired) {
-              setShowQuotaModal(true);
+              showQuotaModalIfNotDismissed();
               return;
             }
           }
@@ -488,6 +515,8 @@ function App() {
         user?.userId ?? null
       );
       setSummary(resultSummary);
+      // Auto-advance sang bước Hoàn thành sau khi tạo biên bản xong
+      setViewStep(biênBảnStep + 1);
 
       // Save summary to backend if we have a transcription ID
       if (transcriptionId) {
@@ -603,6 +632,34 @@ function App() {
     XLSX.writeFile(wb, fileName);
   };
 
+  const handleExportPDF = () => {
+    if (!summary) return;
+    const title = fileMeta?.name
+      ? `Biên bản: ${fileMeta.name.replace(/\.[^/.]+$/, '')}`
+      : `Biên bản cuộc họp — ${new Date().toLocaleDateString('vi-VN')}`;
+    const lines = summary
+      .split('\n')
+      .map(line => {
+        if (/^#{1,3}\s/.test(line)) return `<h3 style="margin:12px 0 4px;font-size:14px">${line.replace(/^#+\s/, '')}</h3>`;
+        if (/^\s*[-*]\s/.test(line)) return `<li style="margin:2px 0">${line.replace(/^\s*[-*]\s/, '')}</li>`;
+        if (line.trim() === '') return '<br/>';
+        return `<p style="margin:4px 0">${line}</p>`;
+      })
+      .join('');
+    const html = `<html><head><meta charset="utf-8"/><title>${title}</title>
+      <style>body{font-family:Arial,sans-serif;font-size:13px;padding:32px;color:#1e293b;max-width:800px;margin:auto}
+      h3{color:#1e40af}li{margin-left:20px}@media print{body{padding:16px}}</style></head>
+      <body><h2 style="color:#1e40af;margin-bottom:16px">${title}</h2>
+      <p style="color:#64748b;font-size:12px;margin-bottom:24px">Tạo lúc: ${new Date().toLocaleString('vi-VN')}</p>
+      ${lines}</body></html>`;
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    setTimeout(() => { w.print(); }, 300);
+  };
+
   const resetApp = () => {
     setStatus(TranscriptionStatus.IDLE);
     setPendingFiles([]);
@@ -706,6 +763,7 @@ function App() {
   const isMultiFile = totalFiles > 1;
   const meetingInfoStep = isMultiFile ? 4 : 3;
   const biênBảnStep = isMultiFile ? 5 : 4;
+  const hoànThànhStep = biênBảnStep + 1;
   const isNavigableState = status === TranscriptionStatus.SYNTHESIZED || status === TranscriptionStatus.COMPLETED;
 
   const currentStep = (() => {
@@ -769,7 +827,7 @@ function App() {
             )}
             {user && (
               <QuotaBadge
-                onQuotaExhausted={() => setShowQuotaModal(true)}
+                onQuotaExhausted={() => showQuotaModalIfNotDismissed()}
               />
             )}
             <button onClick={handleLogout} className="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors px-3 py-2">
@@ -1427,13 +1485,147 @@ function App() {
             </div>
           )}
 
+          {/* BƯỚC: Hoàn thành */}
+          {isNavigableState && viewStep === hoànThànhStep && (
+            <div className="animate-in fade-in duration-300 space-y-8">
+              <div>
+                <h2 className="text-2xl font-sans font-medium text-slate-800">Hoàn thành</h2>
+                <p className="text-slate-500 font-medium text-sm mt-1">Phiên làm việc đã xong. Tải xuống hoặc xem lại kết quả bên dưới.</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Card: Ghi chép */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
+                      <FileAudioIcon className="w-5 h-5 text-indigo-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-slate-800 text-sm">File ghi chép</h3>
+                      <p className="text-xs text-slate-400">{fileMeta?.name || 'Văn bản phiên âm'}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const text = synthesizedTranscription || transcription || '';
+                      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `ghi-chep-${new Date().toISOString().slice(0,10)}.txt`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="w-full py-2.5 bg-indigo-50 text-indigo-700 text-sm font-medium rounded-xl hover:bg-indigo-100 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <DownloadIcon className="w-4 h-4" />
+                    Tải xuống .txt
+                  </button>
+                </div>
+
+                {/* Card: Biên bản PDF */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+                      <DownloadIcon className="w-5 h-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-slate-800 text-sm">Biên bản</h3>
+                      <p className="text-xs text-slate-400">{summary ? 'Sẵn sàng xuất' : 'Chưa tạo biên bản'}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleExportPDF}
+                      disabled={!summary}
+                      className="flex-1 py-2.5 bg-emerald-50 text-emerald-700 text-sm font-medium rounded-xl hover:bg-emerald-100 transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
+                    >
+                      <DownloadIcon className="w-4 h-4" />
+                      PDF
+                    </button>
+                    <button
+                      onClick={handleExportExcel}
+                      disabled={!summary}
+                      className="flex-1 py-2.5 bg-slate-50 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-100 transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
+                    >
+                      <DownloadIcon className="w-4 h-4" />
+                      Excel
+                    </button>
+                  </div>
+                </div>
+
+                {/* Card: Mind map */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
+                      <span className="text-lg">🗺</span>
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-slate-800 text-sm">Sơ đồ tư duy</h3>
+                      <p className="text-xs text-slate-400">{mindmapTree ? 'Đã tạo' : 'Chưa tạo'}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setViewStep(biênBảnStep)}
+                    className="w-full py-2.5 bg-purple-50 text-purple-700 text-sm font-medium rounded-xl hover:bg-purple-100 transition-colors flex items-center justify-center gap-2"
+                  >
+                    {mindmapTree ? 'Xem mind map' : 'Tạo mind map'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Mind map preview nếu đã có */}
+              {mindmapTree && (
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 animate-in fade-in duration-300">
+                  <h3 className="text-sm font-medium text-slate-700 mb-3 flex items-center gap-2">
+                    <span>🗺</span> Sơ đồ tư duy
+                  </h3>
+                  <Suspense fallback={<div className="h-48 flex items-center justify-center text-slate-400 text-sm">Đang tải...</div>}>
+                    <MindmapCanvas tree={mindmapTree} />
+                  </Suspense>
+                </div>
+              )}
+
+              {/* Nút tạo phiên mới */}
+              <div className="flex justify-center pt-4 border-t border-slate-100">
+                <button
+                  onClick={resetApp}
+                  className="px-8 py-3.5 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2"
+                >
+                  <RefreshIcon className="w-5 h-5" />
+                  Tạo phiên mới
+                </button>
+              </div>
+            </div>
+          )}
+
         </>}
       </main>
 
+      {/* Toast: hết lượt */}
+      {quotaToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+          <div className="bg-amber-50 border border-amber-300 text-amber-800 text-sm font-medium px-5 py-3.5 rounded-2xl shadow-lg flex items-center gap-3">
+            <span className="text-base">⚡</span>
+            <span>Bạn đã hết lượt hôm nay. Hãy nâng cấp để tiếp tục.</span>
+            <button
+              onClick={() => { setQuotaToast(false); navigate('/pricing'); }}
+              className="ml-2 text-amber-700 underline underline-offset-2 font-semibold whitespace-nowrap"
+            >
+              Xem gói
+            </button>
+          </div>
+        </div>
+      )}
+
       <QuotaUpgradeModal
         isOpen={showQuotaModal}
-        onClose={() => setShowQuotaModal(false)}
+        onClose={() => {
+          localStorage.setItem(QUOTA_DISMISS_KEY, todayStr());
+          setShowQuotaModal(false);
+        }}
         onViewPlans={() => {
+          localStorage.setItem(QUOTA_DISMISS_KEY, todayStr());
           setShowQuotaModal(false);
           navigate('/pricing');
         }}

@@ -21,7 +21,7 @@ const PLANS: Plan[] = [
     unit: 'VND/tháng',
     description: 'Bắt đầu miễn phí, không cần thẻ',
     features: [
-      '1 chuyển đổi/ngày',
+      '1 lần/ngày (tải file → ghi chép → biên bản)',
       'Phiên âm cơ bản (Basic)',
       'Tóm tắt nội dung cuộc họp',
       'Xuất văn bản (copy)',
@@ -42,7 +42,6 @@ const PLANS: Plan[] = [
       'Tóm tắt & biên bản chuyên nghiệp',
       'Xuất PDF & DOCX',
       'Sơ đồ tư duy & checklist',
-      'Ưu tiên xử lý',
     ],
     cta: 'Nâng cấp ngay',
     ctaAction: 'upgrade',
@@ -57,8 +56,6 @@ const PLANS: Plan[] = [
     features: [
       'Tất cả tính năng Pro',
       'Nhiều tài khoản nhóm',
-      'API access',
-      'SLA & hỗ trợ ưu tiên',
       'Tùy chỉnh theo nhu cầu',
       'Triển khai on-premise',
     ],

@@ -22,7 +22,8 @@ router.get('/users', requireAuth, requireAdmin, async (_req, res) => {
         u.id,
         u.email,
         u.created_at,
-        p.role
+        p.role,
+        p.daily_limit
       FROM auth.users u
       LEFT JOIN public.profiles p ON p.user_id = u.id
       ORDER BY u.created_at DESC
@@ -40,8 +41,8 @@ router.post('/users', requireAuth, requireAdmin, async (req, res) => {
   if (!email || !password) {
     return res.status(400).json({ error: 'Email và mật khẩu là bắt buộc' });
   }
-  if (!['free', 'user', 'admin'].includes(role)) {
-    return res.status(400).json({ error: 'Role không hợp lệ (free, user hoặc admin)' });
+  if (!['free', 'pro', 'enterprise', 'admin'].includes(role)) {
+    return res.status(400).json({ error: 'Role không hợp lệ (free, pro, enterprise hoặc admin)' });
   }
   try {
     // Kiểm tra email đã tồn tại chưa
@@ -79,7 +80,7 @@ router.post('/users', requireAuth, requireAdmin, async (req, res) => {
 // Body: { role?, password? }
 router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
   const { id } = req.params;
-  const { role, password } = req.body ?? {};
+  const { role, password, daily_limit } = req.body ?? {};
 
   // Không cho xóa role admin của chính mình
   if (req.user?.userId === id && role && role !== 'admin') {
@@ -93,13 +94,24 @@ router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
     }
 
     if (role) {
-      if (!['free', 'user', 'admin'].includes(role)) {
-        return res.status(400).json({ error: 'Role không hợp lệ (free, user hoặc admin)' });
+      if (!['free', 'pro', 'enterprise', 'admin'].includes(role)) {
+        return res.status(400).json({ error: 'Role không hợp lệ (free, pro, enterprise hoặc admin)' });
       }
       await sql`
         INSERT INTO public.profiles (user_id, role, created_at, updated_at)
         VALUES (${id}, ${role}, NOW(), NOW())
         ON CONFLICT (user_id) DO UPDATE SET role = ${role}, updated_at = NOW()
+      `;
+    }
+
+    if (daily_limit !== undefined) {
+      if (daily_limit !== null && (!Number.isInteger(daily_limit) || daily_limit < 1)) {
+        return res.status(400).json({ error: 'daily_limit phải là số nguyên >= 1 hoặc null' });
+      }
+      await sql`
+        INSERT INTO public.profiles (user_id, daily_limit, created_at, updated_at)
+        VALUES (${id}, ${daily_limit}, NOW(), NOW())
+        ON CONFLICT (user_id) DO UPDATE SET daily_limit = ${daily_limit}, updated_at = NOW()
       `;
     }
 

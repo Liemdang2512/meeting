@@ -24,8 +24,8 @@ export const QuotaUpgradeModal: React.FC<QuotaUpgradeModalProps> = ({
             Đã hết lượt hôm nay
           </h2>
           <p className="text-slate-500 text-sm leading-relaxed">
-            Tài khoản miễn phí giới hạn 1 chuyển đổi/ngày.
-            Nâng cấp lên Pro để chuyển đổi không giới hạn.
+            Tài khoản miễn phí giới hạn 1 lần/ngày — bao gồm đầy đủ tải file, ghi chép, thông tin cuộc họp và biên bản.
+            Nâng cấp lên Pro để sử dụng không giới hạn.
           </p>
           <p className="text-slate-400 text-xs">
             Quota sẽ được reset lúc 00:00 GMT+7 mỗi ngày.

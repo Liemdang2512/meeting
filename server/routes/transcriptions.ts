@@ -5,7 +5,7 @@ import { requireAuth } from '../auth';
 const router = Router();
 router.use(requireAuth);
 
-const FREE_DAILY_LIMIT = 1;
+const DEFAULT_FREE_DAILY_LIMIT = 1;
 
 // POST /api/transcriptions
 // Body: { file_name: string, file_size?: number, transcription_text: string }
@@ -19,6 +19,10 @@ router.post('/', async (req, res) => {
   // Quota enforcement for free tier (atomic: increment-then-check, prevents race condition)
   if (req.user!.role === 'free') {
     try {
+      const [profile] = await sql`
+        SELECT daily_limit FROM public.profiles WHERE user_id = ${req.user!.userId}
+      `;
+      const dailyLimit = profile?.daily_limit ?? DEFAULT_FREE_DAILY_LIMIT;
       const [quota] = await sql`
         INSERT INTO public.daily_conversion_usage (user_id, usage_date, count)
         VALUES (
@@ -30,7 +34,7 @@ router.post('/', async (req, res) => {
         DO UPDATE SET count = daily_conversion_usage.count + 1
         RETURNING count
       `;
-      if (quota.count > FREE_DAILY_LIMIT) {
+      if (quota.count > dailyLimit) {
         // Undo the increment so the count stays accurate
         await sql`
           UPDATE public.daily_conversion_usage
@@ -39,8 +43,8 @@ router.post('/', async (req, res) => {
             AND usage_date = (CURRENT_DATE AT TIME ZONE 'UTC')
         `;
         return res.status(429).json({
-          error: 'Bạn đã đạt giới hạn chuyển đổi hôm nay. Nâng cấp để tiếp tục.',
-          quota: { used: FREE_DAILY_LIMIT, limit: FREE_DAILY_LIMIT, remaining: 0 },
+          error: 'Bạn đã đạt giới hạn hôm nay. Nâng cấp để tiếp tục.',
+          quota: { used: dailyLimit, limit: dailyLimit, remaining: 0 },
           upgradeRequired: true,
         });
       }
