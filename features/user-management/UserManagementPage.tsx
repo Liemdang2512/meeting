@@ -7,6 +7,7 @@ interface UserRow {
   role: 'free' | 'pro' | 'enterprise' | 'admin';
   daily_limit: number | null;
   created_at: string;
+  tokens_used: number;
 }
 
 interface UserManagementPageProps {
@@ -15,6 +16,14 @@ interface UserManagementPageProps {
 }
 
 export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentUserId, isAdmin }) => {
+  const now = new Date();
+  type TokenFilterMode = 'month' | 'custom' | 'all';
+  const [tokenFilterMode, setTokenFilterMode] = useState<TokenFilterMode>('month');
+  const [filterMonth, setFilterMonth] = useState<string>(String(now.getMonth() + 1));
+  const [filterYear, setFilterYear] = useState<string>(String(now.getFullYear()));
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
+
   const [users, setUsers] = useState<UserRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +50,19 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
     setIsLoading(true);
     setError(null);
     try {
-      const res = await authFetch('/admin/users');
+      const params = new URLSearchParams();
+      if (tokenFilterMode === 'month') {
+        const m = parseInt(filterMonth, 10);
+        const y = parseInt(filterYear, 10);
+        const from = new Date(y, m - 1, 1);
+        const to = new Date(y, m, 0, 23, 59, 59, 999);
+        params.set('from', from.toISOString());
+        params.set('to', to.toISOString());
+      } else if (tokenFilterMode === 'custom' && customFrom && customTo) {
+        params.set('from', new Date(customFrom).toISOString());
+        params.set('to', new Date(customTo + 'T23:59:59').toISOString());
+      }
+      const res = await authFetch(`/admin/users?${params}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Không thể tải danh sách user');
       setUsers(data.users);
@@ -50,7 +71,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [tokenFilterMode, filterMonth, filterYear, customFrom, customTo]);
 
   useEffect(() => {
     fetchUsers();
@@ -169,7 +190,66 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
           <h2 className="text-3xl font-sans font-medium text-slate-800">Quản lý tài khoản</h2>
           <p className="text-slate-500 font-medium mt-1 text-sm">Tạo, sửa, xóa và phân quyền tài khoản người dùng.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Bộ lọc token-usage */}
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-medium text-slate-500 whitespace-nowrap">Token dùng:</span>
+              {([
+                { id: 'month' as const, label: 'Theo tháng' },
+                { id: 'custom' as const, label: 'Tùy chỉnh' },
+                { id: 'all' as const, label: 'Tất cả' },
+              ]).map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setTokenFilterMode(item.id)}
+                  className={`px-2.5 py-1 border text-xs font-medium transition-all rounded-lg ${ tokenFilterMode === item.id ? 'bg-indigo-900 border-slate-200 text-white' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            {tokenFilterMode === 'month' && (
+              <div className="flex items-center gap-1.5">
+                <select
+                  value={filterMonth}
+                  onChange={(e) => setFilterMonth(e.target.value)}
+                  className="text-xs font-medium text-slate-800 bg-white border border-slate-200 rounded-lg px-2 py-1 focus:outline-none cursor-pointer"
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                    <option key={m} value={m}>T{m}</option>
+                  ))}
+                </select>
+                <select
+                  value={filterYear}
+                  onChange={(e) => setFilterYear(e.target.value)}
+                  className="text-xs font-medium text-slate-800 bg-white border border-slate-200 rounded-lg px-2 py-1 focus:outline-none cursor-pointer"
+                >
+                  {Array.from({ length: 5 }, (_, i) => now.getFullYear() - i).map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {tokenFilterMode === 'custom' && (
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="date"
+                  value={customFrom}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                  className="text-xs font-medium border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-800 focus:outline-none"
+                />
+                <span className="text-xs text-slate-400">—</span>
+                <input
+                  type="date"
+                  value={customTo}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  className="text-xs font-medium border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-800 focus:outline-none"
+                />
+              </div>
+            )}
+          </div>
           <button
             type="button"
             onClick={fetchUsers}
@@ -202,6 +282,18 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
                 <th className="text-left px-5 py-4 font-medium text-sm">Email</th>
                 <th className="text-left px-5 py-4 font-medium text-sm">Role</th>
                 <th className="text-left px-5 py-4 font-medium text-sm">Lần/ngày</th>
+                <th className="text-left px-5 py-4 font-medium text-sm hidden md:table-cell">
+                  Token dùng
+                  {tokenFilterMode === 'month' && (
+                    <span className="ml-1 text-xs font-normal opacity-70">(T{filterMonth}/{filterYear})</span>
+                  )}
+                  {tokenFilterMode === 'custom' && customFrom && customTo && (
+                    <span className="ml-1 text-xs font-normal opacity-70">({customFrom} → {customTo})</span>
+                  )}
+                  {tokenFilterMode === 'all' && (
+                    <span className="ml-1 text-xs font-normal opacity-70">(tất cả)</span>
+                  )}
+                </th>
                 <th className="text-left px-5 py-4 font-medium text-sm hidden sm:table-cell">Ngày tạo</th>
                 <th className="px-5 py-4 text-right font-medium text-sm">Thao tác</th>
               </tr>
@@ -237,6 +329,15 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
                         onChange={(e) => handleChangeDailyLimit(u.id, e.target.value)}
                         className="w-16 text-sm font-medium border border-slate-200 px-2 py-1.5 bg-white text-slate-800 focus:outline-none focus:bg-slate-50 rounded-xl text-center"
                       />
+                    ) : (
+                      <span className="text-xs text-slate-400 font-medium">—</span>
+                    )}
+                  </td>
+                  <td className="px-5 py-4 hidden md:table-cell">
+                    {u.tokens_used > 0 ? (
+                      <span className="text-sm font-medium text-slate-800">
+                        {u.tokens_used.toLocaleString('vi-VN')}
+                      </span>
                     ) : (
                       <span className="text-xs text-slate-400 font-medium">—</span>
                     )}

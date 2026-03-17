@@ -19,8 +19,8 @@ export interface TokenUsageSummary {
 }
 
 export interface UseTokenUsageLogsOptions {
-  fromDate: Date;
-  toDate: Date;
+  fromDate?: Date;
+  toDate?: Date;
   feature?: TokenUsageFeature | 'all';
   userId?: string;
   page?: number;
@@ -84,14 +84,11 @@ export const useTokenUsageLogs = (options: UseTokenUsageLogsOptions): UseTokenUs
     setError(null);
 
     try {
-      const fromIso = options.fromDate.toISOString();
-      const toIso = options.toDate.toISOString();
-      const params = new URLSearchParams({
-        from: fromIso,
-        to: toIso,
-        page: String(page),
-        pageSize: String(pageSize),
-      });
+      const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+      if (options.fromDate && options.toDate) {
+        params.set('from', options.fromDate.toISOString());
+        params.set('to', options.toDate.toISOString());
+      }
       if (options.feature && options.feature !== 'all') {
         params.set('feature', options.feature);
       }
@@ -126,7 +123,8 @@ export const useTokenUsageLogs = (options: UseTokenUsageLogsOptions): UseTokenUs
     } finally {
       setIsLoading(false);
     }
-  }, [options.fromDate, options.toDate, options.feature, options.userId, page, pageSize]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options.fromDate?.toISOString(), options.toDate?.toISOString(), options.feature, options.userId, page, pageSize]);
 
   useEffect(() => {
     void fetchLogs();

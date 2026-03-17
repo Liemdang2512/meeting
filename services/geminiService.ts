@@ -317,54 +317,113 @@ Người nói 1: Phần đó sẽ handle authentication và rate limiting cho to
 `;
 
 const PROMPT_JA = `
-Bạn là chuyên gia phiên âm và dịch thuật Nhật–Việt. Nhiệm vụ:
+Bạn là chuyên gia phiên âm và dịch thuật Nhật–Việt chuyên nghiệp. Nhiệm vụ:
 
-1. NGHE VÀ PHIÊN ÂM toàn bộ lời nói NGUYÊN VĂN bằng tiếng Nhật. Không tóm tắt, không bỏ sót.
+1. NGHE VÀ DỊCH toàn bộ lời nói sang tiếng Việt. Không tóm tắt, không bỏ sót.
 
-2. DỊCH SANG TIẾNG VIỆT theo các quy tắc sau:
+2. HỆ THỐNG KÍNH NGỮ TIẾNG NHẬT (cực kỳ quan trọng):
+   Tiếng Nhật có 3 cấp độ kính ngữ bắt buộc — phải phản ánh vào tiếng Việt:
+   - 丁寧語 (Teineigo — lịch sự thông thường, dùng です/ます):
+     → Việt: "anh/chị", "tôi", dùng "ạ" vừa phải, tông chuyên nghiệp.
+   - 尊敬語 (Sonkeigo — tôn kính, nâng cao hành động người trên):
+     → Việt: "kính thưa", "quý anh/chị", "xin trân trọng", liberal "ạ/dạ".
+   - 謙譲語 (Kenjōgo — khiêm nhường, hạ thấp bản thân):
+     → Việt: "bên chúng tôi xin", "chúng tôi trân trọng", nhún nhường vừa phải.
+   - 普通体/タメ口 (thể thông thường, thân mật):
+     → Việt: "bạn/mình/cậu", ít "ạ/dạ", giọng thân thiện.
+   Theo dõi SỰ CHUYỂN ĐỔI CẤP ĐỘ trong cùng cuộc trò chuyện — phản ánh vào tông giọng dịch.
 
-   a. NGHĨA & NGỮ CẢNH: Dịch theo nghĩa và ngữ cảnh, không bám chữ từng từ.
-      Giữ nguyên mức độ chắc chắn của người nói:
-      - と思います → "tôi nghĩ là…", "có lẽ…"
-      - 〜かもしれません → "có thể…", "có khả năng…"
-      - 必ず〜します → "nhất định sẽ…", "chắc chắn sẽ…"
+3. TỪ VỰNG KÍNH NGỮ ĐẶC BIỆT:
+   - いただく (nhận/làm điều gì đó — khiêm nhường) → "chúng tôi xin được"; もらう → "nhận".
+   - おっしゃる (nói — tôn kính) → "như anh/chị đã đề cập"; 言う → "nói".
+   - いらっしゃる (ở/đến/đi — tôn kính) → "anh/chị đến/có mặt"; いる/来る/行く → "ở/đến/đi".
+   - ご覧になる (xem — tôn kính) → "anh/chị xem qua"; 見る → "xem".
+   - 申す (nói — khiêm nhường) → "chúng tôi xin trình bày"; 言う → "nói".
+   - 参る (đến/đi — khiêm nhường) → "chúng tôi sẽ đến"; 来る/行く → "đến/đi".
+   - 存じる (biết — khiêm nhường) → "chúng tôi được biết"; 知る → "biết".
+   - 拝見する (xem — khiêm nhường) → "chúng tôi đã xem qua".
 
-   b. KÍNH NGỮ & TÔNG GIỌNG:
-      - Keigo (敬語): dịch bằng giọng trang trọng → "quý công ty, bên anh/chị, chúng tôi, xin, vui lòng…"
-      - Thường (普通形) / casual: dịch thân mật, xưng "tôi/anh/em", hạn chế "ạ/dạ" nếu hai bên ngang hàng
-      - Khiêm nhường ngữ (謙譲語): thể hiện nhún nhường vừa phải, tránh tự hạ quá nhiều
+4. XƯNG HÔ & CHỦ NGỮ ẨN:
+   - Tiếng Nhật hay lược bỏ chủ ngữ → bổ sung vào bản dịch Việt cho rõ ai làm/ai yêu cầu/ai chịu trách nhiệm.
+   - Suy luận từ ngữ cảnh và quan hệ trên–dưới: 上司→cấp trên, 部下→nhân viên cấp dưới, 同僚→đồng nghiệp.
+   - Chú ý phân biệt 私ども (chúng tôi — công ty) vs 私たち (chúng ta/chúng tôi — nhóm người).
 
-   c. XƯNG HÔ & CHỦ NGỮ ẨN:
-      - Xác định rõ "tôi / chúng tôi / công ty chúng tôi / bên em / phía anh/chị…" theo ngữ cảnh và quan hệ trên–dưới
-      - Tiếng Nhật hay lược chủ ngữ → bổ sung vào bản dịch Việt cho rõ ai làm, ai chịu trách nhiệm, ai yêu cầu
+5. TÊN RIÊNG:
+   - Tên người Nhật: giữ nguyên thứ tự Họ–Tên (田中健 → Tanaka Ken; 山田花子 → Yamada Hanako).
+     Dùng Romaji chuẩn Hepburn. KHÔNG dùng âm Hán Việt cho tên Nhật.
+   - Chức danh trong xưng hô: 社長 → "Giám đốc [tên]", 部長 → "Trưởng phòng [tên]",
+     課長 → "Trưởng bộ phận [tên]", 係長 → "Trưởng tổ [tên]",
+     先輩 → "anh/chị [tên]" (ngữ cảnh công sở), 先生 → "thầy/cô" hoặc "anh/chị" (tùy ngữ cảnh).
+   - Tên công ty Nhật: GIỮ NGUYÊN (Toyota, Sony, Rakuten, SoftBank, Panasonic, Fujitsu, NTT...).
+   - Bộ phận/phòng ban: dịch Việt (営業部 → phòng kinh doanh; 総務部 → phòng hành chính; 開発部 → phòng phát triển; 人事部 → phòng nhân sự; 経理部 → phòng kế toán).
 
-   d. TÊN RIÊNG, CÔNG TY, THƯƠNG HIỆU:
-      - Tên người Nhật: giữ nguyên thứ tự Họ–Tên (ví dụ: 田中健 → Tanaka Ken)
-      - Tên công ty Nhật: giữ nguyên, không dịch (Toyota, Sony, Rakuten…)
-      - Bộ phận/phòng ban: dịch sang tiếng Việt (営業部 → phòng kinh doanh; 総務部 → phòng hành chính – tổng vụ)
+6. LOANWORD KATAKANA & WASEI-EIGO (和製英語 — cực kỳ dễ nhầm):
+   Katakana thông thường → dịch về nghĩa gốc:
+   - ミーティング → cuộc họp | プロジェクト → dự án | プレゼン → bài trình bày
+   - スケジュール → lịch trình | リーダー → người phụ trách/trưởng nhóm
+   - コンセンサス → đồng thuận | デッドライン → hạn chót | フィードバック → phản hồi
+   CẢNH BÁO WASEI-EIGO (nghĩa khác tiếng Anh gốc):
+   - マイペース (my pace) = làm theo nhịp của bản thân (KHÔNG phải "tốc độ của tôi")
+   - バイキング (Viking) = buffet (KHÔNG phải người Viking)
+   - サービス (service, trong nhà hàng) = tặng thêm miễn phí
+   - ノルマ (norma) = chỉ tiêu/quota
+   - リストラ (restructure) = cắt giảm nhân sự, sa thải
+   GIỮ NGUYÊN: API, KPI, OKR, ROI, AI, IT, SDK, MVP, UX/UI, CI/CD, sprint, backlog.
 
-   e. LOANWORD KATAKANA: Dịch sang nghĩa Việt tự nhiên:
-      - ミーティング → cuộc họp, プロジェクト → dự án, コンセンサス → đồng thuận
-      - Giữ nguyên nếu là tên riêng sản phẩm/thương hiệu
+7. SỐ LIỆU — RẤT QUAN TRỌNG (đơn vị Nhật giống Trung/Hàn):
+   Tiếng Nhật nhóm theo ĐƠN VỊ VẠN (万), KHÔNG phải nghìn:
+   - 1万 = 10.000 (mười nghìn)
+   - 10万 = 100.000 (một trăm nghìn)
+   - 100万 = 1.000.000 (một triệu)
+   - 1000万 = 10.000.000 (mười triệu)
+   - 1億 = 100.000.000 (một trăm triệu)
+   - 10億 = 1.000.000.000 (một tỷ)
+   - 1兆 = 1.000.000.000.000 (một nghìn tỷ)
+   - "3億5千万" = 350 triệu (KHÔNG phải 35 tỷ!)
+   Ngày: "2026年3月17日" → "ngày 17 tháng 3 năm 2026".
+   Tiền tệ: 円/JPY/¥ → "yên" hoặc "JPY". Giữ nguyên mã tiền tệ quốc tế (USD, EUR...).
 
-   f. SỐ LIỆU, THỜI GIAN, ĐƠN VỊ ĐO: Dịch chính xác, quy đổi cách đọc tự nhiên
-      - Ví dụ: 2026年3月12日 → "ngày 12 tháng 3 năm 2026"; 3億5千万 → "350 triệu"
+8. TỪ ĐỆM & NGẬP NGỪNG: Bỏ hoàn toàn: あの (ano), えーと/えっと (ēto), まあ (mā — khi là filler),
+   なんか (nanka — filler), うーん (ūn), ねえ/ね (ne — khi chỉ là đệm câu), さあ (sā — filler).
+   GIỨ LẠI khi có nghĩa thực:
+   - そうですね / そうですよ → "đúng vậy", "đúng thế" (xác nhận thực sự)
+   - やはり/やっぱり → "quả nhiên", "đúng như dự đoán"
+   - まあ (khi là "thôi thì", "dù sao") → giữ lại với nghĩa tương đương.
 
-   g. THUẬT NGỮ CHUYÊN NGÀNH: Thống nhất cách dịch theo chuyên ngành.
-      Lần đầu xuất hiện thuật ngữ mới: ghi "Thuật ngữ (tiếng Nhật/Anh gốc)" để người đọc dễ bám.
+9. THÀNH NGỮ & CÁCH DIỄN ĐẠT ĐẶC TRƯNG:
+   Dịch theo NGHĨA, KHÔNG dịch nghĩa đen:
+   - 一石二鳥 → "một công đôi việc" | 七転び八起き → "ngã nhiều lần nhưng luôn đứng dậy"
+   - 猫の手も借りたい → "cực kỳ bận, cần thêm người giúp"
+   - 取り越し苦労 → "lo lắng không cần thiết, lo bò trắng răng"
+   - 気が置けない → "thân thiết, không cần đề phòng" (KHÔNG phải "không thể thả lỏng")
+   - 馬が合う → "hợp nhau, ăn ý với nhau"
+   Thành ngữ kinh doanh: 根回し → "vận động hành lang nội bộ, thống nhất trước khi họp chính thức".
 
-   h. KHÔNG NGHE RÕ / KHÔNG CHẮC NGHĨA: Ghi [không rõ], TUYỆT ĐỐI không đoán bừa
+10. CẤU TRÚC CÂU ĐẶC THÙ:
+    - Tiếng Nhật đặt động từ CUỐI câu, PHỦ ĐỊNH ở cuối — chờ nghe hết câu mới dịch.
+    - ～でしょうか → "có thể... không?" (hỏi lịch sự) | ～ないでしょうか → "liệu có thể... không?"
+    - ～ていただけますか → "Anh/chị có thể... giúp tôi không?" (yêu cầu lịch sự)
+    - ～と思われます → "có vẻ...", "dường như..." (không chắc chắn, khách quan)
+    - ～かねます → "chúng tôi e rằng khó có thể..." (từ chối lịch sự)
+    - ～させていただきます → "chúng tôi xin phép..." (xin phép lịch sự/làm gì đó)
 
-   i. TRUNG LẬP NỘI DUNG: Dịch đúng nội dung, không thêm bớt cảm xúc, không đổi giọng điệu
+11. MỨC ĐỘ CHẮC CHẮN:
+    - と思います → "tôi nghĩ là...", "có lẽ..."
+    - 〜かもしれません → "có thể...", "có khả năng..."
+    - 〜でしょう → "chắc là...", "có lẽ..."
+    - 必ず〜します / 絶対に → "nhất định sẽ...", "chắc chắn sẽ..."
+    - 〜はずです → "đáng lẽ phải...", "chắc là..."
 
-3. PHÂN BIỆT NGƯỜI NÓI: Tách theo giọng nói ("Người nói 1:", "Người nói 2:"...).
-   Nếu người nói tự giới thiệu tên → dùng tên thật.
+12. PHÂN BIỆT NGƯỜI NÓI: Tách theo giọng nói ("Người nói 1:", "Người nói 2:"...).
+    Nếu người nói tự giới thiệu tên → dùng tên thật.
 
-4. QUY ĐỊNH VỀ OUTPUT (RẤT QUAN TRỌNG):
-   - CHỈ trả về nội dung hội thoại đã được dịch sang tiếng Việt.
-   - KHÔNG được thêm tiêu đề, mô tả, lời giải thích, chú thích.
-   - KHÔNG viết các câu như "Dưới đây là bản dịch", "Transcript:", "Bản dịch như sau".
-   - Mỗi lượt nói là một dòng, bắt đầu bằng "Người nói X:" hoặc tên thật.
+13. KHÔNG NGHE RÕ: Ghi [không rõ]. Tên không rõ: [tên không rõ]. KHÔNG đoán bừa.
+
+14. QUY ĐỊNH OUTPUT (RẤT QUAN TRỌNG):
+    - CHỈ trả về nội dung hội thoại đã dịch sang tiếng Việt.
+    - KHÔNG thêm tiêu đề, mô tả, lời giải thích, chú thích.
+    - KHÔNG viết "Dưới đây là bản dịch", "Transcript:", "Bản dịch như sau".
+    - Mỗi lượt nói là một dòng, bắt đầu bằng "Người nói X:" hoặc tên thật.
 
 Ví dụ đúng:
 Người nói 1: Hôm nay mình sẽ giới thiệu về kiến trúc backend của hệ thống.
@@ -478,21 +537,29 @@ const getLangTranslationRules = (language: AudioLanguage, customLanguage?: strin
     case 'ja':
       return `
       3. QUY TẮC RIÊNG CHO TIẾNG NHẬT:
-         a. NGHĨA & NGỮ CẢNH: Dịch theo nghĩa và ngữ cảnh, không bám chữ từng từ.
-            Giữ nguyên mức độ chắc chắn: と思います → "tôi nghĩ là…"; 〜かもしれません → "có thể…"; 必ず → "nhất định sẽ…"
-         b. KÍNH NGỮ & TÔNG GIỌNG:
-            - Keigo (敬語): dịch trang trọng → "quý công ty, bên anh/chị, xin, vui lòng…"
-            - Casual (普通形): dịch thân mật, hạn chế "ạ/dạ" nếu hai bên ngang hàng
-            - Khiêm nhường ngữ (謙譲語): thể hiện nhún nhường vừa phải
-         c. XƯNG HÔ & CHỦ NGỮ ẨN: Bổ sung chủ ngữ bị lược (ai làm, ai chịu trách nhiệm, ai yêu cầu)
-            theo ngữ cảnh và quan hệ trên–dưới
-         d. TÊN RIÊNG: Tên người Nhật giữ nguyên thứ tự Họ–Tên (田中健 → Tanaka Ken).
-            Tên công ty Nhật giữ nguyên. Bộ phận dịch Việt (営業部 → phòng kinh doanh).
-         e. LOANWORD KATAKANA: Dịch nghĩa Việt (ミーティング → cuộc họp, プロジェクト → dự án).
-            Giữ nguyên nếu là tên sản phẩm/thương hiệu.
-         f. SỐ LIỆU, THỜI GIAN: Dịch chính xác, đọc tự nhiên (2026年3月12日 → "ngày 12 tháng 3 năm 2026")
-         g. THUẬT NGỮ: Lần đầu ghi kèm bản gốc nếu cần
-         h. TRUNG LẬP: Không thêm bớt cảm xúc, không đổi giọng điệu`;
+         - Kính ngữ: 丁寧語 (です/ます) → "anh/chị/tôi" + "ạ" vừa phải.
+           尊敬語 → rất trang trọng: "kính thưa", "quý anh/chị", liberal "ạ/dạ".
+           謙譲語 → nhún nhường: "chúng tôi xin", "bên chúng tôi trân trọng".
+           普通体 → thân mật: "bạn/mình", ít "ạ".
+         - Từ vựng kính ngữ: いただく → "xin được/chúng tôi xin"; おっしゃる → "như anh/chị đề cập";
+           いらっしゃる → "anh/chị có mặt"; 申す → "chúng tôi xin trình bày";
+           参る → "chúng tôi sẽ đến"; 存じる → "chúng tôi được biết".
+         - Chủ ngữ bị lược → bổ sung từ ngữ cảnh (ai làm, ai yêu cầu, ai chịu trách nhiệm).
+         - Chức danh: 社長 → "Giám đốc [tên]"; 部長 → "Trưởng phòng"; 課長 → "Trưởng bộ phận";
+           先輩 → "anh/chị [tên]" (công sở).
+         - Tên người: Romaji chuẩn Hepburn, thứ tự Họ–Tên. Tên công ty GIỮ NGUYÊN.
+           Bộ phận dịch Việt (営業部 → phòng kinh doanh; 開発部 → phòng phát triển; 人事部 → phòng nhân sự).
+         - Katakana → dịch nghĩa: ミーティング → cuộc họp, プロジェクト → dự án, プレゼン → bài trình bày.
+           WASEI-EIGO cảnh báo: リストラ = sa thải (KHÔNG phải "tái cơ cấu"); バイキング = buffet;
+           サービス (nhà hàng) = tặng thêm; ノルマ = chỉ tiêu/quota.
+           GIỮ NGUYÊN: API, KPI, OKR, ROI, AI, IT, MVP, sprint, backlog.
+         - Số đơn vị VẠN: 1万=10k, 1億=100 triệu, 10億=1 tỷ, 1兆=1.000 tỷ — "1億" ≠ "1 billion"!
+         - Mức độ chắc chắn: と思います → "tôi nghĩ"; かもしれません → "có thể";
+           必ず/絶対に → "nhất định"; かねます → "e rằng khó có thể" (từ chối lịch sự).
+         - Cấu trúc: động từ cuối câu, phủ định ở cuối — chờ hết câu mới dịch.
+           させていただきます → "xin phép..."; ていただけますか → "anh/chị có thể... giúp không?"
+         - Từ đệm: bỏ あの/えーと/なんか/うーん/さあ (filler). GIỬ LẠI: そうですね (xác nhận) → "đúng vậy";
+           やはり/やっぱり → "quả nhiên".`;
     case 'other':
       return `
       3. GIỮ NGUYÊN: tên riêng, tên công ty, tên sản phẩm, thuật ngữ kỹ thuật quốc tế
@@ -671,9 +738,12 @@ export const transcribeDeep = async (
     onProgress?.(3, 'Đang kiểm tra và hiệu chỉnh ngữ cảnh...');
     const jaReviewNote = language === 'ja' ? `
       LƯU Ý TIẾNG NHẬT: Kiểm tra thêm:
-      - Mức độ chắc chắn (と思います / かもしれません / 必ず) có được dịch đúng sắc thái không
-      - Xưng hô và chủ ngữ ẩn có được bổ sung rõ ràng không
-      - Kính ngữ có phản ánh đúng tông giọng (trang trọng / thân mật) không
+      - Mức độ chắc chắn (と思います / かもしれません / 必ず / かねます) có được dịch đúng sắc thái không
+      - Xưng hô và chủ ngữ ẩn có được bổ sung rõ ràng (ai làm, ai yêu cầu) không
+      - Kính ngữ (尊敬語/謙譲語/丁寧語/普通体) có phản ánh đúng tông giọng không
+      - Wasei-eigo có bị dịch sai nghĩa (リストラ/バイキング/ノルマ...) không
+      - Số đơn vị vạn/ức/兆 có bị nhầm không (1億 = 100 triệu, không phải 1 tỷ)
+      - Động từ/phủ định cuối câu có bị dịch thiếu/sai không
     ` : '';
     const finalTranscript = await runTextAgent(
       `

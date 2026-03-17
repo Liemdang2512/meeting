@@ -9,37 +9,52 @@ interface TokenUsageAdminPageProps {
   isAdmin: boolean;
 }
 
-type DateRangePreset = '7d' | '30d' | '365d';
+type DateMode = '7d' | '30d' | '365d' | 'month' | 'custom' | 'all';
 
-const getDateRange = (preset: DateRangePreset): { from: Date; to: Date } => {
+const now = new Date();
+
+const getPresetRange = (mode: DateMode): { from?: Date; to?: Date } => {
   const to = new Date();
   const from = new Date();
-
-  if (preset === '7d') {
-    from.setDate(to.getDate() - 7);
-  } else if (preset === '30d') {
-    from.setDate(to.getDate() - 30);
-  } else {
-    from.setFullYear(to.getFullYear() - 1);
-  }
-
-  return { from, to };
+  if (mode === '7d') { from.setDate(to.getDate() - 7); return { from, to }; }
+  if (mode === '30d') { from.setDate(to.getDate() - 30); return { from, to }; }
+  if (mode === '365d') { from.setFullYear(to.getFullYear() - 1); return { from, to }; }
+  return {};
 };
 
 export const TokenUsageAdminPage: React.FC<TokenUsageAdminPageProps> = ({
   currentUserId,
   isAdmin,
 }) => {
-  const [preset, setPreset] = useState<DateRangePreset>('7d');
+  const [dateMode, setDateMode] = useState<DateMode>('30d');
+  const [filterMonth, setFilterMonth] = useState(String(now.getMonth() + 1));
+  const [filterYear, setFilterYear] = useState(String(now.getFullYear()));
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
   const [featureFilter, setFeatureFilter] = useState<TokenUsageFeature | 'all'>('all');
   const [page, setPage] = useState(1);
   const [emailFilter, setEmailFilter] = useState('');
 
-  const { from, to } = useMemo(() => getDateRange(preset), [preset]);
+  const { fromDate, toDate } = useMemo(() => {
+    if (dateMode === 'all') return { fromDate: undefined, toDate: undefined };
+    if (dateMode === 'month') {
+      const m = parseInt(filterMonth, 10);
+      const y = parseInt(filterYear, 10);
+      const from = new Date(y, m - 1, 1);
+      const to = new Date(y, m, 0, 23, 59, 59, 999);
+      return { fromDate: from, toDate: to };
+    }
+    if (dateMode === 'custom') {
+      if (!customFrom || !customTo) return { fromDate: undefined, toDate: undefined };
+      return { fromDate: new Date(customFrom), toDate: new Date(customTo + 'T23:59:59') };
+    }
+    const { from, to } = getPresetRange(dateMode);
+    return { fromDate: from, toDate: to };
+  }, [dateMode, filterMonth, filterYear, customFrom, customTo]);
 
   const { logs, summary, isLoading, error, refetch } = useTokenUsageLogs({
-    fromDate: from,
-    toDate: to,
+    fromDate,
+    toDate,
     feature: featureFilter,
     page,
     pageSize: 20,
@@ -113,8 +128,8 @@ export const TokenUsageAdminPage: React.FC<TokenUsageAdminPageProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    const fromLabel = from.toISOString().slice(0, 10);
-    const toLabel = to.toISOString().slice(0, 10);
+    const fromLabel = fromDate ? fromDate.toISOString().slice(0, 10) : 'all';
+    const toLabel = toDate ? toDate.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
     link.download = `token_usage_${fromLabel}_to_${toLabel}.csv`;
     link.click();
     URL.revokeObjectURL(url);
@@ -148,60 +163,106 @@ export const TokenUsageAdminPage: React.FC<TokenUsageAdminPageProps> = ({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-4 text-xs">
-        <div className="flex items-center gap-2">
-          <span className="font-medium text-slate-800">Khoảng thời gian:</span>
-          {([
-            { id: '7d', label: '7 ngày' },
-            { id: '30d', label: '30 ngày' },
-            { id: '365d', label: '1 năm' },
-          ] as const).map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => {
-                setPreset(item.id);
-                setPage(1);
-              }}
-              className={`px-3 py-1.5 border text-xs font-medium transition-all ${ preset === item.id ? 'border-slate-200 bg-indigo-900 text-white shadow-sm rounded-xl translate-y-px' : 'border-slate-200 text-slate-800 bg-white hover:bg-slate-50 shadow-sm rounded-xl' }`}
-            >
-              {item.label}
-            </button>
-          ))}
+      <div className="flex flex-wrap items-start gap-4 text-xs">
+        {/* Lọc thời gian */}
+        <div className="flex flex-col gap-2">
+          <span className="font-medium text-slate-800">Thời gian:</span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {([
+              { id: '7d' as const, label: '7 ngày' },
+              { id: '30d' as const, label: '30 ngày' },
+              { id: '365d' as const, label: '1 năm' },
+              { id: 'month' as const, label: 'Theo tháng' },
+              { id: 'custom' as const, label: 'Tùy chỉnh' },
+              { id: 'all' as const, label: 'Tất cả' },
+            ]).map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => { setDateMode(item.id); setPage(1); }}
+                className={`px-3 py-1.5 border text-xs font-medium transition-all ${ dateMode === item.id ? 'border-slate-200 bg-indigo-900 text-white shadow-sm rounded-xl translate-y-px' : 'border-slate-200 text-slate-800 bg-white hover:bg-slate-50 shadow-sm rounded-xl' }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          {/* Chọn tháng/năm */}
+          {dateMode === 'month' && (
+            <div className="flex items-center gap-2 mt-1">
+              <select
+                value={filterMonth}
+                onChange={(e) => { setFilterMonth(e.target.value); setPage(1); }}
+                className="px-3 py-1.5 border border-slate-200 text-xs font-medium rounded-xl bg-white text-slate-800 focus:outline-none"
+              >
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                  <option key={m} value={m}>Tháng {m}</option>
+                ))}
+              </select>
+              <select
+                value={filterYear}
+                onChange={(e) => { setFilterYear(e.target.value); setPage(1); }}
+                className="px-3 py-1.5 border border-slate-200 text-xs font-medium rounded-xl bg-white text-slate-800 focus:outline-none"
+              >
+                {Array.from({ length: 5 }, (_, i) => now.getFullYear() - i).map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {/* Chọn khoảng ngày tùy chỉnh */}
+          {dateMode === 'custom' && (
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-slate-500">Từ</span>
+              <input
+                type="date"
+                value={customFrom}
+                onChange={(e) => { setCustomFrom(e.target.value); setPage(1); }}
+                className="px-3 py-1.5 border border-slate-200 text-xs font-medium rounded-xl bg-white text-slate-800 focus:outline-none"
+              />
+              <span className="text-slate-500">đến</span>
+              <input
+                type="date"
+                value={customTo}
+                onChange={(e) => { setCustomTo(e.target.value); setPage(1); }}
+                className="px-3 py-1.5 border border-slate-200 text-xs font-medium rounded-xl bg-white text-slate-800 focus:outline-none"
+              />
+            </div>
+          )}
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Lọc tính năng */}
+        <div className="flex flex-col gap-2">
           <span className="font-medium text-slate-800">Tính năng:</span>
-          {([
-            { value: 'all' as const, label: 'Tất cả' },
-            { value: 'minutes' as const, label: 'Biên bản họp' },
-          ]).map(({ value, label }) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => {
-                setFeatureFilter(value);
-                setPage(1);
-              }}
-              className={`px-3 py-1.5 border text-xs font-medium transition-all ${ featureFilter === value ? 'border-slate-200 bg-indigo-900 text-white shadow-sm rounded-xl translate-y-px' : 'border-slate-200 text-slate-800 bg-white hover:bg-slate-50 shadow-sm rounded-xl' }`}
-            >
-              {label}
-            </button>
-          ))}
+          <div className="flex items-center gap-1.5">
+            {([
+              { value: 'all' as const, label: 'Tất cả' },
+              { value: 'minutes' as const, label: 'Biên bản họp' },
+            ]).map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => { setFeatureFilter(value); setPage(1); }}
+                className={`px-3 py-1.5 border text-xs font-medium transition-all ${ featureFilter === value ? 'border-slate-200 bg-indigo-900 text-white shadow-sm rounded-xl translate-y-px' : 'border-slate-200 text-slate-800 bg-white hover:bg-slate-50 shadow-sm rounded-xl' }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Lọc email */}
+        <div className="flex flex-col gap-2">
           <span className="font-medium text-slate-800">Email:</span>
           <input
             type="text"
             value={emailFilter}
-            onChange={(e) => {
-              setEmailFilter(e.target.value);
-              setPage(1);
-            }}
+            onChange={(e) => { setEmailFilter(e.target.value); setPage(1); }}
             placeholder="Nhập email để lọc..."
             className="px-3 py-1.5 border text-xs font-medium rounded-xl border-slate-200 bg-white placeholder-slate-400 text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
           />
         </div>
-        <div className="flex-1 text-right text-xs text-slate-500 font-medium whitespace-nowrap">
+
+        <div className="flex-1 text-right text-xs text-slate-500 font-medium whitespace-nowrap self-start pt-6">
           Đang xem: <span className="font-medium border-b border-slate-200 px-1 text-slate-800">{currentUserId}</span> (admin)
         </div>
       </div>

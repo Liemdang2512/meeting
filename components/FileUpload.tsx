@@ -8,6 +8,7 @@ interface FileUploadProps {
   onStartConvert: () => void;
   fileStatuses: ('idle' | 'processing' | 'done' | 'error')[]; // trạng thái từng file
   disabled: boolean;
+  showStartButton?: boolean;
 }
 
 const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
@@ -38,6 +39,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   onStartConvert,
   fileStatuses,
   disabled,
+  showStartButton = true,
 }) => {
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,7 +103,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   };
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full flex flex-col gap-4 min-h-0">
       {/* Drop Zone — ẩn khi đang xử lý */}
       {!isProcessing && (
         <div
@@ -145,14 +147,14 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
       {/* Danh sách file */}
       {hasFiles && (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3 flex-1 min-h-0">
           <p className="text-sm font-medium text-slate-400">
             {isProcessing
               ? `Đang xử lý song song · ${doneCount}/${pendingFiles.length} file xong`
               : `${pendingFiles.length} file đã chọn`}
           </p>
 
-          <div className="space-y-3">
+          <div className="space-y-3 flex-1 min-h-0 overflow-auto pr-1">
             {pendingFiles.map((file, index) => {
               const status = getFileStatus(index);
               return (
@@ -200,11 +202,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           </div>
 
           {/* Nút chuyển — chỉ hiện khi chưa xử lý */}
-          {!isProcessing && (
+          {showStartButton && !isProcessing && (
             <button
               onClick={onStartConvert}
               disabled={disabled}
-              className="w-full py-4 bg-indigo-600 border-slate-200 text-white font-sans font-medium text-xl shadow-sm rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-6 border"
+              className="w-full py-4 bg-indigo-600 border-slate-200 text-white font-sans font-medium text-xl shadow-sm rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-auto border"
             >
               {pendingFiles.length === 1 ? 'Chuyển văn bản' : `Chuyển ${pendingFiles.length} file`}
             </button>

@@ -15,17 +15,32 @@ function requireAdmin(req: Request, res: Response, next: () => void) {
 }
 
 // GET /api/admin/users — danh sách tất cả users
-router.get('/users', requireAuth, requireAdmin, async (_req, res) => {
+// Query params (optional): from (ISO date), to (ISO date) — filter token usage by date range
+// No params → tất cả thời gian
+router.get('/users', requireAuth, requireAdmin, async (req, res) => {
+  const { from, to } = req.query as Record<string, string | undefined>;
+
   try {
+    const dateFilter = from && to
+      ? sql`WHERE created_at >= ${from}::timestamptz AND created_at <= ${to}::timestamptz`
+      : sql``;
+
     const users = await sql`
       SELECT
         u.id,
         u.email,
         u.created_at,
         p.role,
-        p.daily_limit
+        p.daily_limit,
+        COALESCE(t.tokens_used, 0) AS tokens_used
       FROM auth.users u
       LEFT JOIN public.profiles p ON p.user_id = u.id
+      LEFT JOIN (
+        SELECT user_id, SUM(total_tokens) AS tokens_used
+        FROM public.token_usage_logs
+        ${dateFilter}
+        GROUP BY user_id
+      ) t ON t.user_id = u.id
       ORDER BY u.created_at DESC
     `;
     res.json({ users });

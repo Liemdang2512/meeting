@@ -809,7 +809,15 @@ function App() {
       {/* Modern Flat Header */}
       <header className="bg-white text-slate-800 sticky top-0 z-10 border-b border-slate-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              navigate('/');
+              setMode('notes');
+            }}
+            className="flex items-center gap-3 text-left hover:opacity-90 transition-opacity"
+            aria-label="Về trang chủ"
+          >
             <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shrink-0 border-slate-200 border">
               <FileAudioIcon className="w-5 h-5 text-white" />
             </div>
@@ -817,7 +825,7 @@ function App() {
               <h1 className="text-lg font-sans font-medium leading-tight">Meeting Minutes - MoMai</h1>
               <p className="text-slate-500 text-xs font-medium leading-tight">Trợ lý họp</p>
             </div>
-          </div>
+          </button>
           <div className="flex flex-wrap items-center gap-2 shrink-0">
             {status !== TranscriptionStatus.IDLE && (
               <button onClick={resetApp} className="flex items-center gap-1.5 bg-slate-50 text-slate-800 hover:bg-slate-100 border-slate-200 text-sm font-medium px-4 py-2 transition-colors border rounded-xl">
@@ -1028,6 +1036,7 @@ function App() {
                   onStartConvert={handleStartConvert}
                   fileStatuses={[]}
                   disabled={false}
+                  showStartButton={false}
                 />
               </div>
 
@@ -1097,6 +1106,15 @@ function App() {
                   />
                 )}
               </div>
+
+              {/* Nút chuyển xuống dưới cùng của Bước 1 */}
+              <button
+                onClick={handleStartConvert}
+                disabled={pendingFiles.length === 0}
+                className="w-full py-4 bg-indigo-600 border-slate-200 text-white font-sans font-medium text-xl shadow-sm rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed border"
+              >
+                {pendingFiles.length === 1 ? 'Chuyển văn bản' : `Chuyển ${pendingFiles.length} file`}
+              </button>
 
               <p className="text-xs font-medium text-slate-400 text-center">Vui lòng hoàn thành bước 1 trước khi chuyển sang các bước tiếp theo</p>
             </div>

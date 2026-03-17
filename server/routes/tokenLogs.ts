@@ -36,17 +36,16 @@ router.get('/', async (req, res) => {
     return res.status(403).json({ error: 'Chỉ admin mới có thể xem tất cả token logs' });
   }
   const { from, to, feature, userId, page = '1', pageSize = '20' } = req.query as Record<string, string>;
-  if (!from || !to) {
-    return res.status(400).json({ error: 'from và to (ISO date) là bắt buộc' });
-  }
   const pageNum = parseInt(page, 10);
   const pageSizeNum = parseInt(pageSize, 10);
   const offset = (pageNum - 1) * pageSizeNum;
 
   try {
-    // Build dynamic WHERE clauses with postgres.js tagged templates
     const featureFilter = feature && feature !== 'all' ? sql`AND l.feature = ${feature}` : sql``;
     const userFilter = userId ? sql`AND l.user_id = ${userId}::uuid` : sql``;
+    const dateFilter = from && to
+      ? sql`AND l.created_at >= ${from}::timestamptz AND l.created_at <= ${to}::timestamptz`
+      : sql``;
 
     const rows = await sql`
       SELECT
@@ -54,8 +53,8 @@ router.get('/', async (req, res) => {
         u.email
       FROM public.token_usage_logs l
       JOIN auth.users u ON u.id = l.user_id
-      WHERE l.created_at >= ${from}::timestamptz
-        AND l.created_at <= ${to}::timestamptz
+      WHERE 1=1
+        ${dateFilter}
         ${featureFilter}
         ${userFilter}
       ORDER BY l.created_at DESC
