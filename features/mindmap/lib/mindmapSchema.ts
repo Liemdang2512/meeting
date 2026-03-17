@@ -8,6 +8,7 @@ import { z } from 'zod';
 const Branch2Schema = z.object({
   id: z.string().optional(),
   label: z.string(),
+  iconKey: z.string().optional(),
 });
 
 /** Level 2 node — can have leaf children */
@@ -15,6 +16,7 @@ const BranchSchema = z.object({
   id: z.string().optional(),
   label: z.string(),
   children: z.array(Branch2Schema).optional(),
+  iconKey: z.string().optional(),
 });
 
 /** Level 1 root node */
@@ -64,6 +66,7 @@ export interface MindmapNode {
   id: string;
   label: string;
   children: MindmapNode[];
+  iconKey?: string;
 }
 
 /**
@@ -84,11 +87,13 @@ export function toMindmapTree(response: MindmapResponse): MindmapNode {
       return {
         id: branchId,
         label: branch.label,
+        iconKey: branch.iconKey,
         children: (branch.children ?? []).map((sub, si) => {
           const subId = nextId(`b${bi}s${si}`, sub.id);
           return {
             id: subId,
             label: sub.label,
+            iconKey: sub.iconKey,
             children: [],
           };
         }),
