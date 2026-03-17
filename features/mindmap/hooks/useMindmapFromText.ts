@@ -20,8 +20,17 @@ NGUYÊN TẮC PHÂN NHÁNH:
 - Nếu là tài liệu kỹ thuật/báo cáo: nhánh theo các mục chính của tài liệu
 - Nếu là văn bản tổng hợp: nhánh theo các chủ đề/vấn đề nổi bật
 
+ICON RULE:
+- Mỗi nhánh chính và nhánh con (KHÔNG áp dụng cho root) phải có trường "iconKey"
+- Chọn iconKey phù hợp nhất với nội dung node từ danh sách sau (chỉ dùng các key trong danh sách):
+  briefcase, alert-triangle, dollar-sign, check-circle, users, target, clock,
+  file-text, settings, zap, shield, trending-up, map, list, message-circle,
+  calendar, database, lock, star, flag, package, tool, globe, heart, eye,
+  bar-chart, layers, link, search, upload
+- Nếu không có key phù hợp, dùng "list" làm mặc định
+
 CHỈ trả về JSON theo định dạng sau, không thêm bất kỳ nội dung nào khác:
-{"root":{"label":"Chủ đề trung tâm","children":[{"label":"Nhánh chính 1","children":[{"label":"Chi tiết 1.1"},{"label":"Chi tiết 1.2"}]},{"label":"Nhánh chính 2","children":[{"label":"Chi tiết 2.1"}]}]}}
+{"root":{"label":"Chủ đề trung tâm","children":[{"label":"Nhánh chính 1","iconKey":"briefcase","children":[{"label":"Chi tiết 1.1","iconKey":"target"},{"label":"Chi tiết 1.2","iconKey":"clock"}]},{"label":"Nhánh chính 2","iconKey":"users","children":[{"label":"Chi tiết 2.1","iconKey":"check-circle"}]}]}}
 
 Văn bản cần phân tích:
 ${text}`;
