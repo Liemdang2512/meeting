@@ -6,14 +6,12 @@ import { z } from 'zod';
 
 /** Level 3 node (leaf — no children) */
 const Branch2Schema = z.object({
-  id: z.string().optional(),
   label: z.string(),
   iconKey: z.string().optional(),
 });
 
 /** Level 2 node — can have leaf children */
 const BranchSchema = z.object({
-  id: z.string().optional(),
   label: z.string(),
   children: z.array(Branch2Schema).optional(),
   iconKey: z.string().optional(),
@@ -21,7 +19,6 @@ const BranchSchema = z.object({
 
 /** Level 1 root node */
 const RootNodeSchema = z.object({
-  id: z.string().optional(),
   label: z.string(),
   children: z.array(BranchSchema),
 });
@@ -75,29 +72,21 @@ export interface MindmapNode {
  */
 export function toMindmapTree(response: MindmapResponse): MindmapNode {
   let counter = 0;
-  const nextId = (prefix: string, provided?: string) =>
-    provided ?? `${prefix}-${++counter}`;
+  const nextId = (prefix: string) => `${prefix}-${++counter}`;
 
-  const rootId = nextId('root', response.root.id);
   return {
-    id: rootId,
+    id: nextId('root'),
     label: response.root.label,
-    children: (response.root.children ?? []).map((branch, bi) => {
-      const branchId = nextId(`b${bi}`, branch.id);
-      return {
-        id: branchId,
-        label: branch.label,
-        iconKey: branch.iconKey,
-        children: (branch.children ?? []).map((sub, si) => {
-          const subId = nextId(`b${bi}s${si}`, sub.id);
-          return {
-            id: subId,
-            label: sub.label,
-            iconKey: sub.iconKey,
-            children: [],
-          };
-        }),
-      };
-    }),
+    children: (response.root.children ?? []).map((branch, bi) => ({
+      id: nextId(`b${bi}`),
+      label: branch.label,
+      iconKey: branch.iconKey,
+      children: (branch.children ?? []).map((sub, si) => ({
+        id: nextId(`b${bi}s${si}`),
+        label: sub.label,
+        iconKey: sub.iconKey,
+        children: [],
+      })),
+    })),
   };
 }
