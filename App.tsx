@@ -13,7 +13,7 @@ import type { MeetingInfo } from './features/minutes/types';
 import { loadMeetingInfoDraft, clearMeetingInfoDraft } from './features/minutes/storage';
 import { buildMinutesCustomPrompt } from './features/minutes/prompt';
 import { MeetingInfoForm } from './features/minutes/components/MeetingInfoForm';
-import { useMindmapFromText } from './features/mindmap/hooks/useMindmapFromText';
+import { useDiagramFromText } from './features/mindmap/hooks/useDiagramFromText';
 import { QuotaBadge } from './features/pricing/QuotaBadge';
 import { QuotaUpgradeModal } from './features/pricing/QuotaUpgradeModal';
 
@@ -22,7 +22,7 @@ const FileSplitPage = lazy(() => import('./features/file-split').then(m => ({ de
 const TokenUsageAdminPage = lazy(() => import('./features/token-usage-admin/TokenUsageAdminPage').then(m => ({ default: m.TokenUsageAdminPage })));
 const UserManagementPage = lazy(() => import('./features/user-management/UserManagementPage').then(m => ({ default: m.UserManagementPage })));
 const MindmapPage = lazy(() => import('./features/mindmap/MindmapPage').then(m => ({ default: m.MindmapPage })));
-const MindmapCanvas = lazy(() => import('./features/mindmap/components/MindmapCanvas').then(m => ({ default: m.MindmapCanvas })));
+const DiagramCanvas = lazy(() => import('./features/mindmap/components/DiagramCanvas').then(m => ({ default: m.DiagramCanvas })));
 const RegisterPage = lazy(() => import('./components/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const PricingPage = lazy(() => import('./features/pricing/PricingPage').then(m => ({ default: m.PricingPage })));
 
@@ -134,7 +134,7 @@ function App() {
   const [synthesizedTranscription, setSynthesizedTranscription] = useState<string | null>(null);
 
   // Mindmap từ transcription
-  const { tree: mindmapTree, loading: mindmapLoading, error: mindmapError, generate: generateMindmap, reset: resetMindmap } = useMindmapFromText();
+  const { diagram: mindmapDiagram, loading: mindmapLoading, error: mindmapError, generate: generateMindmap, reset: resetMindmap } = useDiagramFromText();
 
   // Step navigation — controls which step's content is displayed
   const [viewStep, setViewStep] = useState(1);
@@ -1466,12 +1466,12 @@ function App() {
               </div>
 
               {/* Mind Map section */}
-              {(mindmapLoading || mindmapTree || mindmapError) && (
+              {(mindmapLoading || mindmapDiagram || mindmapError) && (
                 <div className="animate-in fade-in duration-300 space-y-3">
                   <div className="flex items-center gap-3">
                     <span className="text-base">🗺</span>
-                    <h2 className="text-lg font-medium text-slate-800">Sơ đồ tư duy</h2>
-                    {mindmapTree && (
+                    <h2 className="text-lg font-medium text-slate-800">Sơ đồ thông tin</h2>
+                    {mindmapDiagram && (
                       <button
                         onClick={resetMindmap}
                         className="text-xs text-slate-400 hover:text-slate-600 transition-colors ml-auto"
@@ -1480,21 +1480,21 @@ function App() {
                       </button>
                     )}
                   </div>
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                  <div className="rounded-2xl border border-slate-200 shadow-sm p-4" style={{ background: '#070d1c' }}>
                     {mindmapLoading && (
-                      <div className="flex items-center justify-center h-48 text-slate-500 text-sm gap-2">
+                      <div className="flex items-center justify-center h-48 text-slate-400 text-sm gap-2">
                         <span className="animate-spin inline-block w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full" />
-                        Đang phân tích và tạo sơ đồ tư duy...
+                        Đang phân tích và tạo sơ đồ thông tin...
                       </div>
                     )}
                     {mindmapError && !mindmapLoading && (
-                      <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+                      <div className="bg-red-950 border border-red-700 rounded-lg px-4 py-3 text-sm text-red-300">
                         {mindmapError}
                       </div>
                     )}
-                    {!mindmapLoading && !mindmapError && mindmapTree && (
+                    {!mindmapLoading && !mindmapError && mindmapDiagram && (
                       <Suspense fallback={<div className="h-48 flex items-center justify-center text-slate-400 text-sm">Đang tải...</div>}>
-                        <MindmapCanvas tree={mindmapTree} />
+                        <DiagramCanvas diagram={mindmapDiagram} />
                       </Suspense>
                     )}
                   </div>
@@ -1579,27 +1579,27 @@ function App() {
                       <span className="text-lg">🗺</span>
                     </div>
                     <div>
-                      <h3 className="font-medium text-slate-800 text-sm">Sơ đồ tư duy</h3>
-                      <p className="text-xs text-slate-400">{mindmapTree ? 'Đã tạo' : 'Chưa tạo'}</p>
+                      <h3 className="font-medium text-slate-800 text-sm">Sơ đồ thông tin</h3>
+                      <p className="text-xs text-slate-400">{mindmapDiagram ? 'Đã tạo' : 'Chưa tạo'}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => setViewStep(biênBảnStep)}
                     className="w-full py-2.5 bg-purple-50 text-purple-700 text-sm font-medium rounded-xl hover:bg-purple-100 transition-colors flex items-center justify-center gap-2"
                   >
-                    {mindmapTree ? 'Xem mind map' : 'Tạo mind map'}
+                    {mindmapDiagram ? 'Xem sơ đồ' : 'Tạo sơ đồ'}
                   </button>
                 </div>
               </div>
 
               {/* Mind map preview nếu đã có */}
-              {mindmapTree && (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 animate-in fade-in duration-300">
-                  <h3 className="text-sm font-medium text-slate-700 mb-3 flex items-center gap-2">
-                    <span>🗺</span> Sơ đồ tư duy
+              {mindmapDiagram && (
+                <div className="rounded-2xl border border-slate-200 shadow-sm p-4 animate-in fade-in duration-300" style={{ background: '#070d1c' }}>
+                  <h3 className="text-sm font-medium text-slate-400 mb-3 flex items-center gap-2">
+                    <span>🗺</span> Sơ đồ thông tin
                   </h3>
                   <Suspense fallback={<div className="h-48 flex items-center justify-center text-slate-400 text-sm">Đang tải...</div>}>
-                    <MindmapCanvas tree={mindmapTree} />
+                    <DiagramCanvas diagram={mindmapDiagram} />
                   </Suspense>
                 </div>
               )}
