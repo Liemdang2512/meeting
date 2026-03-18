@@ -90,3 +90,35 @@ export function toMindmapTree(response: MindmapResponse): MindmapNode {
     })),
   };
 }
+
+// ============================================================
+// Diagram schema — visual infographic (hub-spoke + linear)
+// ============================================================
+
+/** A node in the visual diagram */
+const DiagramNodeSchema = z.object({
+  id: z.string().max(20),
+  label: z.string(),
+  subtitle: z.string().optional(),
+  description: z.string().optional(),
+  iconKey: z.string().optional(),
+  role: z.enum(['source', 'intermediate', 'destination', 'default']),
+});
+
+/** An edge connecting two diagram nodes */
+const DiagramEdgeSchema = z.object({
+  source: z.string(),
+  target: z.string(),
+});
+
+/** Top-level diagram response from Gemini */
+export const DiagramResponseSchema = z.object({
+  title: z.string(),
+  layoutType: z.enum(['hub-spoke', 'linear']),
+  nodes: z.array(DiagramNodeSchema).min(1),
+  edges: z.array(DiagramEdgeSchema),
+});
+
+export type DiagramNode = z.infer<typeof DiagramNodeSchema>;
+export type DiagramEdge = z.infer<typeof DiagramEdgeSchema>;
+export type DiagramResponse = z.infer<typeof DiagramResponseSchema>;
