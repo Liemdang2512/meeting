@@ -40,6 +40,7 @@ export type TokenUsageActionType =
   | 'my-usage-view'
   | 'mindmap-generate'
   | 'checklist-generate'
+  | 'diagram-generate'
   | 'other';
 
 export type TokenUsageMetadataValue = string | number | boolean | null;

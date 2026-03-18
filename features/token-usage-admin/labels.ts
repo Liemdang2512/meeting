@@ -21,6 +21,7 @@ export const ACTION_LABELS: Record<TokenUsageActionType, string> = {
   'my-usage-view': 'Xem token của tôi',
   'mindmap-generate': 'Tạo mindmap',
   'checklist-generate': 'Tạo checklist',
+  'diagram-generate': 'Tạo sơ đồ',
   other: 'Khác',
 };
 
