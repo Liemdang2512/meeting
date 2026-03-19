@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { MeetingInfo, MeetingParticipant, MeetingParticipantRole } from '../types';
 import { saveMeetingInfoDraft } from '../storage';
+import { EmailRecipientsInput } from './EmailRecipientsInput';
 
 type Props = {
   initialValue: MeetingInfo;
@@ -183,6 +184,17 @@ export function MeetingInfoForm(props: Props) {
             ))}
           </div>
         )}
+      </div>
+
+      {/* Email recipients */}
+      <div className="space-y-1">
+        <p className="text-xs font-medium text-slate-500">
+          Nhập danh sách email nhận biên bản. Tối đa 20 địa chỉ.
+        </p>
+        <EmailRecipientsInput
+          value={value.recipientEmails}
+          onChange={(emails) => setValue(prev => ({ ...prev, recipientEmails: emails }))}
+        />
       </div>
 
       <div className="flex gap-4 justify-end flex-wrap pt-4">
