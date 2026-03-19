@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: "Completed 07-00-PLAN.md"
-last_updated: "2026-03-19T09:16:00Z"
+stopped_at: Completed 07-01-PLAN.md
+last_updated: "2026-03-19T09:23:06.581Z"
 progress:
   total_phases: 8
   completed_phases: 4
   total_plans: 21
-  completed_plans: 16
+  completed_plans: 17
 ---
 
 # Project State
@@ -21,7 +21,7 @@ Plan: 2 of 5
 
 ## Last Session
 
-- **Stopped At:** Completed 07-00-PLAN.md (Wave 0 test stubs)
+- **Stopped At:** Completed 07-01-PLAN.md
 - **Timestamp:** 2026-03-19T09:16:00Z
 
 ## Decisions
@@ -49,6 +49,9 @@ Plan: 2 of 5
 - [Phase 06-visual-diagram]: Deleted useMindmapFromText test file since the hook no longer exists after replacement with useDiagramFromText
 - [Phase 07-email-sending-after-minutes]: Test stubs use expect(true).toBe(false) — clear RED state, no vacuous passes
 - [Phase 07-email-sending-after-minutes]: No imports from implementation modules in stubs — decoupled from implementation order
+- [Phase 07-email-sending-after-minutes]: Extract markdownToHtml to lib/markdownUtils.ts (server-safe, zero browser deps) to prevent window.open crash when imported server-side
+- [Phase 07-email-sending-after-minutes]: saveMeetingInfoDraft uses destructure-exclude pattern to strip recipientEmails — email recipients never persisted to localStorage
+- [Phase 07-email-sending-after-minutes]: app_settings table uses key/value/updated_at schema for extensible Resend API key storage
 
 ## Performance Metrics
 
@@ -65,6 +68,7 @@ Plan: 2 of 5
 | Phase 06-visual-diagram P01 | 4min | 2 tasks | 4 files |
 | Phase 06-visual-diagram P02 | 7min | 2 tasks | 6 files |
 | Phase 07-email-sending-after-minutes P00 | 3min | 2 tasks | 5 files |
+| Phase 07-email-sending-after-minutes P07-01 | 4min | 2 tasks | 8 files |
 
 ## Progress
 
