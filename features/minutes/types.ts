@@ -13,5 +13,6 @@ export interface MeetingInfo {
   meetingDatetime: string;
   meetingLocation: string;
   participants: MeetingParticipant[];
+  recipientEmails: string[];
 }
 

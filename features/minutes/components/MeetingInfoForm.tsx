@@ -23,6 +23,7 @@ function normalize(info: MeetingInfo): MeetingInfo {
     meetingDatetime: info.meetingDatetime ?? '',
     meetingLocation: info.meetingLocation ?? '',
     participants: Array.isArray(info.participants) ? info.participants : [],
+    recipientEmails: Array.isArray(info.recipientEmails) ? info.recipientEmails : [],
   };
 }
 

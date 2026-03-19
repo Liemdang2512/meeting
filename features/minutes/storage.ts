@@ -15,6 +15,7 @@ export function loadMeetingInfoDraft(): MeetingInfo | null {
       meetingDatetime: parsed.meetingDatetime ?? '',
       meetingLocation: parsed.meetingLocation ?? '',
       participants: parsed.participants,
+      recipientEmails: [],
     };
   } catch {
     return null;
@@ -22,7 +23,8 @@ export function loadMeetingInfoDraft(): MeetingInfo | null {
 }
 
 export function saveMeetingInfoDraft(info: MeetingInfo): void {
-  localStorage.setItem(DRAFT_KEY, JSON.stringify(info));
+  const { recipientEmails: _, ...persistable } = info;
+  localStorage.setItem(DRAFT_KEY, JSON.stringify(persistable));
 }
 
 export function clearMeetingInfoDraft(): void {
