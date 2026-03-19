@@ -73,16 +73,17 @@
 **Plans**: In progress
 
 ### Phase 7: Email Sending After Minutes
-**Goal**: Sau khi tạo xong biên bản cuộc họp, user có thể nhập danh sách email người nhận và gửi email chứa nội dung biên bản
+**Goal**: Sau khi tạo xong biên bản cuộc họp, user có thể nhập danh sách email người nhận và gửi email chứa nội dung biên bản (HTML body + PDF đính kèm)
 **Depends on**: Phase 6
 **Requirements**: [EMAIL-01, EMAIL-02, EMAIL-03, EMAIL-04]
 **Success Criteria**:
   1. Bước 3 (thông tin cuộc họp) có trường nhập danh sách email người nhận
   2. Sau khi biên bản được tạo, user có thể gửi email đến các địa chỉ đã nhập
-  3. Email chứa nội dung biên bản đầy đủ
+  3. Email chứa nội dung biên bản đầy đủ (HTML body + PDF attachment)
   4. Xác nhận gửi thành công/thất bại hiển thị cho user
-**Plans**: 3 plans
+**Plans**: 4 plans
 Plans:
-- [ ] 07-01-PLAN.md — Email chips input in MeetingInfoForm
-- [ ] 07-02-PLAN.md — Server-side email endpoint, admin settings, HTML template
-- [ ] 07-03-PLAN.md — Email send card in completion step, admin settings UI
+- [ ] 07-01-PLAN.md — Infrastructure: markdownUtils extraction, MeetingInfo type extension, DB migration, resend install
+- [ ] 07-02-PLAN.md — EmailRecipientsInput chips component + MeetingInfoForm integration
+- [ ] 07-03-PLAN.md — Server-side email route: PDF generator, HTML template, Resend SDK, admin settings API
+- [ ] 07-04-PLAN.md — Email send card in completion step, admin email settings UI, human verification
