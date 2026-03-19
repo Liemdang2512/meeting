@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 07-03-PLAN.md
-last_updated: "2026-03-19T09:28:52.612Z"
+stopped_at: "Checkpoint: 07-04 Task 3 human-verify pending"
+last_updated: "2026-03-19T09:38:41.418Z"
 progress:
   total_phases: 8
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 21
-  completed_plans: 19
+  completed_plans: 20
 ---
 
 # Project State
@@ -21,7 +21,7 @@ Plan: 3 of 5
 
 ## Last Session
 
-- **Stopped At:** Completed 07-03-PLAN.md
+- **Stopped At:** Checkpoint: 07-04 Task 3 human-verify pending
 - **Timestamp:** 2026-03-19T09:16:00Z
 
 ## Decisions
@@ -56,6 +56,8 @@ Plan: 3 of 5
 - [Phase 07-email-sending-after-minutes]: jsPDF doc.text() API used exclusively (no doc.html()) — Node.js compatible, no DOM required
 - [Phase 07-email-sending-after-minutes]: Resend API key read from DB on every request — allows admin key rotation without restart
 - [Phase 07-email-sending-after-minutes]: 503 returned when resend_api_key not configured — clear service-unavailable signal to frontend
+- [Phase 07-email-sending-after-minutes]: EmailSettingsSection defined as standalone function before App() to avoid hooks-in-nested-component anti-pattern
+- [Phase 07-email-sending-after-minutes]: Email subject auto-fills using useEffect on meetingInfo.companyName/meetingDatetime dependencies
 
 ## Performance Metrics
 
@@ -75,6 +77,7 @@ Plan: 3 of 5
 | Phase 07-email-sending-after-minutes P07-01 | 4min | 2 tasks | 8 files |
 | Phase 07-email-sending-after-minutes P07-02 | 4min | 2 tasks | 2 files |
 | Phase 07-email-sending-after-minutes P07-03 | 3min | 2 tasks | 5 files |
+| Phase 07-email-sending-after-minutes P07-04 | 7min | 2 tasks | 2 files |
 
 ## Progress
 
