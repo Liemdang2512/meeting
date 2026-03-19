@@ -171,4 +171,41 @@ router.delete('/users/:id', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// GET /api/admin/settings — read app settings (mask API key)
+router.get('/settings', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const rows = await sql`SELECT key, value, updated_at FROM public.app_settings ORDER BY key`;
+    const masked = rows.map(r =>
+      r.key === 'resend_api_key' && r.value.length > 8
+        ? { ...r, value: r.value.slice(0, 8) + '...' }
+        : r
+    );
+    res.json({ settings: masked });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/admin/settings — upsert a single setting
+router.put('/settings', requireAuth, requireAdmin, async (req, res) => {
+  const { key, value } = req.body ?? {};
+  const ALLOWED_KEYS = ['resend_api_key', 'resend_from_email', 'email_max_recipients'];
+  if (!key || !ALLOWED_KEYS.includes(key)) {
+    return res.status(400).json({ error: 'Setting key khong hop le' });
+  }
+  if (value === undefined || value === null || value === '') {
+    return res.status(400).json({ error: 'Value la bat buoc' });
+  }
+  try {
+    await sql`
+      INSERT INTO public.app_settings (key, value, updated_at)
+      VALUES (${key}, ${String(value)}, NOW())
+      ON CONFLICT (key) DO UPDATE SET value = ${String(value)}, updated_at = NOW()
+    `;
+    res.json({ ok: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
