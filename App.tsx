@@ -7,7 +7,7 @@ import { authFetch } from './lib/api';
 import { FileUpload } from './components/FileUpload';
 import { TranscriptionView } from './components/TranscriptionView';
 import { Spinner } from './components/Spinner';
-import { FileAudioIcon, RefreshIcon, AlertCircleIcon, DownloadIcon, CheckIcon, CopyIcon } from './components/Icons';
+import { FileAudioIcon, RefreshIcon, AlertCircleIcon, DownloadIcon, CheckIcon, CopyIcon, MailIcon } from './components/Icons';
 import { LoginPage } from './components/LoginPage';
 import type { MeetingInfo } from './features/minutes/types';
 import { loadMeetingInfoDraft, clearMeetingInfoDraft } from './features/minutes/storage';
@@ -179,6 +179,20 @@ function App() {
       recipientEmails: [],
     }
   ));
+
+  // Email sending state
+  const [emailSendState, setEmailSendState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [emailSentCount, setEmailSentCount] = useState(0);
+
+  useEffect(() => {
+    const parts = ['Biên bản cuộc họp'];
+    if (meetingInfo.companyName) parts.push(meetingInfo.companyName);
+    if (meetingInfo.meetingDatetime) parts.push(meetingInfo.meetingDatetime);
+    else parts.push(new Date().toISOString().slice(0, 10));
+    setEmailSubject(parts.join(' - '));
+  }, [meetingInfo.companyName, meetingInfo.meetingDatetime]);
 
   useEffect(() => {
     const init = async () => {
@@ -647,6 +661,38 @@ function App() {
     await downloadAsDocx(summary, filename);
   };
 
+  const handleSendEmail = async () => {
+    if (!summary || meetingInfo.recipientEmails.length === 0) return;
+    setEmailSendState('loading');
+    setEmailError('');
+    try {
+      const resp = await authFetch('/email/send-minutes', {
+        method: 'POST',
+        body: JSON.stringify({
+          recipients: meetingInfo.recipientEmails,
+          subject: emailSubject,
+          minutesMarkdown: summary,
+          meetingInfo: {
+            companyName: meetingInfo.companyName,
+            companyAddress: meetingInfo.companyAddress,
+            meetingDatetime: meetingInfo.meetingDatetime,
+            meetingLocation: meetingInfo.meetingLocation,
+            participants: meetingInfo.participants,
+          },
+        }),
+      });
+      if (!resp.ok) {
+        const data = await resp.json();
+        throw new Error(data.error || 'Gửi thất bại');
+      }
+      setEmailSendState('success');
+      setEmailSentCount(meetingInfo.recipientEmails.length);
+    } catch (err: any) {
+      setEmailSendState('error');
+      setEmailError(err.message || 'Gửi thất bại. Vui lòng thử lại.');
+    }
+  };
+
   const resetApp = () => {
     setStatus(TranscriptionStatus.IDLE);
     setPendingFiles([]);
@@ -671,6 +717,10 @@ function App() {
       participants: [],
       recipientEmails: [],
     });
+    setEmailSendState('idle');
+    setEmailSubject('');
+    setEmailError('');
+    setEmailSentCount(0);
   };
 
   const handleLogout = async () => {
@@ -1507,7 +1557,7 @@ function App() {
                 <p className="text-slate-500 font-medium text-sm mt-1">Phiên làm việc đã xong. Tải xuống hoặc xem lại kết quả bên dưới.</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {/* Card: Ghi chép */}
                 <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-3">
                   <div className="flex items-center gap-3">
@@ -1585,6 +1635,66 @@ function App() {
                   >
                     {mindmapTree ? 'Xem sơ đồ' : 'Tạo sơ đồ'}
                   </button>
+                </div>
+
+                {/* Card: Gửi email */}
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
+                      <MailIcon className="w-5 h-5 text-indigo-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-slate-800 text-sm">Gửi email biên bản</h3>
+                      <p className="text-xs text-slate-400">
+                        {emailSendState === 'success'
+                          ? `Đã gửi • ${emailSentCount} địa chỉ`
+                          : meetingInfo.recipientEmails.length > 0
+                          ? `${meetingInfo.recipientEmails.length} người nhận`
+                          : 'Chưa có người nhận'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Email subject field */}
+                  <div>
+                    <label className="text-xs font-medium text-slate-600 mb-1 block">Tiêu đề email</label>
+                    <input
+                      value={emailSubject}
+                      onChange={(e) => setEmailSubject(e.target.value)}
+                      className="w-full px-3 py-2 border-slate-200 focus:border-slate-200 bg-white focus:outline-none text-xs font-medium transition-colors border rounded-xl"
+                    />
+                  </div>
+
+                  {/* Send button */}
+                  <button
+                    onClick={handleSendEmail}
+                    disabled={meetingInfo.recipientEmails.length === 0 || emailSendState === 'loading' || !summary}
+                    title={meetingInfo.recipientEmails.length === 0 ? 'Nhập địa chỉ email ở bước Thông tin cuộc họp để gửi biên bản' : undefined}
+                    className={`w-full py-2.5 text-sm font-medium rounded-xl transition-colors flex items-center justify-center gap-2 ${
+                      emailSendState === 'error'
+                        ? 'bg-red-50 text-red-700 hover:bg-red-100'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    } ${(meetingInfo.recipientEmails.length === 0 || !summary) ? 'opacity-40 cursor-not-allowed' : ''} ${emailSendState === 'loading' ? 'cursor-wait' : ''}`}
+                  >
+                    {emailSendState === 'loading' && <Spinner />}
+                    {emailSendState !== 'loading' && <MailIcon className="w-4 h-4" />}
+                    {emailSendState === 'loading' ? 'Đang gửi...'
+                      : emailSendState === 'success' ? 'Gửi lại'
+                      : emailSendState === 'error' ? 'Thử lại'
+                      : 'Gửi email'}
+                  </button>
+
+                  {/* Status row */}
+                  {emailSendState === 'success' && (
+                    <p className="text-xs font-medium text-emerald-600 text-center mt-1">
+                      {`Đã gửi thành công đến ${emailSentCount} địa chỉ`}
+                    </p>
+                  )}
+                  {emailSendState === 'error' && (
+                    <p className="text-xs font-medium text-red-500 text-center mt-1">
+                      {emailError || 'Gửi thất bại. Vui lòng thử lại.'}
+                    </p>
+                  )}
                 </div>
               </div>
 
