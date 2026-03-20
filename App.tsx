@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { TranscriptionStatus, FileMetadata, type TokenLoggingContext } from './types';
 import { transcribeBasic, transcribeDeep, summarizeTranscript, synthesizeTranscriptions, type DeepProgressCallback, type AudioLanguage } from './services/geminiService';
 import { getMe, logout as signOut, loadApiKeyFromAccount, saveApiKeyToAccount } from './lib/auth';
@@ -26,6 +26,7 @@ const MindmapPage = lazy(() => import('./features/mindmap/MindmapPage').then(m =
 const MindmapTreeCanvasLazy = lazy(() => import('./features/mindmap/components/MindmapTreeCanvas').then(m => ({ default: m.MindmapTreeCanvas })));
 const RegisterPage = lazy(() => import('./components/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const PricingPage = lazy(() => import('./features/pricing/PricingPage').then(m => ({ default: m.PricingPage })));
+const HomePage = lazy(() => import('./components/HomePage').then(m => ({ default: m.HomePage })));
 
 declare global {
   interface AIStudio {
@@ -110,18 +111,19 @@ Tóm tắt các nội dung chính đã thảo luận, chia theo từng chủ đ�
 - Nội dung trao đổi phải được chia thành các MỤC rõ ràng (Nội dung 01, 02, 03...).`;
 
 function EmailSettingsSection() {
-  const [apiKey, setApiKey] = useState('');
-  const [fromEmail, setFromEmail] = useState('');
+  const [gmailUser, setGmailUser] = useState('');
+  const [gmailPass, setGmailPass] = useState('');
   const [maxRecipients, setMaxRecipients] = useState('20');
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [loadedApiKey, setLoadedApiKey] = useState('');
+  const [loadedGmailUser, setLoadedGmailUser] = useState('');
+  const [loadedPassMasked, setLoadedPassMasked] = useState('');
 
   useEffect(() => {
     authFetch('/admin/settings').then(r => r.json()).then(data => {
       if (data.settings) {
         for (const s of data.settings) {
-          if (s.key === 'resend_api_key') setLoadedApiKey(s.value);
-          if (s.key === 'resend_from_email') setFromEmail(s.value);
+          if (s.key === 'gmail_user') setLoadedGmailUser(s.value);
+          if (s.key === 'gmail_app_password') setLoadedPassMasked(s.value);
           if (s.key === 'email_max_recipients') setMaxRecipients(s.value);
         }
       }
@@ -131,21 +133,27 @@ function EmailSettingsSection() {
   const handleSave = async () => {
     setSaveState('saving');
     try {
-      if (apiKey) {
-        await authFetch('/admin/settings', { method: 'PUT', body: JSON.stringify({ key: 'resend_api_key', value: apiKey }) });
+      if (gmailUser) {
+        await authFetch('/admin/settings', { method: 'PUT', body: JSON.stringify({ key: 'gmail_user', value: gmailUser }) });
       }
-      await authFetch('/admin/settings', { method: 'PUT', body: JSON.stringify({ key: 'resend_from_email', value: fromEmail }) });
-      await authFetch('/admin/settings', { method: 'PUT', body: JSON.stringify({ key: 'email_max_recipients', value: maxRecipients }) });
+      if (gmailPass) {
+        await authFetch('/admin/settings', { method: 'PUT', body: JSON.stringify({ key: 'gmail_app_password', value: gmailPass }) });
+      }
+      if (maxRecipients) {
+        await authFetch('/admin/settings', { method: 'PUT', body: JSON.stringify({ key: 'email_max_recipients', value: maxRecipients }) });
+      }
       setSaveState('saved');
       setTimeout(() => setSaveState('idle'), 2000);
       const resp = await authFetch('/admin/settings');
       const data = await resp.json();
       if (data.settings) {
         for (const s of data.settings) {
-          if (s.key === 'resend_api_key') setLoadedApiKey(s.value);
+          if (s.key === 'gmail_user') setLoadedGmailUser(s.value);
+          if (s.key === 'gmail_app_password') setLoadedPassMasked(s.value);
         }
       }
-      setApiKey('');
+      setGmailUser('');
+      setGmailPass('');
     } catch {
       setSaveState('idle');
     }
@@ -153,34 +161,40 @@ function EmailSettingsSection() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-medium text-slate-800">Cấu hình gửi email (Resend)</h2>
+      <h2 className="text-lg font-medium text-slate-800">Cấu hình gửi email (Gmail SMTP)</h2>
 
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-        {/* API Key */}
+        {/* Gmail account */}
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-slate-800">Resend API Key</label>
-          {loadedApiKey && (
-            <p className="text-xs text-slate-400">Current: {loadedApiKey}</p>
+          <label className="block text-sm font-medium text-slate-800">Gmail</label>
+          {loadedGmailUser && (
+            <p className="text-xs text-slate-400">Hiện tại: {loadedGmailUser}</p>
           )}
           <input
-            type="password"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
+            type="email"
+            value={gmailUser}
+            onChange={(e) => setGmailUser(e.target.value)}
             className="w-full px-4 py-3 border-slate-200 focus:border-slate-200 bg-white focus:outline-none text-sm font-medium transition-colors border rounded-xl"
-            placeholder="re_xxxxxxxx..."
+            placeholder="youraccount@gmail.com"
           />
         </div>
 
-        {/* From email */}
+        {/* App Password */}
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-slate-800">From email</label>
+          <label className="block text-sm font-medium text-slate-800">Gmail App Password</label>
+          {loadedPassMasked && (
+            <p className="text-xs text-slate-400">Hiện tại: {loadedPassMasked}</p>
+          )}
           <input
-            type="email"
-            value={fromEmail}
-            onChange={(e) => setFromEmail(e.target.value)}
+            type="password"
+            value={gmailPass}
+            onChange={(e) => setGmailPass(e.target.value)}
             className="w-full px-4 py-3 border-slate-200 focus:border-slate-200 bg-white focus:outline-none text-sm font-medium transition-colors border rounded-xl"
-            placeholder="minutes@yourdomain.com"
+            placeholder="xxxx xxxx xxxx xxxx"
           />
+          <p className="text-xs text-slate-400">
+            Tạo App Password tại: myaccount.google.com → Security → 2-Step Verification → App passwords
+          </p>
         </div>
 
         {/* Max recipients */}
@@ -236,6 +250,8 @@ function App() {
 
   // Mindmap từ transcription
   const { tree: mindmapTree, loading: mindmapLoading, error: mindmapError, generate: generateMindmap, reset: resetMindmap } = useMindmapTree();
+  const mindmapCaptureFnRef = useRef<(() => Promise<string | null>) | null>(null);
+  const mindmapPdfDataRef = useRef<string | null>(null);
 
   // Step navigation — controls which step's content is displayed
   const [viewStep, setViewStep] = useState(1);
@@ -766,12 +782,16 @@ function App() {
     setEmailSendState('loading');
     setEmailError('');
     try {
+      // Dùng PDF mindmap đã capture sẵn (capture ngay khi mindmap render)
+      const mindmapPng = mindmapPdfDataRef.current ?? null;
+
       const resp = await authFetch('/email/send-minutes', {
         method: 'POST',
         body: JSON.stringify({
           recipients: meetingInfo.recipientEmails,
           subject: emailSubject,
           minutesMarkdown: summary,
+          mindmapPng,
           meetingInfo: {
             companyName: meetingInfo.companyName,
             companyAddress: meetingInfo.companyAddress,
@@ -856,6 +876,13 @@ function App() {
   }
 
   if (!user) {
+    if (route === '/home') {
+      return (
+        <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><Spinner /></div>}>
+          <HomePage onNavigate={(path) => { window.history.pushState({}, '', path); setRoute(path); }} />
+        </Suspense>
+      );
+    }
     if (route === '/register') {
       return (
         <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><Spinner /></div>}>
@@ -942,6 +969,15 @@ function App() {
   const isEmailSettingsRoute = route === '/admin/email-settings';
   const isMindmapRoute = route === '/mindmap';
   const isPricingRoute = route === '/pricing';
+  const isHomeRoute = route === '/home';
+
+  if (isHomeRoute) {
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><Spinner /></div>}>
+        <HomePage onNavigate={(path) => { window.history.pushState({}, '', path); setRoute(path); }} />
+      </Suspense>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -1328,7 +1364,7 @@ function App() {
                         )}
                       </div>
                     ) : (
-                      <TranscriptionView text={completedTranscriptions[viewingIndex]?.text || ''} userId={user?.userId ?? null} />
+                      <TranscriptionView text={completedTranscriptions[viewingIndex]?.text || ''} userId={user?.userId ?? null} onMindmapCapture={(fn) => { mindmapCaptureFnRef.current = fn; }} onMindmapPdfReady={(pdf) => { mindmapPdfDataRef.current = pdf; }} />
                     )}
                   </div>
                 </div>
@@ -1380,7 +1416,7 @@ function App() {
                 </div>
               )}
               <div className="h-[calc(100vh-300px)] border-transparent rounded-2xl">
-                <TranscriptionView text={completedTranscriptions[viewingIndex]?.text || ''} userId={user?.userId ?? null} />
+                <TranscriptionView text={completedTranscriptions[viewingIndex]?.text || ''} userId={user?.userId ?? null} onMindmapCapture={(fn) => { mindmapCaptureFnRef.current = fn; }} onMindmapPdfReady={(pdf) => { mindmapPdfDataRef.current = pdf; }} />
               </div>
             </div>
           )}
@@ -1413,7 +1449,7 @@ function App() {
                 )}
               </div>
               <div className="h-[calc(100vh-280px)] border-transparent rounded-2xl">
-                <TranscriptionView text={synthesizedTranscription} userId={user?.userId ?? null} />
+                <TranscriptionView text={synthesizedTranscription} userId={user?.userId ?? null} onMindmapCapture={(fn) => { mindmapCaptureFnRef.current = fn; }} onMindmapPdfReady={(pdf) => { mindmapPdfDataRef.current = pdf; }} />
               </div>
             </div>
           )}
@@ -1486,7 +1522,7 @@ function App() {
                         : completedTranscriptions.length > 1
                           ? completedTranscriptions[viewingIndex]?.text || ''
                           : transcription
-                    } userId={user?.userId ?? null} />
+                    } userId={user?.userId ?? null} onMindmapCapture={(fn) => { mindmapCaptureFnRef.current = fn; }} onMindmapPdfReady={(pdf) => { mindmapPdfDataRef.current = pdf; }} />
                   </div>
                 </div>
 
@@ -1571,7 +1607,7 @@ function App() {
                     ) : (
                       <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-300">
                         <div className="flex-1 border-transparent overflow-hidden rounded-2xl">
-                          <TranscriptionView text={summary} userId={user?.userId ?? null} />
+                          <TranscriptionView text={summary} userId={user?.userId ?? null} onMindmapCapture={(fn) => { mindmapCaptureFnRef.current = fn; }} onMindmapPdfReady={(pdf) => { mindmapPdfDataRef.current = pdf; }} />
                         </div>
                         <div className="mt-4 flex flex-col sm:flex-row gap-3">
                           <button

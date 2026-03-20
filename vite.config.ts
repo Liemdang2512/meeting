@@ -8,10 +8,6 @@ export default defineConfig(({ mode }) => {
       server: {
         port: 3000,
         host: '0.0.0.0',
-        headers: {
-          'Cross-Origin-Opener-Policy': 'same-origin',
-          'Cross-Origin-Embedder-Policy': 'credentialless',
-        },
         proxy: {
           '/api': {
             target: 'http://localhost:3001',
@@ -19,7 +15,23 @@ export default defineConfig(({ mode }) => {
           },
         },
       },
-      plugins: [react()],
+      plugins: [
+        react(),
+        {
+          name: 'coep-per-route',
+          configureServer(server) {
+            server.middlewares.use((_req, res, next) => {
+              const url = _req.url ?? '';
+              // /home không cần ffmpeg nên không set COEP — cho phép embed YouTube
+              if (!url.startsWith('/home')) {
+                res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+                res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless');
+              }
+              next();
+            });
+          },
+        },
+      ],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
