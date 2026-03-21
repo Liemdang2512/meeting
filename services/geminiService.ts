@@ -585,7 +585,7 @@ const runAudioAgent = async (
     { inlineData: { mimeType: getMimeType(file), data: base64Audio } },
   ];
   const response = await ai.models.generateContent({
-    model: 'gemini-3-pro-preview',
+    model: 'gemini-3-flash-preview',
     contents,
     config: { temperature: 0.1, maxOutputTokens: 65536 },
   });
@@ -604,7 +604,7 @@ const runAudioAgent = async (
       userId,
       feature: loggingContext.feature,
       actionType: loggingContext.actionType,
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-3-flash-preview',
       inputTokens: usage?.promptTokenCount ?? null,
       outputTokens: usage?.candidatesTokenCount ?? null,
       totalTokens:
@@ -628,7 +628,7 @@ const runTextAgent = async (
   const apiKey = getApiKey();
   const ai = new GoogleGenAI({ apiKey });
   const response = await ai.models.generateContent({
-    model: 'gemini-3-pro-preview',
+    model: 'gemini-3-flash-preview',
     contents: prompt,
     config: { temperature: 0.1, maxOutputTokens: 65536 },
   });
@@ -647,7 +647,7 @@ const runTextAgent = async (
       userId,
       feature: loggingContext.feature,
       actionType: loggingContext.actionType,
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-3-flash-preview',
       inputTokens: usage?.promptTokenCount ?? null,
       outputTokens: usage?.candidatesTokenCount ?? null,
       totalTokens:
@@ -816,7 +816,7 @@ ${combined}
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-3-flash-preview',
       contents: prompt,
       config: { temperature: 0.1 },
     });
@@ -838,7 +838,7 @@ ${combined}
         userId,
         feature: loggingContext.feature,
         actionType: loggingContext.actionType,
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-3-flash-preview',
         inputTokens: usage?.promptTokenCount ?? null,
         outputTokens: usage?.candidatesTokenCount ?? null,
         totalTokens:
@@ -872,7 +872,7 @@ export const summarizeTranscript = async (
 
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-3-flash-preview',
       contents: `Dưới đây là văn bản ghi chép cuộc họp:\n\n${transcript}\n\n--- Yêu cầu: ---\n${customPrompt}`,
       config: {
         temperature: 0.3,
@@ -896,7 +896,7 @@ export const summarizeTranscript = async (
         userId,
         feature: loggingContext.feature,
         actionType: loggingContext.actionType,
-        model: 'gemini-3-pro-preview',
+        model: 'gemini-3-flash-preview',
         inputTokens: usage?.promptTokenCount ?? null,
         outputTokens: usage?.candidatesTokenCount ?? null,
         totalTokens:
@@ -941,8 +941,10 @@ export const generateStructured = async <T>(
   schema: any,
   loggingContext?: TokenLoggingContext,
   userId?: string | null,
+  options?: { useResponseSchema?: boolean },
 ): Promise<T> => {
   const ai = getAiInstance();
+  const useResponseSchema = options?.useResponseSchema ?? true;
 
   // z.toJSONSchema(schema) — Zod v4 built-in, correct call (not schema.toJSONSchema())
   const { $schema: _drop, ...jsonSchema } = z.toJSONSchema(schema) as any;
@@ -953,9 +955,9 @@ export const generateStructured = async <T>(
       contents: prompt,
       config: {
         temperature: 0,
-        maxOutputTokens: 4096,
+        maxOutputTokens: 8192,
         responseMimeType: 'application/json',
-        responseSchema: jsonSchema as any,
+        ...(useResponseSchema ? { responseSchema: jsonSchema as any } : {}),
       },
     });
 
