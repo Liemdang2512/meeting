@@ -876,7 +876,7 @@ function App() {
   }
 
   if (!user) {
-    if (route === '/home') {
+    if (route === '/') {
       return (
         <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><Spinner /></div>}>
           <HomePage onNavigate={(path) => { window.history.pushState({}, '', path); setRoute(path); }} />
@@ -890,7 +890,7 @@ function App() {
             onRegisterSuccess={async () => {
               const loggedInUser = await getMe();
               setUser(loggedInUser);
-              navigate('/');
+              navigate('/meeting');
               if (loggedInUser) {
                 setIsAdmin(loggedInUser.role === 'admin');
                 const accountKey = await loadApiKeyFromAccount(loggedInUser.userId);
@@ -911,6 +911,7 @@ function App() {
       // Sau khi dang nhap thanh cong, lay user info va cap nhat state
       const loggedInUser = await getMe();
       setUser(loggedInUser);
+      navigate('/meeting');
       if (loggedInUser) {
         setIsAdmin(loggedInUser.role === 'admin');
         const accountKey = await loadApiKeyFromAccount(loggedInUser.userId);
@@ -963,13 +964,13 @@ function App() {
     { n: 5, label: 'Hoàn thành' },
   ];
 
-  const isNotesRoute = route === '/' || route === '';
+  const isNotesRoute = route === '/meeting';
   const isAdminRoute = route === '/admin/token-usage';
   const isUserMgmtRoute = route === '/admin/users';
   const isEmailSettingsRoute = route === '/admin/email-settings';
   const isMindmapRoute = route === '/mindmap';
   const isPricingRoute = route === '/pricing';
-  const isHomeRoute = route === '/home';
+  const isHomeRoute = route === '/';
 
   if (isHomeRoute) {
     return (
@@ -987,7 +988,7 @@ function App() {
           <button
             type="button"
             onClick={() => {
-              navigate('/');
+              navigate('/meeting');
               setMode('notes');
             }}
             className="flex items-center gap-3 text-left hover:opacity-90 transition-opacity"
@@ -1024,7 +1025,7 @@ function App() {
           <div className="flex gap-2 overflow-x-auto py-2 scrollbar-none">
             <button
               onClick={() => {
-                navigate('/');
+                navigate('/meeting');
                 setMode('notes');
               }}
               className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isNotesRoute ? 'bg-indigo-900 text-white' : 'text-slate-600 hover:bg-slate-200 hover:text-slate-800' }`}
@@ -1033,7 +1034,7 @@ function App() {
             </button>
             <button
               onClick={() => {
-                navigate('/');
+                navigate('/meeting');
                 setMode('splitter');
               }}
               className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isNotesRoute && mode === 'splitter' ? 'bg-indigo-900 text-white' : 'text-slate-600 hover:bg-slate-200 hover:text-slate-800' }`}

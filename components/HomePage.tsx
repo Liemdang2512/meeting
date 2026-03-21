@@ -422,7 +422,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
               <div>
                 <h4 style={{ fontWeight: 900, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#0f172a', marginBottom: '24px' }}>Sản phẩm</h4>
                 <ul style={{ listStyle: 'none', padding: 0 }}>
-                  {[['Bảng giá', '/pricing'], ['Tính năng', '/home']].map(([label, path]) => (
+                  {[['Bảng giá', '/pricing'], ['Tính năng', '/']].map(([label, path]) => (
                     <li key={label} style={{ marginBottom: '16px' }}>
                       <button onClick={() => handleNav(path)} style={{ fontSize: '0.875rem', fontWeight: 700, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{label}</button>
                     </li>
