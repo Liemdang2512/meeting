@@ -112,22 +112,24 @@ router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
       if (!['free', 'pro', 'enterprise', 'admin'].includes(role)) {
         return res.status(400).json({ error: 'Role không hợp lệ (free, pro, enterprise hoặc admin)' });
       }
-      await sql`
-        INSERT INTO public.profiles (user_id, role, created_at, updated_at)
-        VALUES (${id}, ${role}, NOW(), NOW())
-        ON CONFLICT (user_id) DO UPDATE SET role = ${role}, updated_at = NOW()
-      `;
+      const [existing] = await sql`SELECT user_id FROM public.profiles WHERE user_id = ${id}`;
+      if (existing) {
+        await sql`UPDATE public.profiles SET role = ${role}, updated_at = NOW() WHERE user_id = ${id}`;
+      } else {
+        await sql`INSERT INTO public.profiles (user_id, role, created_at, updated_at) VALUES (${id}, ${role}, NOW(), NOW())`;
+      }
     }
 
     if (daily_limit !== undefined) {
       if (daily_limit !== null && (!Number.isInteger(daily_limit) || daily_limit < 1)) {
         return res.status(400).json({ error: 'daily_limit phải là số nguyên >= 1 hoặc null' });
       }
-      await sql`
-        INSERT INTO public.profiles (user_id, daily_limit, created_at, updated_at)
-        VALUES (${id}, ${daily_limit}, NOW(), NOW())
-        ON CONFLICT (user_id) DO UPDATE SET daily_limit = ${daily_limit}, updated_at = NOW()
-      `;
+      const [existing] = await sql`SELECT user_id FROM public.profiles WHERE user_id = ${id}`;
+      if (existing) {
+        await sql`UPDATE public.profiles SET daily_limit = ${daily_limit}, updated_at = NOW() WHERE user_id = ${id}`;
+      } else {
+        await sql`INSERT INTO public.profiles (user_id, daily_limit, created_at, updated_at) VALUES (${id}, ${daily_limit}, NOW(), NOW())`;
+      }
     }
 
     if (password) {
@@ -176,8 +178,8 @@ router.get('/settings', requireAuth, requireAdmin, async (req, res) => {
   try {
     const rows = await sql`SELECT key, value, updated_at FROM public.app_settings ORDER BY key`;
     const masked = rows.map(r =>
-      r.key === 'resend_api_key' && r.value.length > 8
-        ? { ...r, value: r.value.slice(0, 8) + '...' }
+      r.key === 'gmail_app_password' && r.value.length > 4
+        ? { ...r, value: r.value.slice(0, 4) + '...' }
         : r
     );
     res.json({ settings: masked });
@@ -189,7 +191,7 @@ router.get('/settings', requireAuth, requireAdmin, async (req, res) => {
 // PUT /api/admin/settings — upsert a single setting
 router.put('/settings', requireAuth, requireAdmin, async (req, res) => {
   const { key, value } = req.body ?? {};
-  const ALLOWED_KEYS = ['resend_api_key', 'resend_from_email', 'email_max_recipients'];
+  const ALLOWED_KEYS = ['gmail_user', 'gmail_app_password', 'email_max_recipients'];
   if (!key || !ALLOWED_KEYS.includes(key)) {
     return res.status(400).json({ error: 'Setting key khong hop le' });
   }
