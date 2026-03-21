@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface HomePageProps {
   onNavigate?: (path: string) => void;
 }
 
 export function HomePage({ onNavigate }: HomePageProps) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   const handleNav = (path: string) => {
+    setMobileOpen(false);
     if (onNavigate) {
       onNavigate(path);
     } else {
@@ -33,6 +36,13 @@ export function HomePage({ onNavigate }: HomePageProps) {
         .shadow-xl-soft {
           box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05), 0 10px 10px -5px rgba(0,0,0,0.02);
         }
+        .desktop-nav { display: flex; }
+        .hamburger-btn { display: none; }
+        @media (max-width: 600px) {
+          .desktop-nav { display: none !important; }
+          .hamburger-btn { display: flex !important; }
+          .brand-text { font-size: 1rem !important; }
+        }
       `}</style>
 
       <div className="bg-dot-grid">
@@ -49,7 +59,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
               </div>
 
               {/* Desktop Nav */}
-              <nav style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+              <nav className="desktop-nav" style={{ alignItems: 'center', gap: '32px' }}>
                 <button onClick={() => handleNav('/pricing')} style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569', background: 'none', border: 'none', cursor: 'pointer' }}>Bảng giá</button>
                 <button onClick={() => handleNav('/login')} style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569', background: 'none', border: 'none', cursor: 'pointer' }}>Đăng nhập</button>
                 <button
@@ -59,8 +69,34 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   Đăng ký
                 </button>
               </nav>
+
+              {/* Hamburger Button */}
+              <button
+                className="hamburger-btn"
+                onClick={() => setMobileOpen(o => !o)}
+                style={{ alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', background: 'none', border: 'none', cursor: 'pointer', flexDirection: 'column', gap: '5px', padding: 0 }}
+                aria-label="Menu"
+              >
+                <span style={{ display: 'block', width: '22px', height: '2px', background: mobileOpen ? 'transparent' : '#0f172a', transition: 'all 0.2s' }} />
+                <span style={{ display: 'block', width: '22px', height: '2px', background: '#0f172a', transform: mobileOpen ? 'rotate(45deg) translate(5px, 5px)' : 'none', transition: 'all 0.2s' }} />
+                <span style={{ display: 'block', width: '22px', height: '2px', background: '#0f172a', transform: mobileOpen ? 'rotate(-45deg) translate(5px, -5px)' : 'none', transition: 'all 0.2s' }} />
+              </button>
             </div>
           </div>
+
+          {/* Mobile Drawer */}
+          {mobileOpen && (
+            <div style={{ background: 'white', borderTop: '1px solid #e2e8f0', padding: '16px 24px 24px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <button onClick={() => handleNav('/pricing')} style={{ textAlign: 'left', padding: '12px 0', fontSize: '1rem', fontWeight: 600, color: '#475569', background: 'none', border: 'none', borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }}>Bảng giá</button>
+              <button onClick={() => handleNav('/login')} style={{ textAlign: 'left', padding: '12px 0', fontSize: '1rem', fontWeight: 600, color: '#475569', background: 'none', border: 'none', borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }}>Đăng nhập</button>
+              <button
+                onClick={() => handleNav('/register')}
+                style={{ marginTop: '12px', padding: '14px', backgroundColor: '#2563eb', color: 'white', borderRadius: '9999px', fontSize: '1rem', fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(37,99,235,0.3)' }}
+              >
+                Đăng ký miễn phí
+              </button>
+            </div>
+          )}
         </header>
 
         <main>
@@ -269,20 +305,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     </div>
                     <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>{title}</h3>
                     <p style={{ color: '#64748b', fontWeight: 500, lineHeight: 1.7, margin: 0, fontSize: '0.9rem' }}>{desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* Trusted By Section */}
-          <section style={{ padding: '64px 1rem', background: 'white', borderTop: '1px solid #e2e8f0' }}>
-            <div style={{ maxWidth: '1100px', margin: '0 auto', textAlign: 'center' }}>
-              <p style={{ fontSize: '0.8rem', fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '40px' }}>Được tin dùng bởi</p>
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '48px', flexWrap: 'wrap' }}>
-                {[1, 2, 3, 4, 5].map(i => (
-                  <div key={i} style={{ width: '120px', height: '40px', background: '#f1f5f9', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8' }}>Logo {i}</span>
                   </div>
                 ))}
               </div>
