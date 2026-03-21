@@ -44,7 +44,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <img src="https://neuronsai.net/assets/NAI.png" alt="NeuronsAI" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} />
                 <span style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.025em', color: '#0f172a' }}>
-                  Neurons<span style={{ color: '#3b5bdb' }}>AI</span>
+                  Meeting Minute I <span style={{ color: '#3b5bdb' }}>Thư ký AI</span>
                 </span>
               </div>
 
@@ -68,11 +68,17 @@ export function HomePage({ onNavigate }: HomePageProps) {
           <section style={{ paddingTop: '80px', paddingBottom: '64px', padding: '80px 1rem 64px' }}>
             <div style={{ maxWidth: '896px', margin: '0 auto', textAlign: 'center' }}>
               <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 900, color: '#0f172a', marginBottom: '24px', letterSpacing: '-0.025em', lineHeight: 1.1 }}>
-                Ghi chép cuộc họp tự động bằng AI
+                THƯ KÝ AI 24/7 CỦA BẠN
               </h1>
-              <p style={{ fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)', color: '#475569', fontWeight: 500, marginBottom: '40px', maxWidth: '672px', margin: '0 auto 40px' }}>
-                Chuyển đổi âm thanh và video thành văn bản chính xác chỉ trong vài giây.
+              <p style={{ fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)', color: '#475569', fontWeight: 500, marginBottom: '24px', maxWidth: '672px', margin: '0 auto 24px' }}>
+                Tự động chuyển đổi video, hình ảnh, âm thanh thành văn bản phù hợp chỉ trong vài giây với tính chính xác cao.
               </p>
+
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginBottom: '40px', flexWrap: 'wrap' }}>
+                {['NHANH CHÓNG', 'CHÍNH XÁC', 'DỄ SỬ DỤNG'].map((tag, i) => (
+                  <span key={i} style={{ fontSize: '0.8rem', fontWeight: 900, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.12em', padding: '6px 16px', background: '#eff6ff', borderRadius: '9999px', border: '1px solid #bfdbfe' }}>{tag}</span>
+                ))}
+              </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
                 <button
@@ -91,7 +97,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
               <div style={{ padding: 'clamp(2rem, 5vw, 3.5rem)' }}>
                 {/* Dashboard Title */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
-                  <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>Ghi chép</h2>
+                  <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>Giới thiệu</h2>
                   <div>
                     <span style={{ padding: '4px 12px', background: '#eff6ff', color: '#2563eb', borderRadius: '9999px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gói miễn phí</span>
                   </div>
@@ -112,7 +118,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 {/* Use Cases Grid */}
                 <div>
                   <div style={{ marginBottom: '24px' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Dành cho ai?</span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Phù hợp với</span>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
@@ -125,31 +131,31 @@ export function HomePage({ onNavigate }: HomePageProps) {
                           <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#d97706', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Báo chí</p>
                         </div>
                       </div>
-                      <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', lineHeight: 1.6 }}>Ghi lại phỏng vấn, họp báo và hiện trường thành văn bản chính xác tức thì.</p>
+                      <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', lineHeight: 1.6 }}>AI tự động tổng hợp nội dung phỏng vấn, soạn tin/ bài phù hợp.</p>
                     </div>
 
-                    {/* Nhân viên */}
+                    {/* Chuyên viên */}
                     <div className="mode-card active" style={{ padding: '24px', borderRadius: '1.5rem', border: '2px solid #2563eb', background: 'rgba(239,246,255,0.1)', cursor: 'pointer' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
                         <div style={{ width: '48px', height: '48px', background: '#eff6ff', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.875rem' }}>💼</div>
                         <div>
-                          <h4 style={{ fontWeight: 900, color: '#0f172a', fontSize: '1.125rem' }}>Nhân viên</h4>
+                          <h4 style={{ fontWeight: 900, color: '#0f172a', fontSize: '1.125rem' }}>Chuyên viên</h4>
                           <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Doanh nghiệp</p>
                         </div>
                       </div>
-                      <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', lineHeight: 1.6 }}>Tự động tạo biên bản họp, tóm tắt nội dung và danh sách việc cần làm sau cuộc họp.</p>
+                      <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', lineHeight: 1.6 }}>AI tự động chuyển đổi thông tin thành biên bản họp, các công việc cần thực hiện sau cuộc họp.</p>
                     </div>
 
-                    {/* Thư ký */}
+                    {/* Cán bộ */}
                     <div className="mode-card" style={{ padding: '24px', borderRadius: '1.5rem', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
                         <div style={{ width: '48px', height: '48px', background: '#f0fdf4', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.875rem' }}>📋</div>
                         <div>
-                          <h4 style={{ fontWeight: 900, color: '#0f172a', fontSize: '1.125rem' }}>Thư Ký Tòa</h4>
+                          <h4 style={{ fontWeight: 900, color: '#0f172a', fontSize: '1.125rem' }}>Cán bộ</h4>
                           <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Pháp lý</p>
                         </div>
                       </div>
-                      <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', lineHeight: 1.6 }}>Ghi chép phiên tòa, lời khai và tranh luận pháp lý chính xác, đảm bảo tính pháp lý của hồ sơ.</p>
+                      <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', lineHeight: 1.6 }}>AI tự động nhận dạng video, hiểu được bối cảnh và ghi chép diễn biến tại phiên toà với tính chính xác cao.</p>
                     </div>
 
                   </div>
@@ -160,27 +166,51 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.01)')}
                     onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
                   >
-                    Bắt đầu ghi chép
+                    Bắt đầu ngay
                   </button>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* Features Grid */}
+          {/* Features Grid — Tại sao chọn MoMai? */}
           <section style={{ padding: '80px 1rem', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
             <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '48px 56px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '64px' }}>
+                <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 900, color: '#0f172a', marginBottom: '12px' }}>Tại sao chọn MoMai?</h2>
+                <p style={{ fontSize: '1.1rem', fontWeight: 500, color: '#64748b' }}>Không chỉ là công cụ, chúng tôi hiểu công việc của bạn</p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '48px 56px' }}>
                 {[
                   {
                     icon: (
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
                       </svg>
                     ),
                     bg: '#eff6ff',
-                    title: 'Ghi chép không giới hạn',
-                    desc: 'Không giới hạn số lần ghi chép. Chuyển đổi hàng nghìn giờ âm thanh và video với gói Không giới hạn.',
+                    title: 'Tự động hoá 100%',
+                    desc: 'Giảm thiểu 95% các tác vụ thủ công. AI tự động thực hiện các thao tác theo quy trình chuẩn giúp bạn có thêm nhiều thời gian.',
+                  },
+                  {
+                    icon: (
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>
+                      </svg>
+                    ),
+                    bg: '#f5f3ff',
+                    title: 'Không giới hạn',
+                    desc: 'Không giới hạn số lần sử dụng. Chuyển đổi hàng nghìn file âm thanh và video với các gói dịch vụ phù hợp.',
+                  },
+                  {
+                    icon: (
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                      </svg>
+                    ),
+                    bg: '#f0fdf4',
+                    title: 'Tiết kiệm chi phí',
+                    desc: 'Tối ưu hóa ngân sách, thời gian cho bạn. Chỉ với chi phí nhỏ so với thuê nhân viên truyền thống hoặc các phần mềm riêng lẻ.',
                   },
                   {
                     icon: (
@@ -189,8 +219,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                       </svg>
                     ),
                     bg: '#f5f3ff',
-                    title: 'Độ chính xác 98%+',
-                    desc: 'Được hỗ trợ bởi các mô hình AI Whisper mới nhất, cho kết quả chính xác với mọi loại âm thanh.',
+                    title: 'Độ chính xác 99%+',
+                    desc: 'Được ứng dụng bởi các mô hình AI mới nhất cùng nền tảng huấn luyện AI riêng do Neurons AI xây dựng cho kết quả chính xác cao nhất.',
                   },
                   {
                     icon: (
@@ -200,7 +230,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     ),
                     bg: '#ecfeff',
                     title: 'Xử lý siêu nhanh',
-                    desc: 'Ghi chép hàng giờ âm thanh và video chỉ trong vài phút. Kết quả trả về gần như tức thì.',
+                    desc: 'Ghi chép và tổng hợp hàng giờ âm thanh và video chỉ trong vài phút.',
                   },
                   {
                     icon: (
@@ -209,8 +239,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                       </svg>
                     ),
                     bg: '#f0fdf4',
-                    title: '134+ ngôn ngữ',
-                    desc: 'Hỗ trợ Tiếng Việt, Tiếng Anh, Tiếng Trung, Tiếng Nhật và hơn 134 ngôn ngữ khác trên toàn thế giới.',
+                    title: '100+ ngôn ngữ',
+                    desc: 'Hỗ trợ Tiếng Việt, Tiếng Anh, Tiếng Trung, Tiếng Nhật và hơn 100 ngôn ngữ khác trên toàn thế giới.',
                   },
                   {
                     icon: (
@@ -219,8 +249,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                       </svg>
                     ),
                     bg: '#fffbeb',
-                    title: 'Hỗ trợ file lớn',
-                    desc: 'Tải lên file dài đến 10 giờ, tối đa 5GB. Hỗ trợ MP3, MP4, WAV, M4A và nhiều định dạng khác.',
+                    title: 'Hỗ trợ nhiều định dạng và dung lượng lớn',
+                    desc: 'Tải lên file dài đến 5 giờ. Hỗ trợ MP3, MP4, WAV, M4A và nhiều định dạng khác.',
                   },
                   {
                     icon: (
@@ -229,8 +259,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                       </svg>
                     ),
                     bg: '#fff1f2',
-                    title: 'Xuất linh hoạt',
-                    desc: 'Xuất ra PDF, DOCX, TXT hoặc định dạng phụ đề SRT và VTT. Xuất nhiều file cùng lúc.',
+                    title: 'Nhiều lựa chọn',
+                    desc: 'Nền tảng cho phép lựa chọn định dạng sau khi tổng hợp: PDF, DOCX, Sơ đồ tư duy...',
                   },
                 ].map(({ icon, bg, title, desc }) => (
                   <div key={title} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -245,11 +275,25 @@ export function HomePage({ onNavigate }: HomePageProps) {
             </div>
           </section>
 
+          {/* Trusted By Section */}
+          <section style={{ padding: '64px 1rem', background: 'white', borderTop: '1px solid #e2e8f0' }}>
+            <div style={{ maxWidth: '1100px', margin: '0 auto', textAlign: 'center' }}>
+              <p style={{ fontSize: '0.8rem', fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '40px' }}>Được tin dùng bởi</p>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '48px', flexWrap: 'wrap' }}>
+                {[1, 2, 3, 4, 5].map(i => (
+                  <div key={i} style={{ width: '120px', height: '40px', background: '#f1f5f9', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8' }}>Logo {i}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
           {/* Pricing Section */}
           <section style={{ padding: '96px 1rem' }}>
             <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center', marginBottom: '64px' }}>
-              <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 900, color: '#0f172a', marginBottom: '24px' }}>Giá cả đơn giản, minh bạch</h2>
-              <p style={{ fontSize: '1.125rem', color: '#475569', fontWeight: 700 }}>Chọn gói phù hợp với công việc của bạn.</p>
+              <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 900, color: '#0f172a', marginBottom: '24px' }}>Bảng giá linh hoạt</h2>
+              <p style={{ fontSize: '1.125rem', color: '#475569', fontWeight: 700 }}>Đầu tư nhỏ, lợi ích lớn. Chọn gói phù hợp với bạn.</p>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '28px', maxWidth: '1100px', margin: '0 auto' }}>
@@ -263,8 +307,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   </div>
                 </div>
                 <div style={{ marginBottom: '24px' }}>
-                  <span style={{ fontSize: '2.75rem', fontWeight: 900, color: '#0f172a' }}>$14.99</span>
-                  <span style={{ fontSize: '1rem', fontWeight: 700, color: '#94a3b8' }}> / tháng</span>
+                  <span style={{ fontSize: '2.75rem', fontWeight: 900, color: '#0f172a' }}>399.000</span>
+                  <span style={{ fontSize: '1rem', fontWeight: 700, color: '#94a3b8' }}> ₫ / tháng</span>
                 </div>
                 <ul style={{ textAlign: 'left', listStyle: 'none', padding: 0, marginBottom: '32px' }}>
                   {[
@@ -272,7 +316,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     'Phỏng vấn & họp báo tự động',
                     'Nhận diện nhiều người nói',
                     'Xuất PDF, DOCX, TXT',
-                    '134+ ngôn ngữ',
+                    '100+ ngôn ngữ',
                   ].map(item => (
                     <li key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontWeight: 600, color: '#475569', marginBottom: '12px', fontSize: '0.875rem' }}>
                       <span style={{ color: '#d97706', marginTop: '2px' }}>✓</span> {item}
@@ -289,19 +333,19 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </button>
               </div>
 
-              {/* Nhân viên — highlight */}
+              {/* Chuyên viên — highlight */}
               <div style={{ background: '#0f172a', padding: '40px', borderRadius: '2.5rem', border: '1px solid #1e293b', color: 'white', position: 'relative', boxShadow: '0 25px 50px rgba(0,0,0,0.2)' }}>
                 <div style={{ position: 'absolute', top: '-16px', left: '50%', transform: 'translateX(-50%)', background: '#2563eb', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', padding: '8px 16px', borderRadius: '9999px', whiteSpace: 'nowrap' }}>Phổ biến nhất</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                   <div style={{ width: '44px', height: '44px', background: '#1e3a5f', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>💼</div>
                   <div>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 900, margin: 0 }}>Nhân viên</h3>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 900, margin: 0 }}>Chuyên viên</h3>
                     <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#60a5fa', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Doanh nghiệp</p>
                   </div>
                 </div>
                 <div style={{ marginBottom: '24px' }}>
-                  <span style={{ fontSize: '2.75rem', fontWeight: 900 }}>$9.99</span>
-                  <span style={{ fontSize: '1rem', fontWeight: 700, color: '#64748b' }}> / tháng</span>
+                  <span style={{ fontSize: '2.75rem', fontWeight: 900 }}>299.000</span>
+                  <span style={{ fontSize: '1rem', fontWeight: 700, color: '#64748b' }}> ₫ / tháng</span>
                 </div>
                 <ul style={{ textAlign: 'left', listStyle: 'none', padding: 0, marginBottom: '32px' }}>
                   {[
@@ -326,18 +370,18 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </button>
               </div>
 
-              {/* Thư ký tòa */}
+              {/* Cán bộ */}
               <div style={{ background: 'white', padding: '40px', borderRadius: '2.5rem', border: '1px solid #e2e8f0', position: 'relative' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
                   <div style={{ width: '44px', height: '44px', background: '#f0fdf4', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>⚖️</div>
                   <div>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>Thư ký tòa</h3>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>Cán bộ</h3>
                     <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#16a34a', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pháp lý</p>
                   </div>
                 </div>
                 <div style={{ marginBottom: '24px' }}>
-                  <span style={{ fontSize: '2.75rem', fontWeight: 900, color: '#0f172a' }}>$19.99</span>
-                  <span style={{ fontSize: '1rem', fontWeight: 700, color: '#94a3b8' }}> / tháng</span>
+                  <span style={{ fontSize: '2.75rem', fontWeight: 900, color: '#0f172a' }}>499.000</span>
+                  <span style={{ fontSize: '1rem', fontWeight: 700, color: '#94a3b8' }}> ₫ / tháng</span>
                 </div>
                 <ul style={{ textAlign: 'left', listStyle: 'none', padding: 0, marginBottom: '32px' }}>
                   {[
@@ -391,8 +435,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <div style={{ flex: '0 0 auto', textAlign: 'center' }}>
                   <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '2rem', padding: '40px 48px' }}>
                     <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#818cf8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Bắt đầu từ</div>
-                    <div style={{ fontSize: '3.5rem', fontWeight: 900, color: 'white', lineHeight: 1 }}>$499</div>
-                    <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#64748b', marginBottom: '32px' }}>/tháng · tùy chỉnh theo nhu cầu</div>
+                    <div style={{ fontSize: '3.5rem', fontWeight: 900, color: 'white', lineHeight: 1 }}>4.900.000</div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#64748b', marginBottom: '32px' }}>₫ / tháng · tùy chỉnh theo nhu cầu</div>
                     <button
                       onClick={() => handleNav('/register')}
                       style={{ display: 'block', width: '100%', padding: '16px 32px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', fontWeight: 700, borderRadius: '9999px', border: 'none', cursor: 'pointer', fontSize: '1rem', boxShadow: '0 4px 20px rgba(99,102,241,0.4)', transition: 'opacity 0.2s', marginBottom: '12px' }}
@@ -407,49 +451,113 @@ export function HomePage({ onNavigate }: HomePageProps) {
               </div>
             </div>
           </section>
+
+          {/* FAQ Section */}
+          <section style={{ padding: '80px 1rem', background: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+            <div style={{ maxWidth: '760px', margin: '0 auto' }}>
+              <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+                <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 900, color: '#0f172a', marginBottom: '12px' }}>Câu hỏi thường gặp</h2>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {[
+                  {
+                    q: 'MoMai hỗ trợ những định dạng file nào?',
+                    a: 'MoMai hỗ trợ MP3, MP4, WAV, M4A, MOV và nhiều định dạng âm thanh, video phổ biến khác. Bạn cũng có thể tải lên file dài đến 5 giờ.',
+                  },
+                  {
+                    q: 'Độ chính xác của AI đạt mức nào?',
+                    a: 'Hệ thống đạt độ chính xác 99%+ nhờ kết hợp các mô hình AI mới nhất cùng nền tảng huấn luyện riêng của Neurons AI, được tối ưu đặc biệt cho tiếng Việt.',
+                  },
+                  {
+                    q: 'Tôi có thể xuất kết quả ra định dạng nào?',
+                    a: 'Bạn có thể xuất ra PDF, DOCX, TXT và Sơ đồ tư duy. Các định dạng phụ đề như SRT và VTT cũng được hỗ trợ.',
+                  },
+                  {
+                    q: 'Dữ liệu của tôi có được bảo mật không?',
+                    a: 'Chúng tôi áp dụng mã hóa đầu cuối và tuân thủ các tiêu chuẩn bảo mật quốc tế. Dữ liệu của bạn không bao giờ được chia sẻ với bên thứ ba.',
+                  },
+                  {
+                    q: 'Có thể dùng thử miễn phí không?',
+                    a: 'Có. Bạn có thể đăng ký và sử dụng gói miễn phí ngay hôm nay mà không cần nhập thông tin thẻ tín dụng.',
+                  },
+                ].map(({ q, a }, i) => (
+                  <details key={i} style={{ background: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', padding: '24px 28px', cursor: 'pointer' }}>
+                    <summary style={{ fontWeight: 700, fontSize: '1rem', color: '#0f172a', listStyle: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      {q}
+                      <span style={{ color: '#2563eb', fontSize: '1.25rem', fontWeight: 400, marginLeft: '16px', flexShrink: 0 }}>+</span>
+                    </summary>
+                    <p style={{ marginTop: '16px', color: '#64748b', fontWeight: 500, lineHeight: 1.7, margin: '16px 0 0' }}>{a}</p>
+                  </details>
+                ))}
+              </div>
+            </div>
+          </section>
         </main>
 
         <footer style={{ background: 'white', borderTop: '1px solid #e2e8f0', padding: '80px 1rem' }}>
           <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '48px', marginBottom: '64px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '48px', marginBottom: '64px' }}>
+              {/* Brand */}
               <div style={{ gridColumn: 'span 1' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                   <img src="https://neuronsai.net/assets/NAI.png" alt="NeuronsAI" style={{ height: '24px', width: 'auto', objectFit: 'contain' }} />
                   <span style={{ fontWeight: 800, color: '#0f172a' }}>Neurons<span style={{ color: '#3b5bdb' }}>AI</span></span>
                 </div>
-                <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#94a3b8', lineHeight: 1.6 }}>Ghi chép cuộc họp bằng AI chính xác.</p>
+                <p style={{ fontSize: '0.875rem', fontWeight: 500, color: '#64748b', lineHeight: 1.7, marginBottom: '20px' }}>
+                  Meeting Minute I Thư ký họp AI là một nền tảng AI đa năng hỗ trợ các công việc tổng hợp thông tin, văn bản. Tại đây, bạn có thể tăng năng suất trong công việc văn phòng với tất cả các mô hình AI hiệu quả và quy trình làm việc tự động mới nhất.
+                </p>
+                {/* Social icons */}
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  {[
+                    { label: 'Facebook', src: '/logo-facebook.png' },
+                    { label: 'Zalo', src: '/logo-zalo.png' },
+                    { label: 'Viber', src: '/logo-viber.png' },
+                    { label: 'YouTube', src: '/logo-ytb.png' },
+                  ].map(({ label, src }) => (
+                    <button key={label} title={label} style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      <img src={src} alt={label} style={{ width: '36px', height: '36px', objectFit: 'contain', borderRadius: '50%' }} />
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              {/* Tin tức */}
               <div>
-                <h4 style={{ fontWeight: 900, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#0f172a', marginBottom: '24px' }}>Sản phẩm</h4>
+                <h4 style={{ fontWeight: 900, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#0f172a', marginBottom: '24px' }}>Tin tức</h4>
                 <ul style={{ listStyle: 'none', padding: 0 }}>
-                  {[['Bảng giá', '/pricing'], ['Tính năng', '/']].map(([label, path]) => (
-                    <li key={label} style={{ marginBottom: '16px' }}>
-                      <button onClick={() => handleNav(path)} style={{ fontSize: '0.875rem', fontWeight: 700, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{label}</button>
+                  {['Tin khuyến mãi', 'Thông báo', 'Tin công nghệ'].map(item => (
+                    <li key={item} style={{ marginBottom: '16px' }}>
+                      <button style={{ fontSize: '0.875rem', fontWeight: 600, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{item}</button>
                     </li>
                   ))}
                 </ul>
               </div>
+
+              {/* Thông tin cần thiết */}
               <div>
-                <h4 style={{ fontWeight: 900, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#0f172a', marginBottom: '24px' }}>Công cụ</h4>
+                <h4 style={{ fontWeight: 900, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#0f172a', marginBottom: '24px' }}>Thông tin cần thiết</h4>
                 <ul style={{ listStyle: 'none', padding: 0 }}>
-                  {['MP3 sang văn bản', 'MP4 sang văn bản', 'Video sang văn bản'].map(item => (
+                  {['Thoả thuận sử dụng', 'Chính sách bảo mật', 'Hướng dẫn sử dụng', 'Hướng dẫn thanh toán'].map(item => (
                     <li key={item} style={{ marginBottom: '16px' }}>
-                      <button onClick={() => handleNav('/register')} style={{ fontSize: '0.875rem', fontWeight: 700, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{item}</button>
+                      <button style={{ fontSize: '0.875rem', fontWeight: 600, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{item}</button>
                     </li>
                   ))}
                 </ul>
               </div>
+
+              {/* Về chúng tôi */}
               <div>
-                <h4 style={{ fontWeight: 900, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#0f172a', marginBottom: '24px' }}>Pháp lý</h4>
+                <h4 style={{ fontWeight: 900, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#0f172a', marginBottom: '24px' }}>Về chúng tôi</h4>
                 <ul style={{ listStyle: 'none', padding: 0 }}>
-                  {['Chính sách bảo mật', 'Điều khoản sử dụng'].map(item => (
+                  {['Câu chuyện', 'Giới thiệu', 'Liên hệ'].map(item => (
                     <li key={item} style={{ marginBottom: '16px' }}>
-                      <button style={{ fontSize: '0.875rem', fontWeight: 700, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{item}</button>
+                      <button style={{ fontSize: '0.875rem', fontWeight: 600, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{item}</button>
                     </li>
                   ))}
                 </ul>
               </div>
             </div>
+
             <div style={{ paddingTop: '48px', borderTop: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px' }}>
               <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8' }}>© 2026 Meeting AI. Bảo lưu mọi quyền.</p>
             </div>
