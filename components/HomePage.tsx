@@ -6,6 +6,7 @@ interface HomePageProps {
 
 export function HomePage({ onNavigate }: HomePageProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [activeCard, setActiveCard] = useState(1);
 
   const handleNav = (path: string) => {
     setMobileOpen(false);
@@ -43,6 +44,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
           .hamburger-btn { display: flex !important; }
           .brand-text { font-size: 1rem !important; }
         }
+        details[open] summary .faq-icon { transform: rotate(45deg); }
+        details summary .faq-icon { transition: transform 0.2s; display: inline-block; }
       `}</style>
 
       <div className="bg-dot-grid">
@@ -101,20 +104,15 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
         <main>
           {/* Hero Section */}
-          <section style={{ paddingTop: '80px', paddingBottom: '64px', padding: '80px 1rem 64px' }}>
+          <section style={{ padding: '80px 1rem 64px' }}>
             <div style={{ maxWidth: '896px', margin: '0 auto', textAlign: 'center' }}>
-              <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', fontWeight: 900, color: '#0f172a', marginBottom: '24px', letterSpacing: '-0.025em', lineHeight: 1.1 }}>
+              <h1 style={{ fontSize: 'clamp(1.75rem, 4.2vw, 3.15rem)', fontWeight: 900, color: '#0f172a', marginBottom: '24px', letterSpacing: '-0.025em', lineHeight: 1.1 }}>
                 THƯ KÝ AI 24/7 CỦA BẠN
               </h1>
-              <p style={{ fontSize: 'clamp(1.1rem, 2.5vw, 1.5rem)', color: '#475569', fontWeight: 500, marginBottom: '24px', maxWidth: '672px', margin: '0 auto 24px' }}>
+
+              <p style={{ fontSize: 'clamp(0.88rem, 2vw, 1.2rem)', color: '#475569', fontWeight: 500, marginBottom: '24px', maxWidth: '672px', margin: '0 auto 24px' }}>
                 Tự động chuyển đổi video, hình ảnh, âm thanh thành văn bản phù hợp chỉ trong vài giây với tính chính xác cao.
               </p>
-
-              <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginBottom: '40px', flexWrap: 'wrap' }}>
-                {['NHANH CHÓNG', 'CHÍNH XÁC', 'DỄ SỬ DỤNG'].map((tag, i) => (
-                  <span key={i} style={{ fontSize: '0.8rem', fontWeight: 900, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.12em', padding: '6px 16px', background: '#eff6ff', borderRadius: '9999px', border: '1px solid #bfdbfe' }}>{tag}</span>
-                ))}
-              </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
                 <button
@@ -133,14 +131,12 @@ export function HomePage({ onNavigate }: HomePageProps) {
               <div style={{ padding: 'clamp(2rem, 5vw, 3.5rem)' }}>
                 {/* Dashboard Title */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
-                  <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>Giới thiệu</h2>
-                  <div>
-                    <span style={{ padding: '4px 12px', background: '#eff6ff', color: '#2563eb', borderRadius: '9999px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gói miễn phí</span>
-                  </div>
+                  <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase' }}>GIỚI THIỆU</h2>
+                  <div />
                 </div>
 
                 {/* Video Demo */}
-                <div style={{ marginBottom: '40px', borderRadius: '1.5rem', overflow: 'hidden', background: '#000', aspectRatio: '16/9', position: 'relative' }}>
+                <div style={{ marginBottom: '20px', borderRadius: '1.5rem', overflow: 'hidden', background: '#000', aspectRatio: '16/9', position: 'relative' }}>
                   <iframe
                     src="https://www.youtube.com/embed/4_pk6Kiv2Uw"
                     title="AI CoWorker AI Audio Transcribe with Verification and Summarization"
@@ -151,15 +147,21 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   />
                 </div>
 
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '19px', marginBottom: '32px', flexWrap: 'wrap' }}>
+                  {['NHANH CHÓNG', 'CHÍNH XÁC', 'DỄ SỬ DỤNG'].map((tag, i) => (
+                    <span key={i} style={{ fontSize: '0.77rem', fontWeight: 900, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.12em', padding: '6px 16px', background: '#eff6ff', borderRadius: '9999px', border: '1px solid #bfdbfe' }}>{tag}</span>
+                  ))}
+                </div>
+
                 {/* Use Cases Grid */}
                 <div>
                   <div style={{ marginBottom: '24px' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Phù hợp với</span>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 900, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Phù hợp với</span>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
                     {/* Phóng viên */}
-                    <div className="mode-card" style={{ padding: '24px', borderRadius: '1.5rem', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer' }}>
+                    <div className={`mode-card${activeCard === 0 ? ' active' : ''}`} onClick={() => setActiveCard(0)} style={{ padding: '24px', borderRadius: '1.5rem', border: activeCard === 0 ? '2px solid #2563eb' : '1px solid #e2e8f0', background: activeCard === 0 ? 'rgba(239,246,255,0.1)' : 'white', cursor: 'pointer' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
                         <div style={{ width: '48px', height: '48px', background: '#fef3c7', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.875rem' }}>🎙️</div>
                         <div>
@@ -167,11 +169,17 @@ export function HomePage({ onNavigate }: HomePageProps) {
                           <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#d97706', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Báo chí</p>
                         </div>
                       </div>
-                      <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', lineHeight: 1.6 }}>AI tự động tổng hợp nội dung phỏng vấn, soạn tin/ bài phù hợp.</p>
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {['Không giới hạn thông tin tổng hợp', 'Phỏng vấn và viết bài tự động', 'Nhận diện nội dung', 'Chuyển đổi nhiều định dạng', '100+ ngôn ngữ'].map((item, i) => (
+                          <li key={i} style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                            <span style={{ color: '#d97706', flexShrink: 0 }}>✓</span>{item}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
 
                     {/* Chuyên viên */}
-                    <div className="mode-card active" style={{ padding: '24px', borderRadius: '1.5rem', border: '2px solid #2563eb', background: 'rgba(239,246,255,0.1)', cursor: 'pointer' }}>
+                    <div className={`mode-card${activeCard === 1 ? ' active' : ''}`} onClick={() => setActiveCard(1)} style={{ padding: '24px', borderRadius: '1.5rem', border: activeCard === 1 ? '2px solid #2563eb' : '1px solid #e2e8f0', background: activeCard === 1 ? 'rgba(239,246,255,0.1)' : 'white', cursor: 'pointer' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
                         <div style={{ width: '48px', height: '48px', background: '#eff6ff', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.875rem' }}>💼</div>
                         <div>
@@ -179,11 +187,17 @@ export function HomePage({ onNavigate }: HomePageProps) {
                           <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Doanh nghiệp</p>
                         </div>
                       </div>
-                      <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', lineHeight: 1.6 }}>AI tự động chuyển đổi thông tin thành biên bản họp, các công việc cần thực hiện sau cuộc họp.</p>
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {['Không giới hạn thông tin tổng hợp', 'Tự động tạo biên bản họp', 'Tóm tắt nội dung & danh sách việc cần làm', 'Tích hợp lịch & email', 'Quy trình chuẩn'].map((item, i) => (
+                          <li key={i} style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                            <span style={{ color: '#2563eb', flexShrink: 0 }}>✓</span>{item}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
 
                     {/* Cán bộ */}
-                    <div className="mode-card" style={{ padding: '24px', borderRadius: '1.5rem', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer' }}>
+                    <div className={`mode-card${activeCard === 2 ? ' active' : ''}`} onClick={() => setActiveCard(2)} style={{ padding: '24px', borderRadius: '1.5rem', border: activeCard === 2 ? '2px solid #2563eb' : '1px solid #e2e8f0', background: activeCard === 2 ? 'rgba(239,246,255,0.1)' : 'white', cursor: 'pointer' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
                         <div style={{ width: '48px', height: '48px', background: '#f0fdf4', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.875rem' }}>📋</div>
                         <div>
@@ -191,7 +205,13 @@ export function HomePage({ onNavigate }: HomePageProps) {
                           <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Pháp lý</p>
                         </div>
                       </div>
-                      <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', lineHeight: 1.6 }}>AI tự động nhận dạng video, hiểu được bối cảnh và ghi chép diễn biến tại phiên toà với tính chính xác cao.</p>
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {['Ghi chép biên bản với độ chính xác cao', 'Nhận diện thuật ngữ pháp lý', 'Đánh dấu thời gian từng câu', 'Nhận diện giọng địa phương', 'Quy trình chuẩn tòa án'].map((item, i) => (
+                          <li key={i} style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
+                            <span style={{ color: '#16a34a', flexShrink: 0 }}>✓</span>{item}
+                          </li>
+                        ))}
+                      </ul>
                     </div>
 
                   </div>
@@ -214,9 +234,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
             <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
               <div style={{ textAlign: 'center', marginBottom: '64px' }}>
                 <h2 style={{ fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)', fontWeight: 900, color: '#0f172a', marginBottom: '12px' }}>Tại sao chọn MoMai?</h2>
-                <p style={{ fontSize: '1.1rem', fontWeight: 500, color: '#64748b' }}>Không chỉ là công cụ, chúng tôi hiểu công việc của bạn</p>
+                <p style={{ fontSize: '1.1rem', fontWeight: 500, color: '#64748b' }}>Được xây dựng cho từng ngành nghề cụ thể</p>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '48px 56px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '48px' }}>
                 {[
                   {
                     icon: (
@@ -230,72 +250,72 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   },
                   {
                     icon: (
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>
                       </svg>
                     ),
-                    bg: '#f5f3ff',
+                    bg: '#eff6ff',
                     title: 'Không giới hạn',
                     desc: 'Không giới hạn số lần sử dụng. Chuyển đổi hàng nghìn file âm thanh và video với các gói dịch vụ phù hợp.',
                   },
                   {
                     icon: (
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
                       </svg>
                     ),
-                    bg: '#f0fdf4',
+                    bg: '#f1f5f9',
                     title: 'Tiết kiệm chi phí',
                     desc: 'Tối ưu hóa ngân sách, thời gian cho bạn. Chỉ với chi phí nhỏ so với thuê nhân viên truyền thống hoặc các phần mềm riêng lẻ.',
                   },
                   {
                     icon: (
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>
                       </svg>
                     ),
-                    bg: '#f5f3ff',
+                    bg: '#eff6ff',
                     title: 'Độ chính xác 99%+',
                     desc: 'Được ứng dụng bởi các mô hình AI mới nhất cùng nền tảng huấn luyện AI riêng do Neurons AI xây dựng cho kết quả chính xác cao nhất.',
                   },
                   {
                     icon: (
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0891b2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>
                       </svg>
                     ),
-                    bg: '#ecfeff',
+                    bg: '#eff6ff',
                     title: 'Xử lý siêu nhanh',
                     desc: 'Ghi chép và tổng hợp hàng giờ âm thanh và video chỉ trong vài phút.',
                   },
                   {
                     icon: (
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
                       </svg>
                     ),
-                    bg: '#f0fdf4',
+                    bg: '#f1f5f9',
                     title: '100+ ngôn ngữ',
                     desc: 'Hỗ trợ Tiếng Việt, Tiếng Anh, Tiếng Trung, Tiếng Nhật và hơn 100 ngôn ngữ khác trên toàn thế giới.',
                   },
                   {
                     icon: (
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
                       </svg>
                     ),
-                    bg: '#fffbeb',
-                    title: 'Hỗ trợ nhiều định dạng và dung lượng lớn',
+                    bg: '#f1f5f9',
+                    title: 'Hỗ trợ nhiều định dạng',
                     desc: 'Tải lên file dài đến 5 giờ. Hỗ trợ MP3, MP4, WAV, M4A và nhiều định dạng khác.',
                   },
                   {
                     icon: (
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e11d48" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
                       </svg>
                     ),
-                    bg: '#fff1f2',
-                    title: 'Nhiều lựa chọn',
+                    bg: '#f1f5f9',
+                    title: 'Hỗ trợ nhiều lựa chọn',
                     desc: 'Nền tảng cho phép lựa chọn định dạng sau khi tổng hợp: PDF, DOCX, Sơ đồ tư duy...',
                   },
                 ].map(({ icon, bg, title, desc }) => (
@@ -306,6 +326,24 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>{title}</h3>
                     <p style={{ color: '#64748b', fontWeight: 500, lineHeight: 1.7, margin: 0, fontSize: '0.9rem' }}>{desc}</p>
                   </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* Trusted By Section */}
+          <section style={{ padding: '64px 1rem', background: '#f8fafc' }}>
+            <div style={{ maxWidth: '1100px', margin: '0 auto', textAlign: 'center' }}>
+              <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '36px' }}>Được tin dùng bởi</p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '48px', flexWrap: 'wrap' }}>
+                {[
+                  { src: '/logo-htp.jpg', alt: 'Saigon Hi-Tech Park' },
+                  { src: '/logo-tand.jpg', alt: 'Tòa Án Nhân Dân' },
+                  { src: '/logo-giadinh.jpg', alt: 'Gia Dinh University' },
+                  { src: '/logo-hiu.jpg', alt: 'HIU' },
+                  { src: '/logo-thethao.jpg', alt: 'Thể Thao & Văn Hóa' },
+                ].map((logo, i) => (
+                  <img key={i} src={logo.src} alt={logo.alt} style={{ height: '60px', width: 'auto', objectFit: 'contain', filter: 'grayscale(20%)', opacity: 0.85 }} />
                 ))}
               </div>
             </div>
@@ -506,7 +544,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   <details key={i} style={{ background: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', padding: '24px 28px', cursor: 'pointer' }}>
                     <summary style={{ fontWeight: 700, fontSize: '1rem', color: '#0f172a', listStyle: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       {q}
-                      <span style={{ color: '#2563eb', fontSize: '1.25rem', fontWeight: 400, marginLeft: '16px', flexShrink: 0 }}>+</span>
+                      <span className="faq-icon" style={{ color: '#2563eb', fontSize: '1.25rem', fontWeight: 400, marginLeft: '16px', flexShrink: 0 }}>+</span>
                     </summary>
                     <p style={{ marginTop: '16px', color: '#64748b', fontWeight: 500, lineHeight: 1.7, margin: '16px 0 0' }}>{a}</p>
                   </details>
@@ -536,7 +574,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     { label: 'Viber', src: '/logo-viber.png' },
                     { label: 'YouTube', src: '/logo-ytb.png' },
                   ].map(({ label, src }) => (
-                    <button key={label} title={label} style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    <button key={label} title={label} aria-label={label} style={{ width: '36px', height: '36px', borderRadius: '50%', border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                       <img src={src} alt={label} style={{ width: '36px', height: '36px', objectFit: 'contain', borderRadius: '50%' }} />
                     </button>
                   ))}
