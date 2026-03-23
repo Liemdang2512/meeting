@@ -54,12 +54,17 @@ export function HomePage({ onNavigate }: HomePageProps) {
           <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '64px' }}>
               {/* Logo */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => handleNav('/')}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                aria-label="Về trang chủ"
+              >
                 <img src="https://neuronsai.net/assets/NAI.png" alt="NeuronsAI" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} />
                 <span style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.025em', color: '#0f172a' }}>
                   Meeting Minute I <span style={{ color: '#3b5bdb' }}>Thư ký AI</span>
                 </span>
-              </div>
+              </button>
 
               {/* Desktop Nav */}
               <nav className="desktop-nav" style={{ alignItems: 'center', gap: '32px' }}>
@@ -335,7 +340,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
           <section style={{ padding: '64px 1rem', background: '#f8fafc' }}>
             <div style={{ maxWidth: '1100px', margin: '0 auto', textAlign: 'center' }}>
               <p style={{ fontSize: '0.85rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '36px' }}>Được tin dùng bởi</p>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '48px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '24px', flexWrap: 'wrap' }}>
                 {[
                   { src: '/logo-htp.jpg', alt: 'Saigon Hi-Tech Park' },
                   { src: '/logo-tand.jpg', alt: 'Tòa Án Nhân Dân' },
@@ -343,7 +348,30 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   { src: '/logo-hiu.jpg', alt: 'HIU' },
                   { src: '/logo-thethao.jpg', alt: 'Thể Thao & Văn Hóa' },
                 ].map((logo, i) => (
-                  <img key={i} src={logo.src} alt={logo.alt} style={{ height: '60px', width: 'auto', objectFit: 'contain', filter: 'grayscale(20%)', opacity: 0.85 }} />
+                  <div
+                    key={i}
+                    style={{
+                      width: '160px',
+                      height: '80px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <img
+                      src={logo.src}
+                      alt={logo.alt}
+                      style={{
+                        maxWidth: '140px',
+                        maxHeight: '64px',
+                        width: 'auto',
+                        height: 'auto',
+                        objectFit: 'contain',
+                        filter: 'grayscale(20%)',
+                        opacity: 0.85,
+                      }}
+                    />
+                  </div>
                 ))}
               </div>
             </div>
