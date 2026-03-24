@@ -29,7 +29,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, o
 
     setLoading(true);
     try {
-      await register(email.trim(), password, confirmPassword);
+      await register(email.trim(), password, confirmPassword, ['specialist']);
       onRegisterSuccess();
     } catch (err: any) {
       setError(err?.message || 'Không thể đăng ký. Vui lòng thử lại.');

@@ -30,12 +30,14 @@ router.post('/login', async (req, res) => {
     if (!valid) {
       return res.status(401).json({ error: 'Email hoặc mật khẩu không đúng' });
     }
-    // Get role from profiles
+    // Get role and workflow groups from profiles
     const [profile] = await sql`
-      SELECT role FROM public.profiles WHERE user_id = ${user.id}
+      SELECT role, workflow_groups, active_workflow_group FROM public.profiles WHERE user_id = ${user.id}
     `;
     const role = profile?.role ?? 'free';
-    const token = signToken({ userId: user.id, email: user.email, role });
+    const workflowGroups = profile?.workflow_groups ?? ['specialist'];
+    const activeWorkflowGroup = profile?.active_workflow_group ?? 'specialist';
+    const token = signToken({ userId: user.id, email: user.email, role, workflowGroups, activeWorkflowGroup });
     return res.json({ token, user: { id: user.id, email: user.email, role } });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
@@ -86,7 +88,7 @@ router.post('/register', registerLimiter, async (req, res) => {
       `;
       return u;
     });
-    const token = signToken({ userId: newUser.id, email: newUser.email, role: 'free' });
+    const token = signToken({ userId: newUser.id, email: newUser.email, role: 'free', workflowGroups: ['specialist'], activeWorkflowGroup: 'specialist' });
     return res.status(201).json({ token, user: { id: newUser.id, email: newUser.email, role: 'free' } });
   } catch (err: any) {
     if (err.statusCode === 409) {
