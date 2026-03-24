@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 08-03-PLAN.md
-last_updated: "2026-03-24T05:30:20.780Z"
+stopped_at: "Checkpoint: 08-04 Task 3 human-verify pending"
+last_updated: "2026-03-24T05:37:05.540Z"
 progress:
   total_phases: 9
   completed_phases: 5
   total_plans: 28
-  completed_plans: 23
+  completed_plans: 24
 ---
 
 # Project State
@@ -17,11 +17,11 @@ progress:
 ## Current Position
 
 Phase: 08 (role-based-workflows) — EXECUTING
-Plan: 4 of 7
+Plan: 5 of 7
 
 ## Last Session
 
-- **Stopped At:** Completed 08-03-PLAN.md
+- **Stopped At:** Checkpoint: 08-04 Task 3 human-verify pending
 - **Timestamp:** 2026-03-19T09:16:00Z
 
 ## Decisions
@@ -67,6 +67,8 @@ Plan: 4 of 7
 - [Phase 08-role-based-workflows]: WorkflowGuard uses useEffect for imperative navigation + synchronous null-return for render blocking
 - [Phase 08-role-based-workflows]: SpecialistWorkflowPage redirects to /meeting via useEffect (Option B minimal-touch, D-04)
 - [Phase 08-role-based-workflows]: Post-login navigation uses activeWorkflowGroup with /meeting fallback for legacy JWT tokens
+- [Phase 08-role-based-workflows]: GroupSwitcher returns null when workflowGroups.length <= 1 — no rendering overhead for single-group users
+- [Phase 08-role-based-workflows]: PATCH /workflow-groups fixes activeWorkflowGroup if removed group was active (Pitfall 3) — server-side safety invariant
 
 ## Performance Metrics
 
@@ -90,6 +92,7 @@ Plan: 4 of 7
 | Phase 08-role-based-workflows P08-01 | 3min | 3 tasks | 9 files |
 | Phase 08-role-based-workflows P08-02 | 4min | 3 tasks | 6 files |
 | Phase 08-role-based-workflows P08-03 | 5min | 2 tasks | 8 files |
+| Phase 08-role-based-workflows P04 | 3min | 2 tasks | 5 files |
 
 ## Progress
 
