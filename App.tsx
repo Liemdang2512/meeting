@@ -27,6 +27,10 @@ const MindmapTreeCanvasLazy = lazy(() => import('./features/mindmap/components/M
 const RegisterPage = lazy(() => import('./components/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const PricingPage = lazy(() => import('./features/pricing/PricingPage').then(m => ({ default: m.PricingPage })));
 const HomePage = lazy(() => import('./components/HomePage').then(m => ({ default: m.HomePage })));
+import { WorkflowGuard } from './features/workflows/WorkflowGuard';
+const ReporterWorkflowPage = lazy(() => import('./features/workflows/reporter/ReporterWorkflowPage'));
+const SpecialistWorkflowPage = lazy(() => import('./features/workflows/specialist/SpecialistWorkflowPage'));
+const OfficerWorkflowPage = lazy(() => import('./features/workflows/officer/OfficerWorkflowPage'));
 
 declare global {
   interface AIStudio {
@@ -890,7 +894,11 @@ function App() {
             onRegisterSuccess={async () => {
               const loggedInUser = await getMe();
               setUser(loggedInUser);
-              navigate('/meeting');
+              if (loggedInUser && loggedInUser.activeWorkflowGroup) {
+                navigate(`/${loggedInUser.activeWorkflowGroup}`);
+              } else {
+                navigate('/meeting');
+              }
               if (loggedInUser) {
                 setIsAdmin(loggedInUser.role === 'admin');
                 const accountKey = await loadApiKeyFromAccount(loggedInUser.userId);
@@ -911,7 +919,11 @@ function App() {
       // Sau khi dang nhap thanh cong, lay user info va cap nhat state
       const loggedInUser = await getMe();
       setUser(loggedInUser);
-      navigate('/meeting');
+      if (loggedInUser && loggedInUser.activeWorkflowGroup) {
+        navigate(`/${loggedInUser.activeWorkflowGroup}`);
+      } else {
+        navigate('/meeting');
+      }
       if (loggedInUser) {
         setIsAdmin(loggedInUser.role === 'admin');
         const accountKey = await loadApiKeyFromAccount(loggedInUser.userId);
@@ -977,6 +989,34 @@ function App() {
       <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><Spinner /></div>}>
         <HomePage onNavigate={(path) => { window.history.pushState({}, '', path); setRoute(path); }} />
       </Suspense>
+    );
+  }
+
+  if (route === '/reporter') {
+    return (
+      <WorkflowGuard group="reporter" user={user} navigate={navigate}>
+        <Suspense fallback={<div>Loading...</div>}>
+          <ReporterWorkflowPage />
+        </Suspense>
+      </WorkflowGuard>
+    );
+  }
+  if (route === '/specialist') {
+    return (
+      <WorkflowGuard group="specialist" user={user} navigate={navigate}>
+        <Suspense fallback={<div>Loading...</div>}>
+          <SpecialistWorkflowPage navigate={navigate} />
+        </Suspense>
+      </WorkflowGuard>
+    );
+  }
+  if (route === '/officer') {
+    return (
+      <WorkflowGuard group="officer" user={user} navigate={navigate}>
+        <Suspense fallback={<div>Loading...</div>}>
+          <OfficerWorkflowPage />
+        </Suspense>
+      </WorkflowGuard>
     );
   }
 

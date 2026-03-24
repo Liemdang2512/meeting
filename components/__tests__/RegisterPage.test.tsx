@@ -9,6 +9,12 @@ vi.mock('../../lib/auth', () => ({
 import { RegisterPage } from '../RegisterPage';
 import { register } from '../../lib/auth';
 
+// Helper to click the first workflow group card (specialist)
+function selectGroup(groupLabel: RegExp) {
+  const btn = screen.getByRole('button', { name: groupLabel });
+  fireEvent.click(btn);
+}
+
 describe('RegisterPage', () => {
   afterEach(() => {
     vi.clearAllMocks();
@@ -23,8 +29,32 @@ describe('RegisterPage', () => {
     expect(screen.getByRole('button', { name: /tạo tài khoản/i })).toBeInTheDocument();
   });
 
+  it('hien thi loi khi chua chon nhom nguoi dung', async () => {
+    render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
+
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: 'user@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/^mật khẩu$/i), {
+      target: { value: 'password123' },
+    });
+    fireEvent.change(screen.getByLabelText(/xác nhận mật khẩu/i), {
+      target: { value: 'password123' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /tạo tài khoản/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/chon it nhat 1 nhom/i)).toBeInTheDocument();
+    });
+    expect(register).not.toHaveBeenCalled();
+  });
+
   it('hien thi loi khi mat khau ngan hon 8 ky tu (truoc khi goi API)', async () => {
     render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
+
+    // Select a group first to bypass group validation
+    selectGroup(/chuyen vien/i);
 
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'user@example.com' },
@@ -46,6 +76,9 @@ describe('RegisterPage', () => {
 
   it('hien thi loi khi mat khau khong khop (truoc khi goi API)', async () => {
     render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
+
+    // Select a group first to bypass group validation
+    selectGroup(/chuyen vien/i);
 
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'user@example.com' },
@@ -72,6 +105,9 @@ describe('RegisterPage', () => {
 
     render(<RegisterPage onRegisterSuccess={onRegisterSuccess} onGoToLogin={() => {}} />);
 
+    // Select specialist group
+    selectGroup(/chuyen vien/i);
+
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'newuser@example.com' },
     });
@@ -89,6 +125,7 @@ describe('RegisterPage', () => {
         'newuser@example.com',
         'securepass123',
         'securepass123',
+        ['specialist'],
       );
       expect(onRegisterSuccess).toHaveBeenCalled();
     });
@@ -101,6 +138,9 @@ describe('RegisterPage', () => {
     );
 
     render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
+
+    // Select a group first
+    selectGroup(/chuyen vien/i);
 
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'user@example.com' },
@@ -125,6 +165,9 @@ describe('RegisterPage', () => {
     mockedRegister.mockRejectedValueOnce(new Error('Email đã được sử dụng'));
 
     render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
+
+    // Select a group first
+    selectGroup(/chuyen vien/i);
 
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'existing@example.com' },
