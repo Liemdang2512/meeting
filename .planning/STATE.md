@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 08-01-PLAN.md
-last_updated: "2026-03-24T05:15:55.106Z"
+stopped_at: Completed 08-02-PLAN.md
+last_updated: "2026-03-24T05:24:00.422Z"
 progress:
   total_phases: 9
   completed_phases: 5
   total_plans: 28
-  completed_plans: 21
+  completed_plans: 22
 ---
 
 # Project State
@@ -17,11 +17,11 @@ progress:
 ## Current Position
 
 Phase: 08 (role-based-workflows) — EXECUTING
-Plan: 2 of 7
+Plan: 3 of 7
 
 ## Last Session
 
-- **Stopped At:** Completed 08-01-PLAN.md
+- **Stopped At:** Completed 08-02-PLAN.md
 - **Timestamp:** 2026-03-19T09:16:00Z
 
 ## Decisions
@@ -61,6 +61,9 @@ Plan: 2 of 7
 - [Phase 08-role-based-workflows]: WorkflowGroup type defined in features/workflows/types.ts as single source of truth (D-01, D-04)
 - [Phase 08-role-based-workflows]: Legacy JWT tokens normalized to specialist group in requireAuth via payload.workflowGroups ?? ['specialist'] (D-08)
 - [Phase 08-role-based-workflows]: register() in lib/auth.ts accepts workflowGroups[] param — RegisterPage passes ['specialist'] default until UI plan
+- [Phase 08-role-based-workflows]: RegisterSchema exported from server/routes/auth.ts for unit testing
+- [Phase 08-role-based-workflows]: vitest.config.ts excludes .claude/worktrees/** to prevent stale stubs from worktrees contaminating test runs
+- [Phase 08-role-based-workflows]: profiles.workflow.test.ts uses inline validation logic test (no supertest/DB) to avoid uninstalled supertest dep
 
 ## Performance Metrics
 
@@ -82,6 +85,7 @@ Plan: 2 of 7
 | Phase 07-email-sending-after-minutes P07-03 | 3min | 2 tasks | 5 files |
 | Phase 07-email-sending-after-minutes P07-04 | 7min | 2 tasks | 2 files |
 | Phase 08-role-based-workflows P08-01 | 3min | 3 tasks | 9 files |
+| Phase 08-role-based-workflows P08-02 | 4min | 3 tasks | 6 files |
 
 ## Progress
 
