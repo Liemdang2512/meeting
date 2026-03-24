@@ -70,7 +70,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
     role text DEFAULT 'user',
     created_at timestamptz DEFAULT now() NOT NULL,
-    updated_at timestamptz
+    updated_at timestamptz,
+    workflow_groups text[] NOT NULL DEFAULT '{specialist}',
+    active_workflow_group text NOT NULL DEFAULT 'specialist'
 );
 
 CREATE TABLE IF NOT EXISTS public.user_settings (

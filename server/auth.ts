@@ -3,10 +3,14 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.API_JWT_SECRET ?? 'dev-secret-change-me';
 
+export type WorkflowGroup = 'reporter' | 'specialist' | 'officer';
+
 export interface AuthUser {
   userId: string;
   email: string;
   role: string;
+  workflowGroups: WorkflowGroup[];
+  activeWorkflowGroup: WorkflowGroup;
 }
 
 // Extend Express Request
@@ -30,10 +34,14 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   }
   const token = header.slice(7);
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as AuthUser;
-    req.user = payload;
+    const payload = jwt.verify(token, JWT_SECRET) as Partial<AuthUser> & Pick<AuthUser, 'userId' | 'email' | 'role'>;
+    req.user = {
+      ...payload,
+      workflowGroups: payload.workflowGroups ?? ['specialist'],
+      activeWorkflowGroup: payload.activeWorkflowGroup ?? 'specialist',
+    } as AuthUser;
     next();
   } catch {
-    res.status(401).json({ error: 'Token không hợp lệ hoặc đã hết hạn' });
+    res.status(401).json({ error: 'Token khong hop le hoac da het han' });
   }
 }

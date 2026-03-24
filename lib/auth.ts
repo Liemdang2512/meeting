@@ -1,9 +1,13 @@
 import { authFetch, getToken, setToken, clearToken } from './api';
 
+export type WorkflowGroup = 'reporter' | 'specialist' | 'officer';
+
 export interface AuthUser {
   userId: string;
   email: string;
   role: string;
+  workflowGroups: WorkflowGroup[];
+  activeWorkflowGroup: WorkflowGroup;
 }
 
 export interface AuthState {
@@ -61,10 +65,10 @@ export async function loadApiKeyFromAccount(_userId: string): Promise<string | n
 }
 
 // Dang ky tai khoan moi: lay JWT, luu vao localStorage
-export async function register(email: string, password: string, confirmPassword: string): Promise<void> {
+export async function register(email: string, password: string, confirmPassword: string, workflowGroups: WorkflowGroup[]): Promise<void> {
   const res = await authFetch('/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ email, password, confirmPassword }),
+    body: JSON.stringify({ email, password, confirmPassword, workflowGroups }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Đăng ký thất bại' }));

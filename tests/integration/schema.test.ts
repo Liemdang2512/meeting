@@ -108,4 +108,13 @@ describe('Database schema', () => {
       expect(rows).toHaveLength(1);
     });
   });
+
+  describe('Workflow groups columns', () => {
+    it('profiles has workflow_groups text[] column', () => {
+      expect(true).toBe(false);
+    });
+    it('profiles has active_workflow_group text column', () => {
+      expect(true).toBe(false);
+    });
+  });
 });
