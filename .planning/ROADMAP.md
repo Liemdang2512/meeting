@@ -13,6 +13,7 @@
 - [x] **Phase 5: Text Mindmap & Checklist** - Mindmap và checklist từ biên bản
 - [ ] **Phase 6: Free Registration, Daily Limit & Payment UI** - Đăng ký tự do, giới hạn hàng ngày, UI thanh toán
 - [x] **Phase 7: Email Sending After Minutes** - Gửi email biên bản cuộc họp đến danh sách người nhận (completed 2026-03-19)
+- [ ] **Phase 8: Role-Based Workflows** - Chia luồng sản phẩm theo nhóm người dùng (Phóng viên/Chuyên viên/Cán bộ)
 
 ## Phase Details
 
@@ -87,3 +88,20 @@ Plans:
 - [ ] 07-02-PLAN.md — EmailRecipientsInput chips component + MeetingInfoForm integration
 - [ ] 07-03-PLAN.md — Server-side email route: PDF generator, HTML template, Resend SDK, admin settings API
 - [ ] 07-04-PLAN.md — Email send card in completion step, admin email settings UI, human verification
+
+### Phase 8: Role-Based Workflows
+**Goal**: Multi-group workflow system: DB text[] columns, extended JWT with workflowGroups/activeWorkflowGroup, register multi-select, per-group routes with guards, group switcher, settings page
+**Depends on**: Phase 7
+**Requirements**: [ROLE-01, ROLE-02, ROLE-03, ROLE-04, ROLE-05, ROLE-06]
+**Success Criteria**:
+  1. User bắt buộc chọn nhóm workflow khi đăng ký (multi-select, min 1)
+  2. workflowGroups[] + activeWorkflowGroup lưu DB text[] và đồng bộ vào JWT
+  3. Sau login/register, app điều hướng đúng workflow theo activeWorkflowGroup
+  4. Guard chặn truy cập sai luồng giữa 3 nhóm
+  5. Có test tự động cho register validation + route guard + group switcher
+**Plans**: 4 plans
+Plans:
+- [ ] 08-01-PLAN.md — DB migration (text[] columns) + WorkflowGroup types + AuthUser extension + legacy JWT normalization
+- [ ] 08-02-PLAN.md — Backend auth: register/login with workflowGroups + PATCH active-workflow-group endpoint
+- [ ] 08-03-PLAN.md — Frontend: RegisterPage multi-select + WorkflowGuard + 3 workflow shells + App.tsx routing
+- [ ] 08-04-PLAN.md — GroupSwitcher header + Settings WorkflowGroupsSection + tests + human verification
