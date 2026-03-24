@@ -2,26 +2,26 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-stopped_at: "Checkpoint: 07-04 Task 3 human-verify pending"
-last_updated: "2026-03-19T09:38:41.418Z"
+status: Ready to execute
+stopped_at: Completed 08-01-PLAN.md
+last_updated: "2026-03-24T05:15:55.106Z"
 progress:
-  total_phases: 8
+  total_phases: 9
   completed_phases: 5
-  total_plans: 21
-  completed_plans: 20
+  total_plans: 28
+  completed_plans: 21
 ---
 
 # Project State
 
 ## Current Position
 
-Phase: 07 (email-sending-after-minutes) — EXECUTING
-Plan: 3 of 5
+Phase: 08 (role-based-workflows) — EXECUTING
+Plan: 2 of 7
 
 ## Last Session
 
-- **Stopped At:** Checkpoint: 07-04 Task 3 human-verify pending
+- **Stopped At:** Completed 08-01-PLAN.md
 - **Timestamp:** 2026-03-19T09:16:00Z
 
 ## Decisions
@@ -58,6 +58,9 @@ Plan: 3 of 5
 - [Phase 07-email-sending-after-minutes]: 503 returned when resend_api_key not configured — clear service-unavailable signal to frontend
 - [Phase 07-email-sending-after-minutes]: EmailSettingsSection defined as standalone function before App() to avoid hooks-in-nested-component anti-pattern
 - [Phase 07-email-sending-after-minutes]: Email subject auto-fills using useEffect on meetingInfo.companyName/meetingDatetime dependencies
+- [Phase 08-role-based-workflows]: WorkflowGroup type defined in features/workflows/types.ts as single source of truth (D-01, D-04)
+- [Phase 08-role-based-workflows]: Legacy JWT tokens normalized to specialist group in requireAuth via payload.workflowGroups ?? ['specialist'] (D-08)
+- [Phase 08-role-based-workflows]: register() in lib/auth.ts accepts workflowGroups[] param — RegisterPage passes ['specialist'] default until UI plan
 
 ## Performance Metrics
 
@@ -78,6 +81,7 @@ Plan: 3 of 5
 | Phase 07-email-sending-after-minutes P07-02 | 4min | 2 tasks | 2 files |
 | Phase 07-email-sending-after-minutes P07-03 | 3min | 2 tasks | 5 files |
 | Phase 07-email-sending-after-minutes P07-04 | 7min | 2 tasks | 2 files |
+| Phase 08-role-based-workflows P08-01 | 3min | 3 tasks | 9 files |
 
 ## Progress
 

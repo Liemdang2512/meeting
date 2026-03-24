@@ -101,7 +101,7 @@ Plans:
   5. Có test tự động cho register validation + route guard + group switcher
 **Plans**: 4 plans
 Plans:
-- [ ] 08-01-PLAN.md — DB migration (text[] columns) + WorkflowGroup types + AuthUser extension + legacy JWT normalization
+- [x] 08-01-PLAN.md — DB migration (text[] columns) + WorkflowGroup types + AuthUser extension + legacy JWT normalization
 - [ ] 08-02-PLAN.md — Backend auth: register/login with workflowGroups + PATCH active-workflow-group endpoint
 - [ ] 08-03-PLAN.md — Frontend: RegisterPage multi-select + WorkflowGuard + 3 workflow shells + App.tsx routing
 - [ ] 08-04-PLAN.md — GroupSwitcher header + Settings WorkflowGroupsSection + tests + human verification
