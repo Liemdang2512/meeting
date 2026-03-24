@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 08-02-PLAN.md
-last_updated: "2026-03-24T05:24:00.422Z"
+stopped_at: Completed 08-03-PLAN.md
+last_updated: "2026-03-24T05:30:20.780Z"
 progress:
   total_phases: 9
   completed_phases: 5
   total_plans: 28
-  completed_plans: 22
+  completed_plans: 23
 ---
 
 # Project State
@@ -17,11 +17,11 @@ progress:
 ## Current Position
 
 Phase: 08 (role-based-workflows) — EXECUTING
-Plan: 3 of 7
+Plan: 4 of 7
 
 ## Last Session
 
-- **Stopped At:** Completed 08-02-PLAN.md
+- **Stopped At:** Completed 08-03-PLAN.md
 - **Timestamp:** 2026-03-19T09:16:00Z
 
 ## Decisions
@@ -64,6 +64,9 @@ Plan: 3 of 7
 - [Phase 08-role-based-workflows]: RegisterSchema exported from server/routes/auth.ts for unit testing
 - [Phase 08-role-based-workflows]: vitest.config.ts excludes .claude/worktrees/** to prevent stale stubs from worktrees contaminating test runs
 - [Phase 08-role-based-workflows]: profiles.workflow.test.ts uses inline validation logic test (no supertest/DB) to avoid uninstalled supertest dep
+- [Phase 08-role-based-workflows]: WorkflowGuard uses useEffect for imperative navigation + synchronous null-return for render blocking
+- [Phase 08-role-based-workflows]: SpecialistWorkflowPage redirects to /meeting via useEffect (Option B minimal-touch, D-04)
+- [Phase 08-role-based-workflows]: Post-login navigation uses activeWorkflowGroup with /meeting fallback for legacy JWT tokens
 
 ## Performance Metrics
 
@@ -86,6 +89,7 @@ Plan: 3 of 7
 | Phase 07-email-sending-after-minutes P07-04 | 7min | 2 tasks | 2 files |
 | Phase 08-role-based-workflows P08-01 | 3min | 3 tasks | 9 files |
 | Phase 08-role-based-workflows P08-02 | 4min | 3 tasks | 6 files |
+| Phase 08-role-based-workflows P08-03 | 5min | 2 tasks | 8 files |
 
 ## Progress
 
