@@ -28,9 +28,11 @@ const RegisterPage = lazy(() => import('./components/RegisterPage').then(m => ({
 const PricingPage = lazy(() => import('./features/pricing/PricingPage').then(m => ({ default: m.PricingPage })));
 const HomePage = lazy(() => import('./components/HomePage').then(m => ({ default: m.HomePage })));
 import { WorkflowGuard } from './features/workflows/WorkflowGuard';
+import { GroupSwitcher } from './features/workflows/GroupSwitcher';
 const ReporterWorkflowPage = lazy(() => import('./features/workflows/reporter/ReporterWorkflowPage'));
 const SpecialistWorkflowPage = lazy(() => import('./features/workflows/specialist/SpecialistWorkflowPage'));
 const OfficerWorkflowPage = lazy(() => import('./features/workflows/officer/OfficerWorkflowPage'));
+const WorkflowGroupsSection = lazy(() => import('./features/settings/WorkflowGroupsSection').then(m => ({ default: m.WorkflowGroupsSection })));
 
 declare global {
   interface AIStudio {
@@ -1020,6 +1022,30 @@ function App() {
     );
   }
 
+  if (route === '/settings') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-start p-8">
+        <div className="w-full max-w-lg">
+          <button
+            onClick={() => window.history.back()}
+            className="mb-4 text-sm text-slate-500 hover:text-slate-800 transition-colors"
+          >
+            ← Quay lai
+          </button>
+          <Suspense fallback={<div className="flex justify-center items-center h-32"><Spinner /></div>}>
+            <WorkflowGroupsSection
+              user={user}
+              onUpdate={async () => {
+                const updatedUser = await getMe();
+                setUser(updatedUser);
+              }}
+            />
+          </Suspense>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Modern Flat Header */}
@@ -1049,11 +1075,20 @@ function App() {
                 Phiên mới
               </button>
             )}
+            {user && user.workflowGroups && user.workflowGroups.length > 1 && (
+              <GroupSwitcher user={user} navigate={navigate} />
+            )}
             {user && (
               <QuotaBadge
                 onQuotaExhausted={() => showQuotaModalIfNotDismissed()}
               />
             )}
+            <button
+              onClick={() => navigate('/settings')}
+              className="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors px-3 py-2"
+            >
+              Cai dat
+            </button>
             <button onClick={handleLogout} className="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors px-3 py-2">
               Đăng xuất
             </button>

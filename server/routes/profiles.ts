@@ -49,4 +49,53 @@ router.patch('/active-workflow-group', async (req, res) => {
   }
 });
 
+// PATCH /api/profiles/workflow-groups
+// Body: { add?: WorkflowGroup[], remove?: WorkflowGroup[] }
+// Constraint: at least 1 group must remain after remove
+// Returns: { token: string, workflowGroups: string[], activeWorkflowGroup: string }
+router.patch('/workflow-groups', async (req, res) => {
+  const { add, remove } = req.body ?? {};
+  try {
+    const [profile] = await sql`
+      SELECT workflow_groups, active_workflow_group FROM public.profiles WHERE user_id = ${req.user!.userId}
+    `;
+    let groups: string[] = profile?.workflow_groups ?? ['specialist'];
+
+    // Add groups
+    if (Array.isArray(add)) {
+      for (const g of add) {
+        if (VALID_GROUPS.includes(g as WorkflowGroup) && !groups.includes(g)) {
+          groups.push(g);
+        }
+      }
+    }
+
+    // Remove groups
+    if (Array.isArray(remove)) {
+      const afterRemove = groups.filter((g: string) => !remove.includes(g));
+      if (afterRemove.length === 0) {
+        return res.status(400).json({ error: 'Phai giu it nhat 1 nhom' });
+      }
+      groups = afterRemove;
+    }
+
+    // Fix active group if removed (Pitfall 3)
+    let activeGroup = profile?.active_workflow_group ?? 'specialist';
+    if (!groups.includes(activeGroup)) {
+      activeGroup = groups[0];
+    }
+
+    await sql`
+      UPDATE public.profiles
+      SET workflow_groups = ${sql.array(groups)}, active_workflow_group = ${activeGroup}, updated_at = NOW()
+      WHERE user_id = ${req.user!.userId}
+    `;
+
+    const newToken = signToken({ ...req.user!, workflowGroups: groups as WorkflowGroup[], activeWorkflowGroup: activeGroup as WorkflowGroup });
+    return res.json({ token: newToken, workflowGroups: groups, activeWorkflowGroup: activeGroup });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
