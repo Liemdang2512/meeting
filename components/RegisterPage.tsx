@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { register } from '../lib/auth';
+import type { WorkflowGroup } from '../lib/auth';
+import { WORKFLOW_GROUPS } from '../features/workflows/types';
 
 interface RegisterPageProps {
   onRegisterSuccess: () => void;
@@ -10,12 +12,25 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, o
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [selectedGroups, setSelectedGroups] = useState<WorkflowGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const toggleGroup = (group: WorkflowGroup) => {
+    setSelectedGroups(prev =>
+      prev.includes(group) ? prev.filter(g => g !== group) : [...prev, group]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // Validate group selection first
+    if (selectedGroups.length === 0) {
+      setError('Vui long chon it nhat 1 nhom nguoi dung');
+      return;
+    }
 
     // Client-side validation
     if (password.length < 8) {
@@ -29,7 +44,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, o
 
     setLoading(true);
     try {
-      await register(email.trim(), password, confirmPassword, ['specialist']);
+      await register(email.trim(), password, confirmPassword, selectedGroups);
       onRegisterSuccess();
     } catch (err: any) {
       setError(err?.message || 'Không thể đăng ký. Vui lòng thử lại.');
@@ -42,8 +57,8 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, o
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
       <div className="max-w-md w-full bg-white border border-slate-200 p-8 space-y-8 shadow-sm rounded-xl">
         <div className="text-center space-y-4">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-indigo-600 text-white font-sans font-medium text-3xl mb-2 rounded-xl transition-all shadow-sm">
-            MA
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl transition-all shadow-sm overflow-hidden mb-2">
+            <img src="/NAI.png" alt="NAI" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-4xl font-sans font-medium text-slate-800 leading-none">
             Đăng ký<br/>tài khoản
@@ -54,6 +69,28 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, o
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-slate-800">Nhom nguoi dung *</label>
+            <div className="space-y-2">
+              {WORKFLOW_GROUPS.map(({ key, label, description }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => toggleGroup(key)}
+                  className={`w-full p-4 border rounded-xl text-left transition-colors ${
+                    selectedGroups.includes(key)
+                      ? 'border-indigo-500 bg-indigo-50 text-indigo-800'
+                      : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="font-medium">{label}</div>
+                  <div className="text-sm opacity-70">{description}</div>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-slate-400">Co the chon nhieu nhom</p>
+          </div>
+
           <div className="space-y-2">
             <label htmlFor="reg-email" className="block text-sm font-medium text-slate-800">Email</label>
             <input
