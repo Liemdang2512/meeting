@@ -1012,7 +1012,7 @@ function App() {
     return (
       <WorkflowGuard group="reporter" user={user} navigate={navigate}>
         <Suspense fallback={<div>Loading...</div>}>
-          <ReporterWorkflowPage />
+          <ReporterWorkflowPage navigate={navigate} user={user!} />
         </Suspense>
       </WorkflowGuard>
     );
