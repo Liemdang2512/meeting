@@ -14,7 +14,7 @@
 - [ ] **Phase 6: Free Registration, Daily Limit & Payment UI** - Đăng ký tự do, giới hạn hàng ngày, UI thanh toán
 - [x] **Phase 7: Email Sending After Minutes** - Gửi email biên bản cuộc họp đến danh sách người nhận (completed 2026-03-19)
 - [ ] **Phase 8: Role-Based Workflows** - Chia luồng sản phẩm theo nhóm người dùng (Phóng viên/Chuyên viên/Cán bộ)
-- [ ] **Phase 9: UI Revamp** - Website và giao diện từng nhóm tính năng (2/8 plans complete)
+- [ ] **Phase 9: UI Revamp** - Website và giao diện từng nhóm tính năng (5/8 plans complete)
 
 ## Phase Details
 
@@ -126,6 +126,6 @@ Plans:
 - [x] 09-03-PLAN.md — ReporterInfoForm + OfficerInfoForm + MeetingLandingPage components
 - [x] 09-04-PLAN.md — Complete ReporterWorkflowPage (4-step wizard)
 - [ ] 09-05-PLAN.md — Complete OfficerWorkflowPage (4-step wizard)
-- [ ] 09-06-PLAN.md — Complete SpecialistWorkflowPage (replace redirect stub)
+- [x] 09-06-PLAN.md — Complete SpecialistWorkflowPage (replace redirect stub)
 - [ ] 09-07-PLAN.md — App.tsx wiring: MeetingLandingPage at /meeting + props to workflow pages
 - [ ] 09-08-PLAN.md — Human verification checkpoint
