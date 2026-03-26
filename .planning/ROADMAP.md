@@ -105,3 +105,26 @@ Plans:
 - [x] 08-02-PLAN.md — Backend auth: register/login with workflowGroups + PATCH active-workflow-group endpoint
 - [x] 08-03-PLAN.md — Frontend: RegisterPage multi-select + WorkflowGuard + 3 workflow shells + App.tsx routing
 - [x] 08-04-PLAN.md — GroupSwitcher header + Settings WorkflowGroupsSection + tests + human verification
+
+### Phase 9: UI Revamp - Website va giao dien tung nhom tinh nang
+
+**Goal:** Build 3 complete independent workflow pages (reporter/specialist/officer) with per-group forms, transcription hints, AI prompts, and a MeetingLandingPage card selector replacing the monolithic /meeting inline block
+**Requirements**: [UI-01, UI-02, UI-03, UI-04, UI-05, UI-06, UI-07, UI-08, UI-09, UI-10, UI-11, UI-12, UI-13, UI-14, UI-15, UI-16]
+**Depends on:** Phase 8
+**Success Criteria**:
+  1. /meeting route shows workflow group cards filtered by user's groups
+  2. /reporter has complete interview workflow (upload, transcribe, form, AI summary)
+  3. /specialist has complete meeting secretary workflow (reuses MeetingInfoForm with label changes)
+  4. /officer has complete legal workflow (upload, transcribe, court form with participants, AI summary)
+  5. Each group uses per-group AI prompt and transcription context hints
+  6. Inline monolithic /meeting block removed from App.tsx
+**Plans**: 8 plans
+Plans:
+- [ ] 09-01-PLAN.md — Types (ReporterInfo, OfficerInfo, SpecialistInfo) + storage with _type discriminator + prompt builders
+- [ ] 09-02-PLAN.md — geminiService systemHint extension + shared WorkflowStepHeader component
+- [ ] 09-03-PLAN.md — ReporterInfoForm + OfficerInfoForm + MeetingLandingPage components
+- [ ] 09-04-PLAN.md — Complete ReporterWorkflowPage (4-step wizard)
+- [ ] 09-05-PLAN.md — Complete OfficerWorkflowPage (4-step wizard)
+- [ ] 09-06-PLAN.md — Complete SpecialistWorkflowPage (replace redirect stub)
+- [ ] 09-07-PLAN.md — App.tsx wiring: MeetingLandingPage at /meeting + props to workflow pages
+- [ ] 09-08-PLAN.md — Human verification checkpoint
