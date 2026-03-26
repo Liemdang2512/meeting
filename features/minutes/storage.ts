@@ -75,7 +75,9 @@ export function loadOfficerDraft(): OfficerInfo | null {
       title: (parsed.title as string) ?? '',
       presiding: (parsed.presiding as string) ?? '',
       courtSecretary: (parsed.courtSecretary as string) ?? '',
-      participants: (parsed.participants as OfficerInfo['participants']) ?? [],
+      participants: Array.isArray(parsed.participants)
+        ? (parsed.participants as OfficerInfo['participants'])
+        : [],
       datetime: (parsed.datetime as string) ?? '',
       location: (parsed.location as string) ?? '',
     };

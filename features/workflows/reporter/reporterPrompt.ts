@@ -1,4 +1,4 @@
-import type { ReporterInfo } from '../../../features/minutes/types';
+import type { ReporterInfo } from '../../minutes/types';
 
 function toCleanText(value: string): string {
   return (value ?? '').trim();

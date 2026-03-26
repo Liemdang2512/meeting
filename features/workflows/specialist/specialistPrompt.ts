@@ -1,5 +1,5 @@
-import type { MeetingInfo } from '../../../features/minutes/types';
-import { buildMinutesCustomPrompt } from '../../../features/minutes/prompt';
+import type { MeetingInfo } from '../../minutes/types';
+import { buildMinutesCustomPrompt } from '../../minutes/prompt';
 
 export function buildSpecialistPrompt(args: {
   info: MeetingInfo;
