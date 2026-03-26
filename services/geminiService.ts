@@ -669,9 +669,12 @@ export const transcribeBasic = async (
   customLanguage?: string,
   loggingContext?: TokenLoggingContext,
   userId?: string | null,
+  systemHint?: string,
 ): Promise<string> => {
   try {
-    return await runAudioAgent(file, getAudioPrompt(language, customLanguage), loggingContext, userId);
+    const basePrompt = getAudioPrompt(language, customLanguage);
+    const fullPrompt = systemHint ? `${basePrompt}\n\nNGỮ CẢNH BỔ SUNG: ${systemHint}` : basePrompt;
+    return await runAudioAgent(file, fullPrompt, loggingContext, userId);
   } catch (error: any) {
     if (error.message?.includes("Requested entity was not found")) throw new Error("API_KEY_EXPIRED");
     throw new Error(error.message || "Lỗi xử lý âm thanh.");
@@ -691,6 +694,7 @@ export const transcribeDeep = async (
   customLanguage?: string,
   loggingContext?: TokenLoggingContext,
   userId?: string | null,
+  systemHint?: string,
 ): Promise<string> => {
   try {
     // Agent 1: Phiên âm nguyên văn, giữ ngôn ngữ gốc
@@ -698,9 +702,7 @@ export const transcribeDeep = async (
       ? (customLanguage?.trim() || 'ngôn ngữ khác')
       : { vi: 'tiếng Việt', en: 'tiếng Anh', zh: 'tiếng Trung', ko: 'tiếng Hàn', ja: 'tiếng Nhật' }[language];
     onProgress?.(1, 'Đang phiên âm nguyên văn...');
-    const rawTranscript = await runAudioAgent(
-      file,
-      `
+    const agent1Prompt = `
       Nhiệm vụ DUY NHẤT của bạn: Phiên âm toàn bộ lời nói trong file âm thanh.
       Ngôn ngữ chính trong file: ${sourceLangLabel}.
       - Ghi NGUYÊN VĂN theo ngôn ngữ gốc, KHÔNG dịch bất cứ thứ gì.
@@ -708,7 +710,10 @@ export const transcribeDeep = async (
         Nếu người nói tự giới thiệu tên → dùng tên thật.
       - Không bỏ sót bất kỳ đoạn nào dù nhỏ.
       - Định dạng Markdown sạch.
-    `,
+    ${systemHint ? `\n\nNGỮ CẢNH BỔ SUNG: ${systemHint}` : ''}`;
+    const rawTranscript = await runAudioAgent(
+      file,
+      agent1Prompt,
       loggingContext,
       userId,
     );
