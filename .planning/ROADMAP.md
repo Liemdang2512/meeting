@@ -120,8 +120,8 @@ Plans:
   6. Inline monolithic /meeting block removed from App.tsx
 **Plans**: 8 plans
 Plans:
-- [ ] 09-01-PLAN.md — Types (ReporterInfo, OfficerInfo, SpecialistInfo) + storage with _type discriminator + prompt builders
-- [ ] 09-02-PLAN.md — geminiService systemHint extension + shared WorkflowStepHeader component
+- [x] 09-01-PLAN.md — Types (ReporterInfo, OfficerInfo, SpecialistInfo) + storage with _type discriminator + prompt builders
+- [x] 09-02-PLAN.md — geminiService systemHint extension + shared WorkflowStepHeader component
 - [ ] 09-03-PLAN.md — ReporterInfoForm + OfficerInfoForm + MeetingLandingPage components
 - [ ] 09-04-PLAN.md — Complete ReporterWorkflowPage (4-step wizard)
 - [ ] 09-05-PLAN.md — Complete OfficerWorkflowPage (4-step wizard)
