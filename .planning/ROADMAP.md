@@ -123,9 +123,9 @@ Plans:
 Plans:
 - [x] 09-01-PLAN.md — Types (ReporterInfo, OfficerInfo, SpecialistInfo) + storage with _type discriminator + prompt builders
 - [x] 09-02-PLAN.md — geminiService systemHint extension + shared WorkflowStepHeader component
-- [ ] 09-03-PLAN.md — ReporterInfoForm + OfficerInfoForm + MeetingLandingPage components
+- [x] 09-03-PLAN.md — ReporterInfoForm + OfficerInfoForm + MeetingLandingPage components
 - [ ] 09-04-PLAN.md — Complete ReporterWorkflowPage (4-step wizard)
-- [ ] 09-05-PLAN.md — Complete OfficerWorkflowPage (4-step wizard)
+- [x] 09-05-PLAN.md — Complete OfficerWorkflowPage (4-step wizard)
 - [ ] 09-06-PLAN.md — Complete SpecialistWorkflowPage (replace redirect stub)
 - [ ] 09-07-PLAN.md — App.tsx wiring: MeetingLandingPage at /meeting + props to workflow pages
 - [ ] 09-08-PLAN.md — Human verification checkpoint
