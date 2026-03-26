@@ -14,6 +14,7 @@
 - [ ] **Phase 6: Free Registration, Daily Limit & Payment UI** - Đăng ký tự do, giới hạn hàng ngày, UI thanh toán
 - [x] **Phase 7: Email Sending After Minutes** - Gửi email biên bản cuộc họp đến danh sách người nhận (completed 2026-03-19)
 - [ ] **Phase 8: Role-Based Workflows** - Chia luồng sản phẩm theo nhóm người dùng (Phóng viên/Chuyên viên/Cán bộ)
+- [ ] **Phase 9: UI Revamp** - Website và giao diện từng nhóm tính năng (2/8 plans complete)
 
 ## Phase Details
 

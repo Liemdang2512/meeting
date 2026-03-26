@@ -4,12 +4,12 @@ milestone: v1.0
 milestone_name: milestone
 status: Executing Phase 09
 stopped_at: Completed 09-01-PLAN.md
-last_updated: "2026-03-26T04:02:38.745Z"
+last_updated: "2026-03-26T04:10:00Z"
 progress:
   total_phases: 10
   completed_phases: 5
   total_plans: 36
-  completed_plans: 24
+  completed_plans: 25
 ---
 
 # Project State
@@ -17,12 +17,12 @@ progress:
 ## Current Position
 
 Phase: 09 (ui-revamp-website-va-giao-dien-tung-nhom-tinh-nang) — EXECUTING
-Plan: 1 of 8
+Plan: 2 of 8
 
 ## Last Session
 
 - **Stopped At:** Completed 09-01-PLAN.md
-- **Timestamp:** 2026-03-19T09:16:00Z
+- **Timestamp:** 2026-03-26T04:08:00Z
 
 ## Decisions
 
@@ -69,8 +69,10 @@ Plan: 1 of 8
 - [Phase 08-role-based-workflows]: Post-login navigation uses activeWorkflowGroup with /meeting fallback for legacy JWT tokens
 - [Phase 08-role-based-workflows]: GroupSwitcher returns null when workflowGroups.length <= 1 — no rendering overhead for single-group users
 - [Phase 08-role-based-workflows]: PATCH /workflow-groups fixes activeWorkflowGroup if removed group was active (Pitfall 3) — server-side safety invariant
-- [Phase 09]: Single DRAFT_KEY with _type discriminator for cross-group localStorage guard
-- [Phase 09]: buildSpecialistPrompt thin wrapper over buildMinutesCustomPrompt — no logic duplication
+- [Phase 09-ui-revamp]: Single DRAFT_KEY mom_meeting_info_v1 used for all workflow groups — _type discriminator guards cross-group reads
+- [Phase 09-ui-revamp]: loadMeetingInfoDraft accepts legacy data (no _type) and _type=specialist — backward compatible
+- [Phase 09-ui-revamp]: buildSpecialistPrompt is thin wrapper over buildMinutesCustomPrompt — DRY, no logic duplication
+- [Phase 09-ui-revamp]: ReporterInfo and OfficerInfo do not extend MeetingInfo — clean separation per D-08
 
 ## Performance Metrics
 
@@ -95,7 +97,7 @@ Plan: 1 of 8
 | Phase 08-role-based-workflows P08-02 | 4min | 3 tasks | 6 files |
 | Phase 08-role-based-workflows P08-03 | 5min | 2 tasks | 8 files |
 | Phase 08-role-based-workflows P04 | 3min | 2 tasks | 5 files |
-| Phase 09-ui-revamp-website-va-giao-dien-tung-nhom-tinh-nang P09-01 | 4min | 2 tasks | 8 files |
+| 09-ui-revamp | 09-01 | 3min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -105,4 +107,4 @@ Plan: 1 of 8
 
 ## Progress
 
-Phases 01–05 complete. Phase 07 executing (plans 07-00, 07-01, 07-02 done — 07-03 and 07-04 remaining).
+Phases 01–07 complete. Phase 09 executing (plan 09-01 done — 09-02 through 09-08 remaining).
