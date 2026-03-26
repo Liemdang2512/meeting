@@ -35,15 +35,14 @@ Declared values from `styles/tokens.css` (all multiples of 4):
 |-------|-------------|-------|-------|
 | xs | `--ui-space-1` | 4px | Icon gaps, inline padding, chip gaps |
 | sm | `--ui-space-2` | 8px | Compact element spacing, input padding supplement |
-| md-sm | `--ui-space-3` | 12px | Input vertical padding, tag internal padding |
 | md | `--ui-space-4` | 16px | Default element spacing, form field gaps |
-| md-lg | `--ui-space-5` | 20px | Card internal padding supplement |
 | lg | `--ui-space-6` | 24px | Section padding, card padding |
 | xl | `--ui-space-8` | 32px | Layout gaps, step header bottom margin |
-| 2xl-sm | `--ui-space-10` | 40px | Workflow card padding |
 | 2xl | `--ui-space-12` | 48px | Major section breaks, page vertical rhythm |
 
 **Tailwind equivalents in use:** `p-4` (16px), `p-6` (24px), `p-8` (32px), `gap-4` (16px), `gap-6` (24px), `space-y-4`, `space-y-6`, `space-y-8`
+
+Note: Component patterns may reference `py-3` (12px), `p-5` (20px), `py-10` (40px) as Tailwind implementation details — these are not named design tokens.
 
 Exceptions:
 - Touch targets on workflow group cards: minimum 44px height (`min-h-[44px]`) per accessibility requirement
@@ -58,9 +57,11 @@ Source: `styles/tokens.css` + `tailwind.config.js` + `components/ui/` patterns
 | Role | Size | Tailwind | Weight | Tailwind | Line Height | Font Family |
 |------|------|----------|--------|----------|-------------|-------------|
 | Body | 14px | `text-sm` | 400 | `font-normal` | 1.5 | Inter / DM Sans (`font-sans`) |
-| Label | 14px | `text-sm` | 500 | `font-medium` | 1.4 | Inter / DM Sans (`font-sans`) |
-| Heading | 20px | `text-xl` | 500 | `font-medium` | 1.2 | Inter / DM Sans (`font-sans`) |
+| Label | 14px | `text-sm` | 600 | `font-semibold` | 1.4 | Inter / DM Sans (`font-sans`) |
+| Heading | 20px | `text-xl` | 600 | `font-semibold` | 1.2 | Inter / DM Sans (`font-sans`) |
 | Display | 24px | `text-2xl` | 600 | `font-semibold` | 1.2 | Space Grotesk (`font-display`) |
+
+**Weights declared:** `font-normal` (400) for body prose — `font-semibold` (600) for labels, headings, and display. No third weight.
 
 **Rules:**
 - Body text color: `#0f172a` (`text-slate-900`) — minimum contrast 4.5:1
@@ -116,7 +117,7 @@ transition-colors duration-200 cursor-pointer
 min-h-[44px]
 ```
 
-- Card label: `text-base font-medium text-slate-800`
+- Card label: `text-base font-semibold text-slate-800`
 - Card description: `text-sm text-slate-500 mt-1`
 - Grid: `grid grid-cols-1 md:grid-cols-3 gap-4`
 - Max width container: `max-w-4xl mx-auto p-8`
@@ -124,9 +125,9 @@ min-h-[44px]
 ### Form Fields (All 3 Workflow Forms)
 
 ```
-Input: w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-medium
+Input: w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-normal
        focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/30 focus:border-[#1E40AF] bg-white
-Label: block text-sm font-medium text-slate-800 mb-1
+Label: block text-sm font-semibold text-slate-800 mb-1
 Field wrapper: space-y-1
 Form section: bg-white border border-slate-200 rounded-xl p-6 space-y-6 shadow-sm
 ```
@@ -134,23 +135,23 @@ Form section: bg-white border border-slate-200 rounded-xl p-6 space-y-6 shadow-s
 ### Step Indicator (WorkflowStepHeader)
 
 - Step count: 4 steps per workflow (Upload, Phiên âm, Thông tin, Kết quả)
-- Active step: `w-8 h-8 rounded-full bg-[#1E3A8A] text-white flex items-center justify-center text-sm font-medium`
+- Active step: `w-8 h-8 rounded-full bg-[#1E3A8A] text-white flex items-center justify-center text-sm font-semibold`
 - Completed step: `w-8 h-8 rounded-full bg-slate-200 text-slate-500` with check icon
 - Upcoming step: `w-8 h-8 rounded-full bg-slate-100 text-slate-400`
-- Step label: `text-sm font-medium text-slate-700` (active) / `text-sm text-slate-400` (inactive)
+- Step label: `text-sm font-semibold text-slate-700` (active) / `text-sm text-slate-400` (inactive)
 - Connector line: `flex-1 h-px bg-slate-200`
 
 ### Primary CTA Button
 
 ```
-px-6 py-3 bg-[#1E3A8A] text-white font-medium rounded-xl
+px-6 py-3 bg-[#1E3A8A] text-white font-semibold rounded-xl
 hover:bg-[#1E40AF] transition-colors duration-200 shadow-sm
 ```
 
 ### Secondary/Skip Button
 
 ```
-px-6 py-3 border border-slate-200 text-slate-600 font-medium rounded-xl
+px-6 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl
 hover:bg-slate-50 transition-colors duration-200
 ```
 
@@ -195,11 +196,11 @@ Source: CONTEXT.md D-03 (group labels), RESEARCH.md patterns, project convention
 | Card: Officer | "Thông tin vụ án" | Source: CONTEXT.md D-03 |
 | Primary CTA — transcribe | "Phiên âm" | Matches existing UI convention |
 | Primary CTA — summarize | "Tổng hợp" | Source: CONTEXT.md D-14 |
-| Primary CTA — continue | "Tiếp tục" | Matches existing UI convention |
+| Primary CTA — continue (form step) | "Tiếp tục" | Used only on form step advance where the destination step (Kết quả) is unambiguous in context |
 | Skip action | "Bỏ qua" | Source: RESEARCH.md code example |
-| CTA label — Reporter output | "Tiếp tục tạo bài" | Source: RESEARCH.md code example |
-| CTA label — Specialist output | "Tiếp tục tạo biên bản" | Matches existing specialist workflow |
-| CTA label — Officer output | "Tiếp tục tạo hồ sơ" | Parallel pattern |
+| CTA label — Reporter output | "Tiếp tục tạo bài" | Used when advancing TO the output generation step for Reporter workflow; includes noun for disambiguation |
+| CTA label — Specialist output | "Tiếp tục tạo biên bản" | Matches existing specialist workflow; includes noun for disambiguation |
+| CTA label — Officer output | "Tiếp tục tạo hồ sơ" | Parallel pattern; includes noun for disambiguation |
 | Form heading — Reporter | "Thông tin phỏng vấn" | Source: RESEARCH.md code example |
 | Form heading — Specialist | "Thông tin cuộc họp" | Adapted from existing MeetingInfoForm |
 | Form heading — Officer | "Thông tin vụ án" | Parallel to D-07 fields |
@@ -215,6 +216,8 @@ Source: CONTEXT.md D-03 (group labels), RESEARCH.md patterns, project convention
 | Prompt editor toggle | "Tùy chỉnh prompt" | Ghost button label |
 | Language selector label | "Ngôn ngữ phiên âm" | Above select element |
 | Step labels | "Upload" / "Phiên âm" / "Thông tin" / "Kết quả" | WorkflowStepHeader |
+
+**"Tiếp tục" vs "Tiếp tục tạo [noun]" rule:** Use bare "Tiếp tục" when the next step is the result/output step and the workflow group makes the destination unambiguous (e.g., advancing from the Thông tin form to Kết quả). Use "Tiếp tục tạo [noun]" when the CTA initiates the AI generation action within a step, where the output type needs to be named explicitly.
 
 **Destructive actions in this phase:** None. No delete, no account removal, no data purge operations are part of this phase's scope. Draft clearing on group switch is silent (no confirmation needed — data is localStorage only).
 
