@@ -8,6 +8,10 @@ type Props = {
   onChange: (next: MeetingInfo) => void;
   onContinue: () => void;
   onSkip: () => void;
+  labels?: {
+    companyName?: string;
+    companyAddress?: string;
+  };
 };
 
 const ROLE_OPTIONS: MeetingParticipantRole[] = ['Chủ trì', 'Thư ký', 'Tham dự', 'Khách', 'Khác'];
@@ -74,7 +78,7 @@ export function MeetingInfoForm(props: Props) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-slate-800">Tên doanh nghiệp</label>
+          <label className="block text-sm font-medium text-slate-800">{props.labels?.companyName ?? 'Tên doanh nghiệp'}</label>
           <input
             value={value.companyName}
             onChange={(e) => updateField('companyName', e.target.value)}
@@ -84,7 +88,7 @@ export function MeetingInfoForm(props: Props) {
         </div>
 
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-slate-800">Địa chỉ doanh nghiệp</label>
+          <label className="block text-sm font-medium text-slate-800">{props.labels?.companyAddress ?? 'Địa chỉ doanh nghiệp'}</label>
           <input
             value={value.companyAddress}
             onChange={(e) => updateField('companyAddress', e.target.value)}
