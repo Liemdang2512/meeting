@@ -13,6 +13,7 @@
 - [x] **Phase 5: Text Mindmap & Checklist** - Mindmap và checklist từ biên bản
 - [ ] **Phase 6: Free Registration, Daily Limit & Payment UI** - Đăng ký tự do, giới hạn hàng ngày, UI thanh toán
 - [x] **Phase 7: Email Sending After Minutes** - Gửi email biên bản cuộc họp đến danh sách người nhận (completed 2026-03-19)
+- [ ] **Phase 9: UI Revamp** - Website và giao diện từng nhóm tính năng (1/8 plans complete)
 
 ## Phase Details
 
