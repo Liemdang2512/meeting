@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 
 // ============================================================
-// Icon map (same whitelist as MindmapCanvas)
+// Icon map
 // ============================================================
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -49,11 +49,6 @@ interface LayoutResult {
   edges: Edge[];
 }
 
-/** hub-spoke layout:
- *  - source at x=0, y centered
- *  - intermediates at x=320, stacked vertically (y spaced 120px)
- *  - destination (if any) at x=640, y centered
- */
 function buildHubSpokeLayout(diagramNodes: DiagramNode[], diagramEdges: { source: string; target: string }[]): LayoutResult {
   const source = diagramNodes.find(n => n.role === 'source');
   const intermediates = diagramNodes.filter(n => n.role === 'intermediate');
@@ -65,21 +60,12 @@ function buildHubSpokeLayout(diagramNodes: DiagramNode[], diagramEdges: { source
 
   const posMap: Record<string, { x: number; y: number }> = {};
 
-  if (source) {
-    posMap[source.id] = { x: 0, y: centerY };
-  }
-  intermediates.forEach((n, i) => {
-    posMap[n.id] = { x: 320, y: i * NODE_HEIGHT };
-  });
-  if (destination) {
-    posMap[destination.id] = { x: 640, y: centerY };
-  }
+  if (source) posMap[source.id] = { x: 0, y: centerY };
+  intermediates.forEach((n, i) => { posMap[n.id] = { x: 320, y: i * NODE_HEIGHT }; });
+  if (destination) posMap[destination.id] = { x: 640, y: centerY };
 
-  // Fallback: nodes with role 'default' in a hub-spoke get placed at x=320
   const unplaced = diagramNodes.filter(n => !posMap[n.id]);
-  unplaced.forEach((n, i) => {
-    posMap[n.id] = { x: 320, y: (intermediates.length + i) * NODE_HEIGHT };
-  });
+  unplaced.forEach((n, i) => { posMap[n.id] = { x: 320, y: (intermediates.length + i) * NODE_HEIGHT }; });
 
   const nodes: Node[] = diagramNodes.map(n => ({
     id: n.id,
@@ -93,13 +79,12 @@ function buildHubSpokeLayout(diagramNodes: DiagramNode[], diagramEdges: { source
     source: e.source,
     target: e.target,
     animated: true,
-    style: { stroke: 'rgba(60,120,220,0.5)', strokeWidth: 2 },
+    style: { stroke: '#94a3b8', strokeWidth: 2 },
   }));
 
   return { nodes, edges };
 }
 
-/** linear layout: nodes left→right, x += 280 per node */
 function buildLinearLayout(diagramNodes: DiagramNode[], diagramEdges: { source: string; target: string }[]): LayoutResult {
   const nodes: Node[] = diagramNodes.map((n, i) => ({
     id: n.id,
@@ -113,21 +98,19 @@ function buildLinearLayout(diagramNodes: DiagramNode[], diagramEdges: { source: 
     source: e.source,
     target: e.target,
     animated: true,
-    style: { stroke: 'rgba(60,120,220,0.5)', strokeWidth: 2 },
+    style: { stroke: '#94a3b8', strokeWidth: 2 },
   }));
 
   return { nodes, edges };
 }
 
 function buildLayout(diagram: DiagramResponse): LayoutResult {
-  if (diagram.layoutType === 'hub-spoke') {
-    return buildHubSpokeLayout(diagram.nodes, diagram.edges);
-  }
+  if (diagram.layoutType === 'hub-spoke') return buildHubSpokeLayout(diagram.nodes, diagram.edges);
   return buildLinearLayout(diagram.nodes, diagram.edges);
 }
 
 // ============================================================
-// DiagramCardNode — dark navy card renderer
+// DiagramCardNode — light card renderer
 // ============================================================
 
 const DiagramCardNode: React.FC<NodeProps> = ({ data }) => {
@@ -136,17 +119,15 @@ const DiagramCardNode: React.FC<NodeProps> = ({ data }) => {
   const isSource = d.role === 'source';
 
   const cardStyle: React.CSSProperties = {
-    background: 'rgba(10, 20, 50, 0.92)',
-    border: isSource
-      ? '1px solid rgba(79, 195, 247, 0.6)'
-      : '1px solid rgba(60, 120, 220, 0.3)',
+    background: '#ffffff',
+    border: isSource ? '2px solid #6366f1' : '1px solid #e2e8f0',
     borderRadius: 10,
     padding: '10px 14px',
     minWidth: 200,
     maxWidth: 240,
     boxShadow: isSource
-      ? '0 0 16px rgba(79, 195, 247, 0.25), 0 2px 8px rgba(0,0,0,0.5)'
-      : '0 0 8px rgba(60, 120, 220, 0.15), 0 2px 6px rgba(0,0,0,0.4)',
+      ? '0 4px 16px rgba(99,102,241,0.15), 0 2px 6px rgba(0,0,0,0.06)'
+      : '0 2px 8px rgba(0,0,0,0.06)',
     cursor: 'default',
   };
 
@@ -154,35 +135,35 @@ const DiagramCardNode: React.FC<NodeProps> = ({ data }) => {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: 24,
-    height: 24,
-    borderRadius: 5,
-    background: 'rgba(30, 58, 110, 0.8)',
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    background: isSource ? '#eef2ff' : '#f1f5f9',
     flexShrink: 0,
   };
 
   return (
     <div style={cardStyle}>
-      <Handle type="target" position={Position.Left} style={{ background: 'rgba(60,120,220,0.5)', border: 'none', width: 8, height: 8 }} />
+      <Handle type="target" position={Position.Left} style={{ background: '#94a3b8', border: 'none', width: 8, height: 8 }} />
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: d.subtitle || d.description ? 6 : 0 }}>
         <div style={iconBoxStyle}>
-          <IconComp size={14} color="#4fc3f7" strokeWidth={1.8} />
+          <IconComp size={14} color={isSource ? '#6366f1' : '#64748b'} strokeWidth={1.8} />
         </div>
-        <span style={{ fontSize: 13, fontWeight: 700, color: '#ffffff', lineHeight: 1.3 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', lineHeight: 1.3 }}>
           {d.label}
         </span>
       </div>
       {d.subtitle && (
-        <div style={{ fontSize: 10, color: '#4fc3f7', fontFamily: 'monospace', letterSpacing: '0.04em', marginBottom: d.description ? 4 : 0 }}>
+        <div style={{ fontSize: 10, color: '#6366f1', fontFamily: 'monospace', letterSpacing: '0.04em', marginBottom: d.description ? 4 : 0 }}>
           {d.subtitle}
         </div>
       )}
       {d.description && (
-        <div style={{ fontSize: 11, color: '#8899aa', lineHeight: 1.4 }}>
+        <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.4 }}>
           {d.description}
         </div>
       )}
-      <Handle type="source" position={Position.Right} style={{ background: 'rgba(60,120,220,0.5)', border: 'none', width: 8, height: 8 }} />
+      <Handle type="source" position={Position.Right} style={{ background: '#94a3b8', border: 'none', width: 8, height: 8 }} />
     </div>
   );
 };
@@ -190,7 +171,7 @@ const DiagramCardNode: React.FC<NodeProps> = ({ data }) => {
 const nodeTypes = { diagramCard: DiagramCardNode };
 
 // ============================================================
-// Export buttons (same pattern as MindmapCanvas, dark background)
+// Export buttons
 // ============================================================
 
 interface ExportButtonsProps {
@@ -206,7 +187,7 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({ containerRef }) => {
     await new Promise(r => setTimeout(r, 160));
     if (!containerRef.current) return null;
     return toPng(containerRef.current, {
-      backgroundColor: '#070d1c',
+      backgroundColor: '#f8fafc',
       pixelRatio: 3,
       cacheBust: true,
     });
@@ -221,9 +202,7 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({ containerRef }) => {
       a.download = 'diagram.png';
       a.href = url;
       a.click();
-    } finally {
-      setBusy(false);
-    }
+    } finally { setBusy(false); }
   }, [capture]);
 
   const handlePDF = useCallback(async () => {
@@ -239,9 +218,7 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({ containerRef }) => {
       const pdf = new jsPDF({ orientation: w > h ? 'landscape' : 'portrait', unit: 'px', format: [w, h] });
       pdf.addImage(url, 'PNG', 0, 0, w, h);
       pdf.save('diagram.pdf');
-    } finally {
-      setBusy(false);
-    }
+    } finally { setBusy(false); }
   }, [capture]);
 
   return (
@@ -255,10 +232,10 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({ containerRef }) => {
             fontSize: 12,
             padding: '5px 14px',
             borderRadius: 8,
-            border: '1px solid rgba(60,120,220,0.4)',
-            background: busy ? 'rgba(10,20,50,0.5)' : 'rgba(10,20,50,0.8)',
+            border: '1px solid #e2e8f0',
+            background: busy ? '#f1f5f9' : '#ffffff',
             cursor: busy ? 'not-allowed' : 'pointer',
-            color: '#64b5f6',
+            color: '#475569',
             fontWeight: 500,
           }}
         >
@@ -288,7 +265,6 @@ const DiagramCanvasInner: React.FC<DiagramCanvasProps> = ({ diagram }) => {
   const [rfNodes, , onNodesChange] = useNodesState(layoutNodes);
   const [rfEdges, , onEdgesChange] = useEdgesState(layoutEdges);
 
-  // Sync layout changes (new diagram data) into RF state
   const syncedNodes = useMemo(
     () => rfNodes.map(n => layoutNodes.find(x => x.id === n.id) ?? n),
     [layoutNodes, rfNodes],
@@ -308,7 +284,7 @@ const DiagramCanvasInner: React.FC<DiagramCanvasProps> = ({ diagram }) => {
           height: 640,
           borderRadius: 12,
           overflow: 'hidden',
-          background: '#070d1c',
+          background: '#f8fafc',
         }}
       >
         <ReactFlow
@@ -323,9 +299,9 @@ const DiagramCanvasInner: React.FC<DiagramCanvasProps> = ({ diagram }) => {
           minZoom={0.1}
           maxZoom={2}
           proOptions={{ hideAttribution: true }}
-          style={{ background: '#070d1c' }}
+          style={{ background: '#f8fafc' }}
         >
-          <Controls style={{ background: 'rgba(10,20,50,0.8)', border: '1px solid rgba(60,120,220,0.3)', borderRadius: 8 }} />
+          <Controls style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: 8 }} />
         </ReactFlow>
       </div>
     </div>

@@ -1,4 +1,5 @@
-import { jsPDF } from 'jspdf';
+import puppeteer from 'puppeteer';
+import { markdownToHtml, escHtml } from '../../lib/markdownUtils';
 
 export interface PdfMeetingData {
   companyName: string;
@@ -9,100 +10,70 @@ export interface PdfMeetingData {
   minutesMarkdown: string;
 }
 
-export function generateMinutesPdfBuffer(data: PdfMeetingData): Buffer {
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const margin = 20;
-  const maxWidth = pageWidth - margin * 2;
-  let y = 25;
+function buildPdfHtml(data: PdfMeetingData): string {
+  const infoRows: string[] = [];
+  if (data.companyName)     infoRows.push(`<p><strong>Doanh nghiệp:</strong> ${escHtml(data.companyName)}</p>`);
+  if (data.companyAddress)  infoRows.push(`<p><strong>Địa chỉ:</strong> ${escHtml(data.companyAddress)}</p>`);
+  if (data.meetingDatetime) infoRows.push(`<p><strong>Thời gian:</strong> ${escHtml(data.meetingDatetime)}</p>`);
+  if (data.meetingLocation) infoRows.push(`<p><strong>Địa điểm:</strong> ${escHtml(data.meetingLocation)}</p>`);
 
-  const addNewPageIfNeeded = (needed: number) => {
-    if (y + needed > doc.internal.pageSize.getHeight() - 20) {
-      doc.addPage();
-      y = 20;
-    }
-  };
-
-  // Title
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.text('BIEN BAN CUOC HOP', pageWidth / 2, y, { align: 'center' });
-  y += 10;
-
-  // Meeting info
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(11);
-  if (data.companyName) { doc.text(`Doanh nghiep: ${data.companyName}`, margin, y); y += 6; }
-  if (data.companyAddress) { doc.text(`Dia chi: ${data.companyAddress}`, margin, y); y += 6; }
-  if (data.meetingDatetime) { doc.text(`Thoi gian: ${data.meetingDatetime}`, margin, y); y += 6; }
-  if (data.meetingLocation) { doc.text(`Dia diem: ${data.meetingLocation}`, margin, y); y += 6; }
-
-  // Participants
+  let participantsHtml = '';
   if (data.participants.length > 0) {
-    y += 4;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Thanh phan tham du:', margin, y);
-    y += 6;
-    doc.setFont('helvetica', 'normal');
-    for (const p of data.participants) {
-      addNewPageIfNeeded(6);
-      const parts = [p.name, p.title, p.role].filter(Boolean).join(' - ');
-      doc.text(`  - ${parts}`, margin, y);
-      y += 5;
-    }
+    const items = data.participants.map(p => {
+      const parts = [p.name, p.title, p.role].filter((v): v is string => Boolean(v)).map(escHtml).join(' - ');
+      return `<li>${parts}</li>`;
+    }).join('');
+    participantsHtml = `<p><strong>Thành phần tham dự:</strong></p><ul>${items}</ul>`;
   }
 
-  // Divider
-  y += 6;
-  doc.setLineWidth(0.3);
-  doc.line(margin, y, pageWidth - margin, y);
-  y += 8;
+  const contentHtml = markdownToHtml(data.minutesMarkdown);
 
-  // Minutes content
-  const lines = data.minutesMarkdown.split('\n');
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) { y += 3; continue; }
+  return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>Biên bản cuộc họp</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.6; color: #000; background: #fff; }
+    .header { margin-bottom: 1em; }
+    .divider { border: none; border-top: 1px solid #aaa; margin: 1em 0; }
+    h1 { font-size: 15pt; font-weight: 700; text-align: center; margin: 0.5em 0 0.8em; }
+    h2 { font-size: 11pt; font-weight: 700; margin: 1em 0 0.4em; }
+    h3 { font-size: 11pt; font-weight: 600; font-style: italic; margin: 0.8em 0 0.3em; }
+    p  { margin: 0 0 0.5em; text-align: justify; }
+    ul, ol { padding-left: 1.5em; margin-bottom: 0.5em; }
+    li { margin-bottom: 0.2em; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1em; font-size: 10pt; }
+    th { border: 1px solid #000; padding: 6px 10px; background: #f2f2f2; font-weight: 700; text-align: left; }
+    td { border: 1px solid #000; padding: 6px 10px; vertical-align: top; }
+    hr { border: none; border-top: 1px solid #aaa; margin: 1em 0; }
+    strong { font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    ${infoRows.join('\n    ')}
+    ${participantsHtml}
+  </div>
+  ${infoRows.length > 0 || participantsHtml ? '<hr class="divider">' : ''}
+  ${contentHtml}
+</body>
+</html>`;
+}
 
-    if (trimmed.startsWith('# ')) {
-      addNewPageIfNeeded(10);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(14);
-      const text = trimmed.slice(2).replace(/\*\*/g, '');
-      doc.text(text, pageWidth / 2, y, { align: 'center' });
-      y += 8;
-    } else if (trimmed.startsWith('## ')) {
-      addNewPageIfNeeded(8);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      const text = trimmed.slice(3).replace(/\*\*/g, '');
-      doc.text(text, margin, y);
-      y += 7;
-    } else if (trimmed.startsWith('### ')) {
-      addNewPageIfNeeded(8);
-      doc.setFont('helvetica', 'bolditalic');
-      doc.setFontSize(11);
-      const text = trimmed.slice(4).replace(/\*\*/g, '');
-      doc.text(text, margin, y);
-      y += 6;
-    } else if (trimmed.startsWith('---')) {
-      addNewPageIfNeeded(6);
-      doc.setLineWidth(0.2);
-      doc.line(margin, y, pageWidth - margin, y);
-      y += 4;
-    } else {
-      // Regular text — wrap long lines
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(11);
-      const text = trimmed.replace(/\*\*/g, '');
-      const wrapped = doc.splitTextToSize(text, maxWidth);
-      for (const wline of wrapped) {
-        addNewPageIfNeeded(6);
-        doc.text(wline, margin, y);
-        y += 5;
-      }
-    }
+export async function generateMinutesPdfBuffer(data: PdfMeetingData): Promise<Buffer> {
+  const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+  try {
+    const page = await browser.newPage();
+    await page.setContent(buildPdfHtml(data), { waitUntil: 'networkidle0' });
+    const pdf = await page.pdf({
+      format: 'A4',
+      margin: { top: '2cm', right: '2cm', bottom: '2cm', left: '2cm' },
+      printBackground: true,
+    });
+    return Buffer.from(pdf);
+  } finally {
+    await browser.close();
   }
-
-  return Buffer.from(doc.output('arraybuffer'));
 }

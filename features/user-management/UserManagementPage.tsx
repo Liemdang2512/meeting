@@ -1,11 +1,38 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { authFetch } from '../../lib/api';
 
+type WorkflowGroup = 'reporter' | 'specialist' | 'officer';
+
+const ALL_GROUPS: WorkflowGroup[] = ['reporter', 'specialist', 'officer'];
+
+const GROUP_LABEL: Record<WorkflowGroup, string> = {
+  reporter: 'Phóng viên',
+  specialist: 'Chuyên viên',
+  officer: 'Cán bộ',
+};
+
+type Feature = 'transcription' | 'summary' | 'mindmap' | 'export_pdf' | 'export_docx' | 'email' | 'diagram';
+
+const ALL_FEATURES: Feature[] = ['transcription', 'summary', 'mindmap', 'export_pdf', 'export_docx', 'email', 'diagram'];
+
+const FEATURE_LABEL: Record<Feature, string> = {
+  transcription: 'Ghi âm',
+  summary: 'Tóm tắt',
+  mindmap: 'Sơ đồ',
+  export_pdf: 'PDF',
+  export_docx: 'Word',
+  email: 'Email',
+  diagram: 'Biểu đồ',
+};
+
 interface UserRow {
   id: string;
   email: string;
   role: 'free' | 'pro' | 'enterprise' | 'admin';
   daily_limit: number | null;
+  features: Feature[];
+  workflow_groups: WorkflowGroup[];
+  active_workflow_group: WorkflowGroup;
   created_at: string;
   tokens_used: number;
 }
@@ -118,6 +145,47 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
     }
   };
 
+  const handleToggleFeature = async (userId: string, feature: Feature, currentFeatures: Feature[]) => {
+    const newFeatures = currentFeatures.includes(feature)
+      ? currentFeatures.filter((f) => f !== feature)
+      : [...currentFeatures, feature];
+    try {
+      const res = await authFetch(`/admin/users/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ features: newFeatures }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Cập nhật thất bại');
+      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, features: newFeatures } : u)));
+    } catch (e: any) {
+      alert(`Lỗi: ${e.message}`);
+    }
+  };
+
+  const handleToggleGroup = async (userId: string, group: WorkflowGroup, currentGroups: WorkflowGroup[]) => {
+    const isRemoving = currentGroups.includes(group);
+    if (isRemoving && currentGroups.length <= 1) {
+      alert('Tài khoản phải có ít nhất 1 nhóm');
+      return;
+    }
+    const newGroups = isRemoving
+      ? currentGroups.filter((g) => g !== group)
+      : [...currentGroups, group];
+    try {
+      const res = await authFetch(`/admin/users/${userId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workflow_groups: newGroups }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Cập nhật thất bại');
+      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, workflow_groups: newGroups } : u)));
+    } catch (e: any) {
+      alert(`Lỗi: ${e.message}`);
+    }
+  };
+
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreateLoading(true);
@@ -204,7 +272,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
                   key={item.id}
                   type="button"
                   onClick={() => setTokenFilterMode(item.id)}
-                  className={`px-2.5 py-1 border text-xs font-medium transition-all rounded-lg ${ tokenFilterMode === item.id ? 'bg-indigo-900 border-slate-200 text-white' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' }`}
+                  className={`px-2.5 py-1 border text-xs font-medium transition-all rounded-lg cursor-pointer ${ tokenFilterMode === item.id ? 'bg-[#1E3A8A] border-slate-200 text-white' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50' }`}
                 >
                   {item.label}
                 </button>
@@ -260,7 +328,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
           <button
             type="button"
             onClick={() => setShowCreate(true)}
-            className="px-4 py-2 text-sm font-medium bg-indigo-600 border-slate-200 text-white shadow-sm rounded-xl hover:bg-indigo-700 transition-all active:bg-indigo-800 border"
+            className="px-4 py-2 text-sm font-medium bg-[#1E3A8A] border-slate-200 text-white shadow-sm rounded-xl hover:bg-[#1E40AF] transition-all active:bg-[#1E40AF] border"
           >
             + Tạo tài khoản
           </button>
@@ -277,10 +345,11 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
           <div className="py-16 text-center text-slate-500 font-medium text-sm">Chưa có tài khoản nào.</div>
         ) : (
           <table className="w-full text-base whitespace-nowrap">
-            <thead className="bg-indigo-900 text-white border-b border-slate-200">
+            <thead className="bg-[#1E3A8A] text-white border-b border-slate-200">
               <tr>
                 <th className="text-left px-5 py-4 font-medium text-sm">Email</th>
                 <th className="text-left px-5 py-4 font-medium text-sm">Role</th>
+                <th className="text-left px-5 py-4 font-medium text-sm hidden md:table-cell">Nhóm</th>
                 <th className="text-left px-5 py-4 font-medium text-sm">Lần/ngày</th>
                 <th className="text-left px-5 py-4 font-medium text-sm hidden md:table-cell">
                   Token dùng
@@ -304,7 +373,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
                   <td className="px-5 py-4 text-slate-800 font-medium text-sm">
                     {u.email}
                     {u.id === currentUserId && (
-                      <span className="ml-3 text-xs bg-indigo-600 border-slate-200 text-white font-black px-2 py-1 align-middle border rounded-2xl">BẠN</span>
+                      <span className="ml-3 text-xs bg-[#1E40AF] border-slate-200 text-white font-black px-2 py-1 align-middle border rounded-2xl">BẠN</span>
                     )}
                   </td>
                   <td className="px-5 py-4">
@@ -319,6 +388,28 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
                       <option value="enterprise">ENTERPRISE</option>
                       <option value="admin">ADMIN</option>
                     </select>
+                  </td>
+                  <td className="px-5 py-4 hidden md:table-cell">
+                    <div className="flex flex-wrap gap-1">
+                      {ALL_GROUPS.map((g) => {
+                        const active = (u.workflow_groups ?? []).includes(g);
+                        return (
+                          <button
+                            key={g}
+                            type="button"
+                            onClick={() => handleToggleGroup(u.id, g, u.workflow_groups ?? ['specialist'])}
+                            title={active ? `Bỏ nhóm ${GROUP_LABEL[g]}` : `Thêm nhóm ${GROUP_LABEL[g]}`}
+                            className={`text-xs font-medium px-2 py-0.5 rounded-lg border transition-all ${
+                              active
+                                ? 'bg-[#1E40AF] text-white border-[#1E40AF]'
+                                : 'bg-white text-slate-400 border-slate-200 hover:border-slate-400'
+                            }`}
+                          >
+                            {GROUP_LABEL[g]}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </td>
                   <td className="px-5 py-4">
                     {u.role === 'free' ? (
@@ -433,7 +524,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
                 <button
                   type="submit"
                   disabled={createLoading}
-                  className="flex-1 py-3 text-sm font-medium bg-indigo-600 border-slate-200 text-white shadow-sm rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50 border"
+                  className="flex-1 py-3 text-sm font-medium bg-[#1E3A8A] border-slate-200 text-white shadow-sm rounded-xl hover:bg-[#1E40AF] transition-all disabled:opacity-50 border"
                 >
                   {createLoading ? 'ĐANG TẠO...' : 'TẠO TÀI KHOẢN'}
                 </button>
@@ -477,7 +568,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
                 <button
                   type="submit"
                   disabled={pwLoading}
-                  className="flex-1 py-3 text-sm font-medium bg-indigo-600 border-slate-200 text-white shadow-sm rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50 border"
+                  className="flex-1 py-3 text-sm font-medium bg-[#1E3A8A] border-slate-200 text-white shadow-sm rounded-xl hover:bg-[#1E40AF] transition-all disabled:opacity-50 border"
                 >
                   {pwLoading ? 'ĐANG LƯU...' : 'LƯU MẬT KHẨU'}
                 </button>

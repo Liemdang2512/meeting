@@ -154,37 +154,47 @@ export async function downloadAsDocx(markdown: string, filename: string): Promis
 
 export function downloadAsPdf(markdown: string, onDone?: () => void): void {
   const content = markdownToHtml(markdown);
-  const printWindow = window.open('', '_blank', 'width=900,height=700');
-  if (!printWindow) { onDone?.(); return; }
 
-  printWindow.document.write(`<!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="utf-8">
-  <title>Biên bản cuộc họp</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', 'Segoe UI', sans-serif; font-size: 11pt; line-height: 1.6; color: #000; background: #fff; }
-    @media print { @page { size: A4; margin: 2cm; } body { margin: 0; } }
-    @media screen { body { max-width: 21cm; margin: 2cm auto; padding: 2cm; } }
-    h1 { font-size: 15pt; font-weight: 700; text-align: center; margin: 0.5em 0 0.8em; }
-    h2 { font-size: 11pt; font-weight: 700; margin: 1em 0 0.4em; }
-    h3 { font-size: 11pt; font-weight: 600; font-style: italic; margin: 0.8em 0 0.3em; }
-    p  { margin: 0 0 0.5em; text-align: justify; }
-    ul, ol { padding-left: 1.5em; margin-bottom: 0.5em; }
-    li { margin-bottom: 0.2em; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 1em; font-size: 10pt; }
-    th { border: 1px solid #000; padding: 6px 10px; background: #f2f2f2; font-weight: 700; text-align: left; }
-    td { border: 1px solid #000; padding: 6px 10px; vertical-align: top; }
-    hr { border: none; border-top: 1px solid #aaa; margin: 1em 0; }
-    strong { font-weight: 700; }
-  </style>
-</head>
-<body>${content}</body>
-</html>`);
-  printWindow.document.close();
-  printWindow.onload = () => { printWindow.focus(); printWindow.print(); onDone?.(); };
-  setTimeout(() => { if (!printWindow.closed) printWindow.print(); onDone?.(); }, 1200);
+  // Inject a hidden print-only container into the current page
+  const container = document.createElement('div');
+  container.id = '__pdf_print_root';
+  container.innerHTML = content;
+  document.body.appendChild(container);
+
+  const style = document.createElement('style');
+  style.id = '__pdf_print_style';
+  style.textContent = `
+    @media print {
+      @page { size: A4; margin: 2cm; }
+      body > *:not(#__pdf_print_root) { display: none !important; }
+      #__pdf_print_root {
+        display: block !important;
+        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+        font-size: 11pt;
+        line-height: 1.6;
+        color: #000;
+        background: #fff;
+      }
+      #__pdf_print_root h1 { font-size: 15pt; font-weight: 700; text-align: center; margin: 0.5em 0 0.8em; }
+      #__pdf_print_root h2 { font-size: 11pt; font-weight: 700; margin: 1em 0 0.4em; }
+      #__pdf_print_root h3 { font-size: 11pt; font-weight: 600; font-style: italic; margin: 0.8em 0 0.3em; }
+      #__pdf_print_root p  { margin: 0 0 0.5em; text-align: justify; }
+      #__pdf_print_root ul, #__pdf_print_root ol { padding-left: 1.5em; margin-bottom: 0.5em; }
+      #__pdf_print_root li { margin-bottom: 0.2em; }
+      #__pdf_print_root table { width: 100%; border-collapse: collapse; margin-bottom: 1em; font-size: 10pt; }
+      #__pdf_print_root th { border: 1px solid #000; padding: 6px 10px; background: #f2f2f2; font-weight: 700; text-align: left; }
+      #__pdf_print_root td { border: 1px solid #000; padding: 6px 10px; vertical-align: top; }
+      #__pdf_print_root hr { border: none; border-top: 1px solid #aaa; margin: 1em 0; }
+      #__pdf_print_root strong { font-weight: 700; }
+    }
+    #__pdf_print_root { display: none; }
+  `;
+  document.head.appendChild(style);
+
+  // window.print() is synchronous — blocks until dialog is closed
+  window.print();
+
+  document.body.removeChild(container);
+  document.head.removeChild(style);
+  onDone?.();
 }

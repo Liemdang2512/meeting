@@ -5,6 +5,7 @@ export interface EmailTemplateData {
   meetingLocation: string;
   participants: Array<{ name: string; title?: string; role?: string }>;
   minutesHtml: string;
+  hasMindmap?: boolean;
 }
 
 export function buildEmailHtml(data: EmailTemplateData): string {
@@ -61,7 +62,7 @@ export function buildEmailHtml(data: EmailTemplateData): string {
     <!-- Footer -->
     <div style="padding:20px 40px;background:#f8fafc;border-top:1px solid #e2e8f0">
       <p style="margin:0;font-size:12px;color:#94a3b8;text-align:center">
-        Email nay duoc gui tu Meeting Scribe AI Pro. File PDF dinh kem chua noi dung bien ban day du.
+        Email nay duoc gui tu Meeting Scribe AI Pro. File PDF dinh kem chua bien ban day du${data.hasMindmap ? ' va so do tu duy' : ''}.
       </p>
     </div>
   </div>

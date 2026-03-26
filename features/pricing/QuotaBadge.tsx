@@ -57,7 +57,7 @@ export const QuotaBadge: React.FC<QuotaBadgeProps> = ({ onQuotaExhausted }) => {
           : 'text-emerald-700 bg-emerald-100'
       }`}
     >
-      Hôm nay: {quota.used}/{quota.limit} lần
+      Hôm nay: {quota.used}/{quota.limit} lượt
     </span>
   );
 };

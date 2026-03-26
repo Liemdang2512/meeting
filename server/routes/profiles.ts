@@ -74,7 +74,7 @@ router.patch('/workflow-groups', async (req, res) => {
     if (Array.isArray(remove)) {
       const afterRemove = groups.filter((g: string) => !remove.includes(g));
       if (afterRemove.length === 0) {
-        return res.status(400).json({ error: 'Phai giu it nhat 1 nhom' });
+        return res.status(400).json({ error: 'Phải giữ ít nhất 1 nhóm' });
       }
       groups = afterRemove;
     }

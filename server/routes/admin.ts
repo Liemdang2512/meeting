@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import sql from '../db';
-import { requireAuth } from '../auth';
+import { requireAuth, FREE_FEATURES, ALL_FEATURES } from '../auth';
 
 const router = Router();
 
@@ -32,6 +32,9 @@ router.get('/users', requireAuth, requireAdmin, async (req, res) => {
         u.created_at,
         p.role,
         p.daily_limit,
+        COALESCE(p.features, '{}') AS features,
+        COALESCE(p.workflow_groups, '{specialist}') AS workflow_groups,
+        COALESCE(p.active_workflow_group, 'specialist') AS active_workflow_group,
         COALESCE(t.tokens_used, 0) AS tokens_used
       FROM auth.users u
       LEFT JOIN public.profiles p ON p.user_id = u.id
@@ -77,10 +80,11 @@ router.post('/users', requireAuth, requireAdmin, async (req, res) => {
       RETURNING id, email, created_at
     `;
 
-    // Tạo profile với role
+    // Tạo profile với role + features mặc định theo role
+    const defaultFeatures = ['pro', 'enterprise', 'admin'].includes(role) ? ALL_FEATURES : FREE_FEATURES;
     await sql`
-      INSERT INTO public.profiles (user_id, role, created_at, updated_at)
-      VALUES (${newUser.id}, ${role}, NOW(), NOW())
+      INSERT INTO public.profiles (user_id, role, features, created_at, updated_at)
+      VALUES (${newUser.id}, ${role}, ${sql.array(defaultFeatures)}, NOW(), NOW())
     `;
 
     return res.status(201).json({
@@ -95,7 +99,7 @@ router.post('/users', requireAuth, requireAdmin, async (req, res) => {
 // Body: { role?, password? }
 router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
   const { id } = req.params;
-  const { role, password, daily_limit } = req.body ?? {};
+  const { role, password, daily_limit, features, workflow_groups } = req.body ?? {};
 
   // Không cho xóa role admin của chính mình
   if (req.user?.userId === id && role && role !== 'admin') {
@@ -129,6 +133,34 @@ router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
         await sql`UPDATE public.profiles SET daily_limit = ${daily_limit}, updated_at = NOW() WHERE user_id = ${id}`;
       } else {
         await sql`INSERT INTO public.profiles (user_id, daily_limit, created_at, updated_at) VALUES (${id}, ${daily_limit}, NOW(), NOW())`;
+      }
+    }
+
+    if (workflow_groups !== undefined) {
+      if (!Array.isArray(workflow_groups) || workflow_groups.length < 1) {
+        return res.status(400).json({ error: 'workflow_groups phải có ít nhất 1 nhóm' });
+      }
+      const valid = ['reporter', 'specialist', 'officer'];
+      if (!workflow_groups.every((g: string) => valid.includes(g))) {
+        return res.status(400).json({ error: 'Nhóm không hợp lệ' });
+      }
+      const [existing] = await sql`SELECT user_id, active_workflow_group FROM public.profiles WHERE user_id = ${id}`;
+      if (existing) {
+        // Nếu active_workflow_group không còn trong danh sách mới, reset về nhóm đầu tiên
+        const newActive = workflow_groups.includes(existing.active_workflow_group)
+          ? existing.active_workflow_group
+          : workflow_groups[0];
+        await sql`UPDATE public.profiles SET workflow_groups = ${sql.array(workflow_groups)}, active_workflow_group = ${newActive}, updated_at = NOW() WHERE user_id = ${id}`;
+      }
+    }
+
+    if (features !== undefined) {
+      if (!Array.isArray(features)) {
+        return res.status(400).json({ error: 'features phải là mảng' });
+      }
+      const [existing] = await sql`SELECT user_id FROM public.profiles WHERE user_id = ${id}`;
+      if (existing) {
+        await sql`UPDATE public.profiles SET features = ${sql.array(features)}, updated_at = NOW() WHERE user_id = ${id}`;
       }
     }
 

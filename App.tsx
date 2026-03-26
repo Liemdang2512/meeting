@@ -29,6 +29,13 @@ const PricingPage = lazy(() => import('./features/pricing/PricingPage').then(m =
 const HomePage = lazy(() => import('./components/HomePage').then(m => ({ default: m.HomePage })));
 import { WorkflowGuard } from './features/workflows/WorkflowGuard';
 import { GroupSwitcher } from './features/workflows/GroupSwitcher';
+import type { WorkflowGroup } from './features/workflows/types';
+
+const WORKFLOW_CARDS: { group: WorkflowGroup; label: string; description: string }[] = [
+  { group: 'reporter', label: 'Bài phỏng vấn', description: 'Ghi chép & tổng hợp phỏng vấn báo chí' },
+  { group: 'specialist', label: 'Thư ký họp', description: 'Biên bản cuộc họp chuyên nghiệp' },
+  { group: 'officer', label: 'Thông tin vụ án', description: 'Ghi chép hồ sơ pháp lý' },
+];
 const ReporterWorkflowPage = lazy(() => import('./features/workflows/reporter/ReporterWorkflowPage'));
 const SpecialistWorkflowPage = lazy(() => import('./features/workflows/specialist/SpecialistWorkflowPage'));
 const OfficerWorkflowPage = lazy(() => import('./features/workflows/officer/OfficerWorkflowPage'));
@@ -272,6 +279,9 @@ function App() {
   const [audioLanguage, setAudioLanguage] = useState<AudioLanguage>('vi');
   const [customLanguage, setCustomLanguage] = useState('');
 
+  // Chế độ workflow được chọn trong bước 1
+  const [selectedWorkflowMode, setSelectedWorkflowMode] = useState<WorkflowGroup | null>(null);
+
   // Progress cho chế độ chuyên sâu (3 bước)
   const [deepProgress, setDeepProgress] = useState<{ step: number; label: string } | null>(null);
 
@@ -347,6 +357,10 @@ function App() {
         }
         // Kiem tra admin tu role trong JWT
         setIsAdmin(currentUser.role === 'admin');
+        // Set workflow mode mặc định theo activeWorkflowGroup
+        if (currentUser.activeWorkflowGroup) {
+          setSelectedWorkflowMode(currentUser.activeWorkflowGroup as WorkflowGroup);
+        }
       }
     };
 
@@ -1022,7 +1036,7 @@ function App() {
     );
   }
 
-  if (route === '/settings') {
+  if (route === '/profile' || route === '/settings') {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-start p-8">
         <div className="w-full max-w-lg">
@@ -1030,7 +1044,7 @@ function App() {
             onClick={() => window.history.back()}
             className="mb-4 text-sm text-slate-500 hover:text-slate-800 transition-colors"
           >
-            ← Quay lai
+            ← Quay lại
           </button>
           <Suspense fallback={<div className="flex justify-center items-center h-32"><Spinner /></div>}>
             <WorkflowGroupsSection
@@ -1075,7 +1089,7 @@ function App() {
                 Phiên mới
               </button>
             )}
-            {user && user.workflowGroups && user.workflowGroups.length > 1 && (
+            {user && user.workflowGroups && (
               <GroupSwitcher user={user} navigate={navigate} />
             )}
             {user && (
@@ -1084,10 +1098,10 @@ function App() {
               />
             )}
             <button
-              onClick={() => navigate('/settings')}
+              onClick={() => navigate('/profile')}
               className="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors px-3 py-2"
             >
-              Cai dat
+              Profile
             </button>
             <button onClick={handleLogout} className="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors px-3 py-2">
               Đăng xuất
@@ -1301,6 +1315,29 @@ function App() {
                   showStartButton={false}
                 />
               </div>
+
+              {/* Chọn nhóm workflow — chỉ hiện nhóm user thuộc về */}
+              {user && user.workflowGroups && user.workflowGroups.length > 0 && (
+                <div className="bg-slate-50 p-6 border-slate-200 shadow-sm rounded-xl space-y-4 border">
+                  <p className="text-sm font-medium text-slate-800">Chọn loại nội dung</p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {WORKFLOW_CARDS.filter(c => user.workflowGroups!.includes(c.group)).map(card => (
+                      <button
+                        key={card.group}
+                        onClick={() => setSelectedWorkflowMode(card.group)}
+                        className={`flex flex-col gap-1.5 p-4 border rounded-xl text-left transition-all ${
+                          selectedWorkflowMode === card.group
+                            ? 'border-indigo-400 bg-indigo-50 text-indigo-700 shadow-sm'
+                            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:shadow-sm'
+                        }`}
+                      >
+                        <span className="font-medium text-sm">{card.label}</span>
+                        <span className="text-xs text-slate-500">{card.description}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Chọn chế độ phiên âm */}
               <div className="bg-slate-50 p-6 border-slate-200 shadow-sm rounded-xl space-y-4 border">

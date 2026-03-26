@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { register } from '../lib/auth';
 import type { WorkflowGroup } from '../lib/auth';
 import { WORKFLOW_GROUPS } from '../features/workflows/types';
+import { AuthShell } from './auth/AuthShell';
 
 interface RegisterPageProps {
   onRegisterSuccess: () => void;
@@ -28,7 +29,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, o
 
     // Validate group selection first
     if (selectedGroups.length === 0) {
-      setError('Vui long chon it nhat 1 nhom nguoi dung');
+      setError('Vui lòng chọn ít nhất 1 nhóm người dùng');
       return;
     }
 
@@ -54,32 +55,39 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, o
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white border border-slate-200 p-8 space-y-8 shadow-sm rounded-xl">
-        <div className="text-center space-y-4">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-xl transition-all shadow-sm overflow-hidden mb-2">
-            <img src="/NAI.png" alt="NAI" className="w-full h-full object-contain" />
-          </div>
-          <h1 className="text-4xl font-sans font-medium text-slate-800 leading-none">
-            Đăng ký<br/>tài khoản
-          </h1>
-          <p className="text-slate-500 text-sm font-medium border-b border-slate-200 pb-4 inline-block">
-            Miễn phí · 1 chuyển đổi/ngày
-          </p>
+    <AuthShell
+      title={
+        <>
+          Đăng ký
+          <br />
+          tài khoản
+        </>
+      }
+      subtitle="Miễn phí · 1 chuyển đổi/ngày"
+      footer={
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={onGoToLogin}
+            className="text-sm text-[#1E40AF] hover:text-[#1E3A8A] font-medium transition-colors"
+          >
+            Đã có tài khoản? Đăng nhập
+          </button>
         </div>
-
+      }
+    >
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-3">
-            <label className="block text-sm font-medium text-slate-800">Nhom nguoi dung *</label>
+            <label className="block text-sm font-medium text-slate-800">Nhóm người dùng *</label>
             <div className="space-y-2">
               {WORKFLOW_GROUPS.map(({ key, label, description }) => (
                 <button
                   key={key}
                   type="button"
                   onClick={() => toggleGroup(key)}
-                  className={`w-full p-4 border rounded-xl text-left transition-colors ${
+                  className={`w-full p-4 border rounded-xl text-left transition-colors cursor-pointer ${
                     selectedGroups.includes(key)
-                      ? 'border-indigo-500 bg-indigo-50 text-indigo-800'
+                      ? 'border-[#1E40AF] bg-blue-50 text-[#1E3A8A]'
                       : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300'
                   }`}
                 >
@@ -88,7 +96,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, o
                 </button>
               ))}
             </div>
-            <p className="text-xs text-slate-400">Co the chon nhieu nhom</p>
+            <p className="text-xs text-slate-400">Có thể chọn nhiều nhóm</p>
           </div>
 
           <div className="space-y-2">
@@ -99,7 +107,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, o
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50 focus:bg-white text-slate-800 font-medium transition-colors"
+              className="w-full h-10 px-3 border border-slate-200 rounded-lg focus:border-[#1E40AF] focus:ring-1 focus:ring-[#1E40AF] outline-none bg-slate-50 focus:bg-white text-slate-800 font-medium transition-colors placeholder:text-gray-400"
               placeholder="name@company.com"
             />
           </div>
@@ -112,7 +120,7 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, o
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50 focus:bg-white text-slate-800 font-medium transition-colors"
+              className="w-full h-10 px-3 border border-slate-200 rounded-lg focus:border-[#1E40AF] focus:ring-1 focus:ring-[#1E40AF] outline-none bg-slate-50 focus:bg-white text-slate-800 font-medium transition-colors placeholder:text-gray-400"
               placeholder="Tối thiểu 8 ký tự"
             />
           </div>
@@ -125,13 +133,14 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, o
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50 focus:bg-white text-slate-800 font-medium transition-colors"
+              className="w-full h-10 px-3 border border-slate-200 rounded-lg focus:border-[#1E40AF] focus:ring-1 focus:ring-[#1E40AF] outline-none bg-slate-50 focus:bg-white text-slate-800 font-medium transition-colors placeholder:text-gray-400"
               placeholder="Nhập lại mật khẩu"
             />
           </div>
 
           {error && (
-            <div className="p-4 bg-red-50 border-red-200 rounded-lg text-red-600 font-medium text-center">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 font-medium flex items-center gap-2 justify-center">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               {error}
             </div>
           )}
@@ -139,22 +148,11 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, o
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 bg-indigo-600 text-white font-sans font-medium text-lg rounded-xl shadow-sm hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-4"
+            className="w-full py-3 bg-[#1E3A8A] text-white font-medium text-base rounded-xl shadow-sm hover:bg-[#1E40AF] transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-4"
           >
             {loading ? 'Đang đăng ký...' : 'Tạo tài khoản'}
           </button>
         </form>
-
-        <div className="pt-4 border-t border-slate-200 text-center">
-          <button
-            type="button"
-            onClick={onGoToLogin}
-            className="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
-          >
-            Đã có tài khoản? Đăng nhập
-          </button>
-        </div>
-      </div>
-    </div>
+    </AuthShell>
   );
 };

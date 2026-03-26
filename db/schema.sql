@@ -68,11 +68,12 @@ CREATE TABLE IF NOT EXISTS public.summaries (
 CREATE TABLE IF NOT EXISTS public.profiles (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
-    role text DEFAULT 'user',
+    role text DEFAULT 'free',
     created_at timestamptz DEFAULT now() NOT NULL,
     updated_at timestamptz,
     workflow_groups text[] NOT NULL DEFAULT '{specialist}',
-    active_workflow_group text NOT NULL DEFAULT 'specialist'
+    active_workflow_group text NOT NULL DEFAULT 'specialist',
+    features text[] NOT NULL DEFAULT '{}'
 );
 
 CREATE TABLE IF NOT EXISTS public.user_settings (

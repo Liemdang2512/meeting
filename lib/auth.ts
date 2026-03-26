@@ -2,12 +2,22 @@ import { authFetch, getToken, setToken, clearToken } from './api';
 
 export type WorkflowGroup = 'reporter' | 'specialist' | 'officer';
 
+export type Feature =
+  | 'transcription'
+  | 'summary'
+  | 'mindmap'
+  | 'export_pdf'
+  | 'export_docx'
+  | 'email'
+  | 'diagram';
+
 export interface AuthUser {
   userId: string;
   email: string;
   role: string;
   workflowGroups: WorkflowGroup[];
   activeWorkflowGroup: WorkflowGroup;
+  features: Feature[];
 }
 
 export interface AuthState {
@@ -46,6 +56,9 @@ export async function getMe(): Promise<AuthUser | null> {
       return null;
     }
     const data = await res.json();
+    if (data?.token) {
+      setToken(data.token);
+    }
     return data.user as AuthUser;
   } catch {
     return null;

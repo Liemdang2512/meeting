@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterAll, describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { WorkflowGuard } from '../WorkflowGuard';
 import type { AuthUser } from '../../../lib/auth';
@@ -7,9 +7,12 @@ const mockUser: AuthUser = {
   userId: '1', email: 'a@b.com', role: 'free',
   workflowGroups: ['reporter', 'specialist'],
   activeWorkflowGroup: 'reporter',
+  features: ['transcription', 'summary'],
 };
 
 describe('WorkflowGuard', () => {
+  const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+
   it('renders children when user has matching group', () => {
     const nav = vi.fn();
     const { getByText } = render(
@@ -28,7 +31,8 @@ describe('WorkflowGuard', () => {
         <div>Content</div>
       </WorkflowGuard>
     );
-    expect(nav).toHaveBeenCalledWith('/reporter');
+    expect(alertSpy).toHaveBeenCalled();
+    expect(nav).toHaveBeenCalledWith('/pricing');
     expect(container.innerHTML).toBe('');
   });
 
@@ -51,5 +55,9 @@ describe('WorkflowGuard', () => {
     );
     expect(getByText('Specialist Content')).toBeTruthy();
     expect(nav).not.toHaveBeenCalled();
+  });
+
+  afterAll(() => {
+    alertSpy.mockRestore();
   });
 });

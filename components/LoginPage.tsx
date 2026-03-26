@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { login } from '../lib/auth';
+import { AuthShell } from './auth/AuthShell';
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
@@ -32,20 +33,36 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white border border-slate-200 p-8 space-y-8 shadow-sm rounded-xl">
-        <div className="text-center space-y-4">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-indigo-600 text-white font-sans font-medium text-3xl mb-2 rounded-xl transition-all shadow-sm">
-            MA
+    <AuthShell
+      title={
+        <>
+          Meeting
+          <br />
+          Minute
+        </>
+      }
+      subtitle="Tự động hóa biên bản"
+      showBackHome
+      footer={
+        <div className="space-y-3">
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => {
+                window.history.pushState({}, '', '/register');
+                window.dispatchEvent(new PopStateEvent('popstate'));
+              }}
+              className="text-sm text-[#1E40AF] hover:text-[#1E3A8A] font-medium transition-colors"
+            >
+              Chưa có tài khoản? Đăng ký miễn phí
+            </button>
           </div>
-          <h1 className="text-4xl font-sans font-medium text-slate-800 leading-none">
-            Meeting<br/>Assistant
-          </h1>
-          <p className="text-slate-500 text-sm font-medium border-b border-slate-200 pb-4 inline-block">
-            Tự động hóa biên bản
+          <p className="text-xs text-slate-400 text-center font-medium">
+            Tài khoản admin: liên hệ quản trị viên
           </p>
         </div>
-
+      }
+    >
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <label
@@ -60,7 +77,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50 focus:bg-white text-slate-800 font-medium transition-colors"
+              className="w-full h-10 px-3 border border-slate-200 rounded-lg focus:border-[#1E40AF] focus:ring-1 focus:ring-[#1E40AF] outline-none bg-slate-50 focus:bg-white text-slate-800 font-medium transition-colors placeholder:text-gray-400"
               placeholder="name@company.com"
             />
           </div>
@@ -78,45 +95,27 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none bg-slate-50 focus:bg-white text-slate-800 font-medium transition-colors"
+              className="w-full h-10 px-3 border border-slate-200 rounded-lg focus:border-[#1E40AF] focus:ring-1 focus:ring-[#1E40AF] outline-none bg-slate-50 focus:bg-white text-slate-800 font-medium transition-colors placeholder:text-gray-400"
               placeholder="••••••••"
             />
           </div>
 
           {error && (
-            <div className="p-4 bg-red-50 border-red-200 rounded-lg text-red-600 font-medium text-center">
-              ⚠ {error}
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600 font-medium flex items-center gap-2 justify-center">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              {error}
             </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 bg-indigo-600 text-white font-sans font-medium text-lg rounded-xl shadow-sm hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-4"
+            className="w-full py-3 bg-[#1E3A8A] text-white font-medium text-base rounded-xl shadow-sm hover:bg-[#1E40AF] transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-4"
           >
             {loading ? 'Đang xác thực...' : 'Đăng nhập'}
           </button>
         </form>
-
-        <div className="pt-4 border-t border-slate-200 space-y-3">
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={() => {
-                window.history.pushState({}, '', '/register');
-                window.dispatchEvent(new PopStateEvent('popstate'));
-              }}
-              className="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
-            >
-              Chưa có tài khoản? Đăng ký miễn phí
-            </button>
-          </div>
-          <p className="text-xs text-slate-400 text-center font-medium">
-            Tài khoản admin: liên hệ quản trị viên
-          </p>
-        </div>
-      </div>
-    </div>
+    </AuthShell>
   );
 };
 

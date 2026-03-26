@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import { requireAuth } from '../auth';
 import sql from '../db';
 import { markdownToHtml } from '../../lib/markdownUtils';
@@ -10,7 +10,7 @@ const router = Router();
 
 router.post('/send-minutes', requireAuth, async (req, res) => {
   try {
-    const { recipients, subject, minutesMarkdown, meetingInfo } = req.body;
+    const { recipients, subject, minutesMarkdown, meetingInfo, mindmapPng } = req.body;
 
     // Validate input
     if (!Array.isArray(recipients) || recipients.length === 0) {
@@ -30,18 +30,17 @@ router.post('/send-minutes', requireAuth, async (req, res) => {
       return res.status(400).json({ error: `Toi da ${maxRecipients} nguoi nhan` });
     }
 
-    // Load Resend API key from DB
-    const [apiKeySetting] = await sql`SELECT value FROM public.app_settings WHERE key = 'resend_api_key'`;
-    if (!apiKeySetting) {
-      return res.status(503).json({ error: 'Email chua duoc cau hinh. Admin can them Resend API key.' });
+    // Load Gmail credentials from DB
+    const [gmailUserSetting] = await sql`SELECT value FROM public.app_settings WHERE key = 'gmail_user'`;
+    const [gmailPassSetting] = await sql`SELECT value FROM public.app_settings WHERE key = 'gmail_app_password'`;
+    if (!gmailUserSetting || !gmailPassSetting) {
+      return res.status(503).json({ error: 'Email chua duoc cau hinh. Admin can them Gmail credentials.' });
     }
 
-    // Load from email
-    const [fromSetting] = await sql`SELECT value FROM public.app_settings WHERE key = 'resend_from_email'`;
-    const fromEmail = fromSetting?.value || process.env.RESEND_FROM_EMAIL || 'noreply@example.com';
+    const fromEmail = gmailUserSetting.value;
 
     // Generate PDF Buffer
-    const pdfBuffer = generateMinutesPdfBuffer({
+    const pdfBuffer = await generateMinutesPdfBuffer({
       companyName: meetingInfo?.companyName ?? '',
       companyAddress: meetingInfo?.companyAddress ?? '',
       meetingDatetime: meetingInfo?.meetingDatetime ?? '',
@@ -52,6 +51,7 @@ router.post('/send-minutes', requireAuth, async (req, res) => {
 
     // Build HTML email body
     const minutesHtml = markdownToHtml(minutesMarkdown);
+    const hasMindmap = typeof mindmapPng === 'string' && mindmapPng.length > 0;
     const htmlBody = buildEmailHtml({
       companyName: meetingInfo?.companyName ?? '',
       companyAddress: meetingInfo?.companyAddress ?? '',
@@ -59,31 +59,50 @@ router.post('/send-minutes', requireAuth, async (req, res) => {
       meetingLocation: meetingInfo?.meetingLocation ?? '',
       participants: meetingInfo?.participants ?? [],
       minutesHtml,
+      hasMindmap,
     });
 
-    // Send via Resend
-    const resend = new Resend(apiKeySetting.value);
-    const { data, error } = await resend.emails.send({
-      from: fromEmail,
-      to: recipients,
-      subject,
-      html: htmlBody,
-      attachments: [
-        {
-          filename: 'bien-ban-cuoc-hop.pdf',
-          content: pdfBuffer,
-        },
-      ],
+    // Send via Gmail SMTP
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: gmailUserSetting.value,
+        pass: gmailPassSetting.value,
+      },
     });
 
-    if (error) {
-      return res.status(502).json({ error: error.message });
+    const attachments: nodemailer.SendMailOptions['attachments'] = [
+      { filename: 'bien-ban-cuoc-hop.pdf', content: pdfBuffer },
+    ];
+
+    if (hasMindmap) {
+      // mindmapPng là data URL của PDF: "data:application/pdf;base64,..."
+      const base64Data = (mindmapPng as string).replace(/^data:[^;]+;base64,/, '');
+      attachments.push({
+        filename: 'so-do-tu-duy.pdf',
+        content: Buffer.from(base64Data, 'base64'),
+        contentType: 'application/pdf',
+      });
     }
 
-    return res.json({ ok: true, id: data?.id });
+    const info = await transporter.sendMail({
+      from: `"Meeting Scribe" <${fromEmail}>`,
+      to: recipients.join(', '),
+      subject,
+      html: htmlBody,
+      attachments,
+    });
+
+    return res.json({ ok: true, id: info.messageId });
   } catch (err: any) {
     console.error('Email send error:', err);
-    return res.status(500).json({ error: err.message || 'Loi gui email' });
+    // AggregateError (e.g. postgres connection refused) has an empty .message —
+    // extract the first sub-error message so the response is diagnostic.
+    const message =
+      err.message ||
+      (err instanceof AggregateError && err.errors?.[0]?.message) ||
+      'Loi gui email';
+    return res.status(500).json({ error: message });
   }
 });
 

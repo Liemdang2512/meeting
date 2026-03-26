@@ -45,7 +45,7 @@ describe('RegisterPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /tạo tài khoản/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/chon it nhat 1 nhom/i)).toBeInTheDocument();
+      expect(screen.getByText(/chọn ít nhất 1 nhóm/i)).toBeInTheDocument();
     });
     expect(register).not.toHaveBeenCalled();
   });
@@ -54,7 +54,7 @@ describe('RegisterPage', () => {
     render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
 
     // Select a group first to bypass group validation
-    selectGroup(/chuyen vien/i);
+    selectGroup(/chuyên viên/i);
 
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'user@example.com' },
@@ -78,7 +78,7 @@ describe('RegisterPage', () => {
     render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
 
     // Select a group first to bypass group validation
-    selectGroup(/chuyen vien/i);
+    selectGroup(/chuyên viên/i);
 
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'user@example.com' },
@@ -106,7 +106,7 @@ describe('RegisterPage', () => {
     render(<RegisterPage onRegisterSuccess={onRegisterSuccess} onGoToLogin={() => {}} />);
 
     // Select specialist group
-    selectGroup(/chuyen vien/i);
+    selectGroup(/chuyên viên/i);
 
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'newuser@example.com' },
@@ -140,7 +140,7 @@ describe('RegisterPage', () => {
     render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
 
     // Select a group first
-    selectGroup(/chuyen vien/i);
+    selectGroup(/chuyên viên/i);
 
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'user@example.com' },
@@ -167,7 +167,7 @@ describe('RegisterPage', () => {
     render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
 
     // Select a group first
-    selectGroup(/chuyen vien/i);
+    selectGroup(/chuyên viên/i);
 
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'existing@example.com' },

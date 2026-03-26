@@ -1,8 +1,24 @@
 import { useState, useCallback } from 'react';
+import { z } from 'zod';
 import { generateStructured } from '../../../services/geminiService';
 import { DiagramResponseSchema } from '../lib/mindmapSchema';
 import type { DiagramResponse } from '../lib/mindmapSchema';
 import type { TokenLoggingContext } from '../../../types';
+
+// Schema without max() constraints — used for Gemini JSON Schema generation (transforms not allowed)
+const DiagramResponseSchemaLoose = z.object({
+  title: z.string(),
+  layoutType: z.enum(['hub-spoke', 'linear']),
+  nodes: z.array(z.object({
+    id: z.string(),
+    label: z.string(),
+    subtitle: z.string().optional(),
+    description: z.string().optional(),
+    iconKey: z.string().optional(),
+    role: z.enum(['source', 'intermediate', 'destination', 'default']),
+  })).min(1),
+  edges: z.array(z.object({ source: z.string(), target: z.string() })),
+});
 
 const MAX_TEXT_LENGTH = 50_000;
 
@@ -45,6 +61,23 @@ export interface UseDiagramFromTextResult {
   reset: () => void;
 }
 
+function sanitizeDiagramResponse(raw: unknown): unknown {
+  if (!raw || typeof raw !== 'object') return raw;
+  const r = raw as any;
+  return {
+    ...r,
+    nodes: Array.isArray(r.nodes)
+      ? r.nodes.map((n: any) => ({
+          ...n,
+          id: typeof n.id === 'string' ? n.id.slice(0, 20) : n.id,
+          label: typeof n.label === 'string' ? n.label.slice(0, 60) : n.label,
+          subtitle: typeof n.subtitle === 'string' ? n.subtitle.slice(0, 40) : n.subtitle,
+          description: typeof n.description === 'string' ? n.description.slice(0, 120) : n.description,
+        }))
+      : r.nodes,
+  };
+}
+
 export function useDiagramFromText(): UseDiagramFromTextResult {
   const [diagram, setDiagram] = useState<DiagramResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -72,12 +105,13 @@ export function useDiagramFromText(): UseDiagramFromTextResult {
 
     try {
       const prompt = buildDiagramPrompt(truncated);
-      const response = await generateStructured<DiagramResponse>(
+      const raw = await generateStructured<z.infer<typeof DiagramResponseSchemaLoose>>(
         prompt,
-        DiagramResponseSchema,
+        DiagramResponseSchemaLoose,
         loggingContext,
         userId,
       );
+      const response = DiagramResponseSchema.parse(sanitizeDiagramResponse(raw));
       setDiagram(response);
     } catch (err: any) {
       setError(err.message || 'Lỗi khi tạo sơ đồ.');

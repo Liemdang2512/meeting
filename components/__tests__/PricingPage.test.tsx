@@ -4,33 +4,38 @@ import { vi } from 'vitest';
 import { PricingPage } from '../../features/pricing/PricingPage';
 
 describe('PricingPage', () => {
-  it('hiển thị 3 gói: Free, Pro, Enterprise', () => {
+  it('hiển thị 3 gói: Phóng viên, Chuyên viên, Cán bộ', () => {
     render(<PricingPage />);
-    expect(screen.getByText('Free')).toBeInTheDocument();
-    expect(screen.getByText('Pro')).toBeInTheDocument();
-    expect(screen.getByText('Enterprise')).toBeInTheDocument();
+    expect(screen.getByText('Phóng viên')).toBeInTheDocument();
+    expect(screen.getByText('Chuyên viên')).toBeInTheDocument();
+    expect(screen.getByText('Cán bộ')).toBeInTheDocument();
   });
 
-  it('gói Free có nút "Gói hiện tại" bị disabled khi currentUserRole="free"', () => {
+  it('currentUserRole="free" không được tính là đã đăng ký gói trả phí', () => {
     render(<PricingPage currentUserRole="free" />);
-    const btn = screen.getAllByRole('button').find(b => b.textContent === 'Gói hiện tại');
-    expect(btn).toBeTruthy();
-    expect(btn).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Gói hiện tại' })).not.toBeInTheDocument();
   });
 
-  it('gói Pro có nút "Nâng cấp ngay" mở UpgradeModal khi click', () => {
+  it('gói Chuyên viên có nút "Nâng cấp ngay" mở UpgradeModal khi click', () => {
     render(<PricingPage currentUserRole="free" />);
-    const upgradeBtn = screen.getByRole('button', { name: 'Nâng cấp ngay' });
-    expect(upgradeBtn).toBeInTheDocument();
+    const upgradeBtn = screen.getAllByRole('button', { name: 'Nâng cấp ngay' })[1];
+    expect(upgradeBtn).toBeTruthy();
     fireEvent.click(upgradeBtn);
     // After click, UpgradeModal should be open - check for modal content
     expect(screen.getByText('Nâng cấp lên Pro')).toBeInTheDocument();
   });
 
-  it('gói Enterprise có nút "Liên hệ"', () => {
-    render(<PricingPage />);
-    const contactBtn = screen.getByRole('button', { name: 'Liên hệ' });
-    expect(contactBtn).toBeInTheDocument();
+  it('currentUserRole="pro" được tính là đang dùng gói Chuyên viên', () => {
+    render(<PricingPage currentUserRole="pro" />);
+    const btn = screen.getByRole('button', { name: 'Gói hiện tại' });
+    expect(btn).toBeInTheDocument();
+    expect(btn).toBeDisabled();
+  });
+
+  it('khi currentUserRole="free" thì cả 3 gói đều là "Nâng cấp ngay"', () => {
+    render(<PricingPage currentUserRole="free" />);
+    const upgradeButtons = screen.getAllByRole('button', { name: 'Nâng cấp ngay' });
+    expect(upgradeButtons).toHaveLength(3);
   });
 
   it('UpgradeModal không hiển thị khi mới render (isOpen=false)', () => {

@@ -1,9 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import "./styles/tokens.css";
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--ui-font-family);
 }
 
 /* Custom Scrollbar */

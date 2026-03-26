@@ -15,7 +15,10 @@ export function WorkflowGuard({ group, user, navigate, children }: WorkflowGuard
       return;
     }
     if (!user.workflowGroups.includes(group)) {
-      navigate(`/${user.activeWorkflowGroup}`);
+      const targetLabel =
+        group === 'reporter' ? 'Phóng viên' : group === 'specialist' ? 'Chuyên viên' : 'Cán bộ';
+      window.alert(`Bạn chưa đăng ký nhóm "${targetLabel}". Vui lòng nâng cấp hoặc cập nhật trong Profile.`);
+      navigate('/pricing');
     }
   }, [user, group, navigate]);
 

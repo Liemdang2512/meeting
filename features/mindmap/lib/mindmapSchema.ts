@@ -1,20 +1,31 @@
 import { z } from 'zod';
 
 // ============================================================
+// Shared icon enum — enforced at schema level so Gemini can't hallucinate
+// ============================================================
+
+const IconKeySchema = z.enum([
+  'briefcase', 'alert-triangle', 'dollar-sign', 'check-circle', 'users', 'target',
+  'clock', 'file-text', 'settings', 'zap', 'shield', 'trending-up', 'map', 'list',
+  'message-circle', 'calendar', 'database', 'lock', 'star', 'flag', 'package',
+  'tool', 'globe', 'heart', 'eye', 'bar-chart', 'layers', 'link', 'search', 'upload',
+]).optional();
+
+// ============================================================
 // Mindmap schema — max 3 levels: center -> main branch -> sub-branch
 // ============================================================
 
 /** Level 3 node (leaf — no children) */
 const Branch2Schema = z.object({
-  label: z.string(),
-  iconKey: z.string().optional(),
+  label: z.string().max(80),
+  iconKey: IconKeySchema,
 });
 
 /** Level 2 node — can have leaf children */
 const BranchSchema = z.object({
-  label: z.string(),
+  label: z.string().max(80),
   children: z.array(Branch2Schema).optional(),
-  iconKey: z.string().optional(),
+  iconKey: IconKeySchema,
 });
 
 /** Level 1 root node */
@@ -98,9 +109,9 @@ export function toMindmapTree(response: MindmapResponse): MindmapNode {
 /** A node in the visual diagram */
 const DiagramNodeSchema = z.object({
   id: z.string().max(20),
-  label: z.string(),
-  subtitle: z.string().optional(),
-  description: z.string().optional(),
+  label: z.string().max(60),
+  subtitle: z.string().max(40).optional(),
+  description: z.string().max(120).optional(),
   iconKey: z.string().optional(),
   role: z.enum(['source', 'intermediate', 'destination', 'default']),
 });

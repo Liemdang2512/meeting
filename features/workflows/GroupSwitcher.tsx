@@ -9,9 +9,12 @@ interface GroupSwitcherProps {
 }
 
 export function GroupSwitcher({ user, navigate }: GroupSwitcherProps) {
-  if (user.workflowGroups.length <= 1) return null;
-
   const handleSwitch = async (group: WorkflowGroup) => {
+    if (!user.workflowGroups.includes(group)) {
+      const target = WORKFLOW_GROUPS.find((g) => g.key === group)?.label ?? group;
+      window.alert(`Nhóm "${target}" chưa được đăng ký. Vui lòng nâng cấp hoặc vào Profile để cập nhật.`);
+      return;
+    }
     if (group === user.activeWorkflowGroup) return;
     try {
       const res = await authFetch('/profiles/active-workflow-group', {
@@ -27,23 +30,26 @@ export function GroupSwitcher({ user, navigate }: GroupSwitcherProps) {
     } catch { /* ignore */ }
   };
 
-  const userGroups = WORKFLOW_GROUPS.filter(g => user.workflowGroups.includes(g.key));
-
   return (
     <div className="flex gap-1">
-      {userGroups.map(({ key, label }) => (
+      {WORKFLOW_GROUPS.map(({ key, label }) => {
+        const isSubscribed = user.workflowGroups.includes(key);
+        return (
         <button
           key={key}
           onClick={() => handleSwitch(key)}
           className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
-            key === user.activeWorkflowGroup
+            !isSubscribed
+              ? 'bg-slate-100 text-slate-400'
+              : key === user.activeWorkflowGroup
               ? 'bg-indigo-600 text-white'
               : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           }`}
+          title={isSubscribed ? `Chuyển sang nhóm ${label}` : `Nhóm ${label} chưa đăng ký`}
         >
-          {label}
+          {label}{!isSubscribed ? ' (khóa)' : ''}
         </button>
-      ))}
+      )})}
     </div>
   );
 }

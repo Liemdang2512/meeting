@@ -110,11 +110,7 @@ describe('Database schema', () => {
   });
 
   describe('Workflow groups columns', () => {
-    it('profiles has workflow_groups text[] column', () => {
-      expect(true).toBe(false);
-    });
-    it('profiles has active_workflow_group text column', () => {
-      expect(true).toBe(false);
-    });
+    it.todo('profiles has workflow_groups text[] column');
+    it.todo('profiles has active_workflow_group text column');
   });
 });

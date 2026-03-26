@@ -19,7 +19,7 @@ export function WorkflowGroupsSection({ user, onUpdate }: WorkflowGroupsSectionP
     setSelected(prev => {
       if (prev.includes(group)) {
         if (prev.length <= 1) {
-          setError('Phai giu it nhat 1 nhom');
+          setError('Phải giữ ít nhất 1 nhóm');
           return prev;
         }
         return prev.filter(g => g !== group);
@@ -37,7 +37,7 @@ export function WorkflowGroupsSection({ user, onUpdate }: WorkflowGroupsSectionP
 
   const handleSave = async () => {
     if (selected.length === 0) {
-      setError('Phai giu it nhat 1 nhom');
+      setError('Phải giữ ít nhất 1 nhóm');
       return;
     }
     const add = selected.filter(g => !user.workflowGroups.includes(g));
@@ -61,22 +61,49 @@ export function WorkflowGroupsSection({ user, onUpdate }: WorkflowGroupsSectionP
         onUpdate();
       } else {
         const data = await res.json();
-        setError(data.error || 'Luu that bai');
+        setError(data.error || 'Lưu thất bại');
         setSaveState('idle');
       }
     } catch {
-      setError('Luu that bai');
+      setError('Lưu thất bại');
       setSaveState('idle');
     }
   };
 
+  const roleLabel = user.role === 'free'
+    ? 'FREE'
+    : user.role === 'pro'
+      ? 'PRO'
+      : user.role === 'enterprise'
+        ? 'ENTERPRISE'
+        : user.role?.toUpperCase();
+  const activeLabel = WORKFLOW_GROUPS.find(g => g.key === user.activeWorkflowGroup)?.label ?? user.activeWorkflowGroup;
+  const registeredLabels = WORKFLOW_GROUPS
+    .filter(g => user.workflowGroups.includes(g.key))
+    .map(g => g.label);
+
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-medium text-slate-800">Quan ly nhom nguoi dung</h2>
+      <h2 className="text-lg font-medium text-slate-800">Profile</h2>
+
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-3">
+        <p className="text-sm text-slate-700">
+          Gói hiện tại: <span className="font-semibold text-[#1E3A8A]">{roleLabel}</span>
+        </p>
+        <p className="text-sm text-slate-700">
+          Nhóm đang sử dụng: <span className="font-semibold">{activeLabel}</span>
+        </p>
+        <p className="text-sm text-slate-700">
+          Nhóm đã đăng ký: <span className="font-semibold">{registeredLabels.join(', ') || 'Chưa có'}</span>
+        </p>
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          Chỉ các nhóm đã đăng ký mới có thể mở workflow. Nhóm chưa đăng ký sẽ hiển thị thông báo.
+        </p>
+      </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
         <p className="text-sm text-slate-600">
-          Chon nhom nguoi dung ban thuoc ve. Ban co the thuoc nhieu nhom cung mot luc.
+          Cập nhật nhóm đã đăng ký của bạn. Bạn có thể thuộc nhiều nhóm cùng một lúc.
         </p>
 
         <div className="grid gap-3">
@@ -124,7 +151,7 @@ export function WorkflowGroupsSection({ user, onUpdate }: WorkflowGroupsSectionP
           disabled={saveState === 'saving' || !hasChanges()}
           className="px-6 py-3 bg-indigo-600 text-white font-sans font-medium border-slate-200 shadow-sm rounded-xl hover:bg-indigo-700 transition-all active:bg-indigo-800 border disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {saveState === 'saving' ? 'Dang luu...' : saveState === 'saved' ? 'Da luu' : 'Luu thay doi'}
+          {saveState === 'saving' ? 'Đang lưu...' : saveState === 'saved' ? 'Đã lưu' : 'Lưu thay đổi'}
         </button>
       </div>
     </div>

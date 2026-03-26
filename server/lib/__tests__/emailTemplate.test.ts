@@ -1,28 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 
 describe('buildEmailHtml', () => {
-  it('returns valid HTML string with DOCTYPE', () => {
-    // TODO: implement when emailTemplate.ts exists
-    expect(true).toBe(false);
-  });
-
-  it('uses only inline styles (no style blocks)', () => {
-    expect(true).toBe(false);
-  });
-
-  it('includes company name in header', () => {
-    expect(true).toBe(false);
-  });
-
-  it('includes participants table', () => {
-    expect(true).toBe(false);
-  });
-
-  it('includes minutes HTML content', () => {
-    expect(true).toBe(false);
-  });
-
-  it('escapes HTML special characters in user data', () => {
-    expect(true).toBe(false);
-  });
+  it.todo('returns valid HTML string with DOCTYPE');
+  it.todo('uses only inline styles (no style blocks)');
+  it.todo('includes company name in header');
+  it.todo('includes participants table');
+  it.todo('includes minutes HTML content');
+  it.todo('escapes HTML special characters in user data');
 });

@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import sql from '../db';
-import { signToken, requireAuth } from '../auth';
+import { signToken, requireAuth, FREE_FEATURES, ALL_FEATURES, Feature } from '../auth';
 
 const router = Router();
 
@@ -32,13 +32,14 @@ router.post('/login', async (req, res) => {
     }
     // Get role and workflow groups from profiles
     const [profile] = await sql`
-      SELECT role, workflow_groups, active_workflow_group FROM public.profiles WHERE user_id = ${user.id}
+      SELECT role, workflow_groups, active_workflow_group, features FROM public.profiles WHERE user_id = ${user.id}
     `;
     const role = profile?.role ?? 'free';
     const workflowGroups = profile?.workflow_groups ?? ['specialist'];
     const activeWorkflowGroup = profile?.active_workflow_group ?? 'specialist';
-    const token = signToken({ userId: user.id, email: user.email, role, workflowGroups, activeWorkflowGroup });
-    return res.json({ token, user: { id: user.id, email: user.email, role, workflowGroups, activeWorkflowGroup } });
+    const features: Feature[] = profile?.features?.length ? profile.features : FREE_FEATURES;
+    const token = signToken({ userId: user.id, email: user.email, role, workflowGroups, activeWorkflowGroup, features });
+    return res.json({ token, user: { id: user.id, email: user.email, role, workflowGroups, activeWorkflowGroup, features } });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }
@@ -87,13 +88,13 @@ router.post('/register', registerLimiter, async (req, res) => {
         RETURNING id, email
       `;
       await tx`
-        INSERT INTO public.profiles (user_id, role, workflow_groups, active_workflow_group, created_at, updated_at)
-        VALUES (${u.id}, 'free', ${sql.array(workflowGroups)}, ${firstGroup}, NOW(), NOW())
+        INSERT INTO public.profiles (user_id, role, workflow_groups, active_workflow_group, features, created_at, updated_at)
+        VALUES (${u.id}, 'free', ${sql.array(workflowGroups)}, ${firstGroup}, ${sql.array(FREE_FEATURES)}, NOW(), NOW())
       `;
       return u;
     });
-    const token = signToken({ userId: newUser.id, email: newUser.email, role: 'free', workflowGroups, activeWorkflowGroup: firstGroup });
-    return res.status(201).json({ token, user: { id: newUser.id, email: newUser.email, role: 'free', workflowGroups, activeWorkflowGroup: firstGroup } });
+    const token = signToken({ userId: newUser.id, email: newUser.email, role: 'free', workflowGroups, activeWorkflowGroup: firstGroup, features: FREE_FEATURES });
+    return res.status(201).json({ token, user: { id: newUser.id, email: newUser.email, role: 'free', workflowGroups, activeWorkflowGroup: firstGroup, features: FREE_FEATURES } });
   } catch (err: any) {
     if (err.statusCode === 409) {
       return res.status(409).json({ error: err.message });
@@ -107,9 +108,34 @@ router.post('/logout', (_req, res) => {
   res.json({ ok: true });
 });
 
-// GET /api/auth/me — return user info from JWT
-router.get('/me', requireAuth, (req, res) => {
-  res.json({ user: req.user });
+// GET /api/auth/me — return fresh user info from DB
+router.get('/me', requireAuth, async (req, res) => {
+  try {
+    const [profile] = await sql`
+      SELECT role, workflow_groups, active_workflow_group, features
+      FROM public.profiles
+      WHERE user_id = ${req.user!.userId}
+    `;
+
+    const role = profile?.role ?? req.user!.role ?? 'free';
+    const workflowGroups = profile?.workflow_groups ?? req.user!.workflowGroups ?? ['specialist'];
+    const activeWorkflowGroup = profile?.active_workflow_group ?? req.user!.activeWorkflowGroup ?? 'specialist';
+    const features: Feature[] = profile?.features?.length ? profile.features : (req.user!.features ?? FREE_FEATURES);
+
+    const freshUser = {
+      userId: req.user!.userId,
+      email: req.user!.email,
+      role,
+      workflowGroups,
+      activeWorkflowGroup,
+      features,
+    };
+
+    const token = signToken(freshUser);
+    res.json({ user: freshUser, token });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;
