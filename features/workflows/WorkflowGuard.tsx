@@ -14,7 +14,9 @@ export function WorkflowGuard({ group, user, navigate, children }: WorkflowGuard
       navigate('/login');
       return;
     }
-    if (!user.workflowGroups.includes(group)) {
+    // Free users được dùng specialist mặc định (1 lượt/ngày)
+    const isFreeSpecialist = user.role === 'free' && group === 'specialist';
+    if (!isFreeSpecialist && !user.workflowGroups.includes(group)) {
       const targetLabel =
         group === 'reporter' ? 'Phóng viên' : group === 'specialist' ? 'Chuyên viên' : 'Cán bộ';
       window.alert(`Bạn chưa đăng ký nhóm "${targetLabel}". Vui lòng nâng cấp hoặc cập nhật trong Profile.`);
@@ -23,6 +25,7 @@ export function WorkflowGuard({ group, user, navigate, children }: WorkflowGuard
   }, [user, group, navigate]);
 
   if (!user) return null;
-  if (!user.workflowGroups.includes(group)) return null;
+  const isFreeSpecialist = user.role === 'free' && group === 'specialist';
+  if (!isFreeSpecialist && !user.workflowGroups.includes(group)) return null;
   return <>{children}</>;
 }

@@ -951,8 +951,10 @@ export const generateStructured = async <T>(
   const ai = getAiInstance();
   const useResponseSchema = options?.useResponseSchema ?? true;
 
-  // z.toJSONSchema(schema) — Zod v4 built-in, correct call (not schema.toJSONSchema())
-  const { $schema: _drop, ...jsonSchema } = z.toJSONSchema(schema) as any;
+  // Only convert to JSON Schema when Gemini needs it — transforms can't be serialized
+  const jsonSchema = useResponseSchema
+    ? (() => { const { $schema: _drop, ...s } = z.toJSONSchema(schema) as any; return s; })()
+    : undefined;
 
   try {
     const response = await ai.models.generateContent({

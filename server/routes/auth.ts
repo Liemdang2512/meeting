@@ -35,8 +35,8 @@ router.post('/login', async (req, res) => {
       SELECT role, workflow_groups, active_workflow_group, features FROM public.profiles WHERE user_id = ${user.id}
     `;
     const role = profile?.role ?? 'free';
-    const workflowGroups = profile?.workflow_groups ?? ['specialist'];
-    const activeWorkflowGroup = profile?.active_workflow_group ?? 'specialist';
+    const workflowGroups = profile?.workflow_groups ?? [];
+    const activeWorkflowGroup = profile?.active_workflow_group ?? '';
     const features: Feature[] = profile?.features?.length ? profile.features : FREE_FEATURES;
     const token = signToken({ userId: user.id, email: user.email, role, workflowGroups, activeWorkflowGroup, features });
     return res.json({ token, user: { id: user.id, email: user.email, role, workflowGroups, activeWorkflowGroup, features } });
@@ -53,13 +53,11 @@ const registerLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-const WorkflowGroupEnum = z.enum(['reporter', 'specialist', 'officer']);
-
 export const RegisterSchema = z.object({
   email: z.string().email('Email không hợp lệ'),
   password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự'),
   confirmPassword: z.string(),
-  workflowGroups: z.array(WorkflowGroupEnum).min(1, 'Vui lòng chọn ít nhất 1 nhóm'),
+  workflowGroups: z.array(z.enum(['reporter', 'specialist', 'officer'])).min(1, 'Chọn ít nhất 1 nhóm').optional(),
 }).refine(d => d.password === d.confirmPassword, {
   message: 'Mật khẩu xác nhận không khớp',
   path: ['confirmPassword'],
@@ -71,8 +69,7 @@ router.post('/register', registerLimiter, async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.issues[0].message });
   }
-  const { email, password, workflowGroups } = parsed.data;
-  const firstGroup = workflowGroups[0];
+  const { email, password } = parsed.data;
   try {
     const newUser = await sql.begin(async (tx: any) => {
       const [existing] = await tx`SELECT id FROM auth.users WHERE email = ${email}`;
@@ -89,12 +86,12 @@ router.post('/register', registerLimiter, async (req, res) => {
       `;
       await tx`
         INSERT INTO public.profiles (user_id, role, workflow_groups, active_workflow_group, features, created_at, updated_at)
-        VALUES (${u.id}, 'free', ${sql.array(workflowGroups)}, ${firstGroup}, ${sql.array(FREE_FEATURES)}, NOW(), NOW())
+        VALUES (${u.id}, 'free', ARRAY[]::text[], '', ${sql.array(FREE_FEATURES)}, NOW(), NOW())
       `;
       return u;
     });
-    const token = signToken({ userId: newUser.id, email: newUser.email, role: 'free', workflowGroups, activeWorkflowGroup: firstGroup, features: FREE_FEATURES });
-    return res.status(201).json({ token, user: { id: newUser.id, email: newUser.email, role: 'free', workflowGroups, activeWorkflowGroup: firstGroup, features: FREE_FEATURES } });
+    const token = signToken({ userId: newUser.id, email: newUser.email, role: 'free', workflowGroups: [], activeWorkflowGroup: '' as any, features: FREE_FEATURES });
+    return res.status(201).json({ token, user: { id: newUser.id, email: newUser.email, role: 'free', workflowGroups: [], activeWorkflowGroup: '', features: FREE_FEATURES } });
   } catch (err: any) {
     if (err.statusCode === 409) {
       return res.status(409).json({ error: err.message });
@@ -118,8 +115,8 @@ router.get('/me', requireAuth, async (req, res) => {
     `;
 
     const role = profile?.role ?? req.user!.role ?? 'free';
-    const workflowGroups = profile?.workflow_groups ?? req.user!.workflowGroups ?? ['specialist'];
-    const activeWorkflowGroup = profile?.active_workflow_group ?? req.user!.activeWorkflowGroup ?? 'specialist';
+    const workflowGroups = profile?.workflow_groups ?? req.user!.workflowGroups ?? [];
+    const activeWorkflowGroup = profile?.active_workflow_group ?? req.user!.activeWorkflowGroup ?? '';
     const features: Feature[] = profile?.features?.length ? profile.features : (req.user!.features ?? FREE_FEATURES);
 
     const freshUser = {

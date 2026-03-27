@@ -1,14 +1,14 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { authFetch } from '../../lib/api';
 
-type WorkflowGroup = 'reporter' | 'specialist' | 'officer';
+type UnifiedRole = 'free' | 'reporter' | 'specialist' | 'officer' | 'admin';
 
-const ALL_GROUPS: WorkflowGroup[] = ['reporter', 'specialist', 'officer'];
-
-const GROUP_LABEL: Record<WorkflowGroup, string> = {
+const ROLE_LABEL: Record<UnifiedRole, string> = {
+  free: 'Free',
   reporter: 'Phóng viên',
   specialist: 'Chuyên viên',
   officer: 'Cán bộ',
+  admin: 'Admin',
 };
 
 type Feature = 'transcription' | 'summary' | 'mindmap' | 'export_pdf' | 'export_docx' | 'email' | 'diagram';
@@ -28,11 +28,9 @@ const FEATURE_LABEL: Record<Feature, string> = {
 interface UserRow {
   id: string;
   email: string;
-  role: 'free' | 'pro' | 'enterprise' | 'admin';
+  role: UnifiedRole;
   daily_limit: number | null;
   features: Feature[];
-  workflow_groups: WorkflowGroup[];
-  active_workflow_group: WorkflowGroup;
   created_at: string;
   tokens_used: number;
 }
@@ -59,7 +57,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
   const [showCreate, setShowCreate] = useState(false);
   const [createEmail, setCreateEmail] = useState('');
   const [createPassword, setCreatePassword] = useState('');
-  const [createRole, setCreateRole] = useState<'free' | 'pro' | 'enterprise' | 'admin'>('free');
+  const [createRole, setCreateRole] = useState<UnifiedRole>('free');
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
 
@@ -113,7 +111,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
     );
   }
 
-  const handleChangeRole = async (userId: string, newRole: 'free' | 'pro' | 'enterprise' | 'admin') => {
+  const handleChangeRole = async (userId: string, newRole: UnifiedRole) => {
     try {
       const res = await authFetch(`/admin/users/${userId}`, {
         method: 'PUT',
@@ -158,29 +156,6 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Cập nhật thất bại');
       setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, features: newFeatures } : u)));
-    } catch (e: any) {
-      alert(`Lỗi: ${e.message}`);
-    }
-  };
-
-  const handleToggleGroup = async (userId: string, group: WorkflowGroup, currentGroups: WorkflowGroup[]) => {
-    const isRemoving = currentGroups.includes(group);
-    if (isRemoving && currentGroups.length <= 1) {
-      alert('Tài khoản phải có ít nhất 1 nhóm');
-      return;
-    }
-    const newGroups = isRemoving
-      ? currentGroups.filter((g) => g !== group)
-      : [...currentGroups, group];
-    try {
-      const res = await authFetch(`/admin/users/${userId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workflow_groups: newGroups }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Cập nhật thất bại');
-      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, workflow_groups: newGroups } : u)));
     } catch (e: any) {
       alert(`Lỗi: ${e.message}`);
     }
@@ -348,8 +323,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
             <thead className="bg-[#1E3A8A] text-white border-b border-slate-200">
               <tr>
                 <th className="text-left px-5 py-4 font-medium text-sm">Email</th>
-                <th className="text-left px-5 py-4 font-medium text-sm">Role</th>
-                <th className="text-left px-5 py-4 font-medium text-sm hidden md:table-cell">Nhóm</th>
+                <th className="text-left px-5 py-4 font-medium text-sm">Gói / Quyền</th>
                 <th className="text-left px-5 py-4 font-medium text-sm">Lần/ngày</th>
                 <th className="text-left px-5 py-4 font-medium text-sm hidden md:table-cell">
                   Token dùng
@@ -380,44 +354,23 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
                     <select
                       value={u.role}
                       disabled={u.id === currentUserId}
-                      onChange={(e) => handleChangeRole(u.id, e.target.value as 'free' | 'pro' | 'enterprise' | 'admin')}
+                      onChange={(e) => handleChangeRole(u.id, e.target.value as UnifiedRole)}
                       className="text-sm font-medium border-slate-200 px-3 py-1.5 bg-white text-slate-800 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:bg-slate-50 cursor-pointer border rounded-xl"
                     >
-                      <option value="free">FREE</option>
-                      <option value="pro">PRO</option>
-                      <option value="enterprise">ENTERPRISE</option>
-                      <option value="admin">ADMIN</option>
+                      {(Object.entries(ROLE_LABEL) as [UnifiedRole, string][]).map(([val, label]) => (
+                        <option key={val} value={val}>{label}</option>
+                      ))}
                     </select>
                   </td>
-                  <td className="px-5 py-4 hidden md:table-cell">
-                    <div className="flex flex-wrap gap-1">
-                      {ALL_GROUPS.map((g) => {
-                        const active = (u.workflow_groups ?? []).includes(g);
-                        return (
-                          <button
-                            key={g}
-                            type="button"
-                            onClick={() => handleToggleGroup(u.id, g, u.workflow_groups ?? ['specialist'])}
-                            title={active ? `Bỏ nhóm ${GROUP_LABEL[g]}` : `Thêm nhóm ${GROUP_LABEL[g]}`}
-                            className={`text-xs font-medium px-2 py-0.5 rounded-lg border transition-all ${
-                              active
-                                ? 'bg-[#1E40AF] text-white border-[#1E40AF]'
-                                : 'bg-white text-slate-400 border-slate-200 hover:border-slate-400'
-                            }`}
-                          >
-                            {GROUP_LABEL[g]}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </td>
                   <td className="px-5 py-4">
-                    {u.role === 'free' ? (
+                    {u.role === 'free' || u.role === 'reporter' || u.role === 'specialist' || u.role === 'officer' ? (
                       <input
                         type="number"
                         min={1}
-                        value={u.daily_limit ?? 1}
-                        onChange={(e) => handleChangeDailyLimit(u.id, e.target.value)}
+                        key={`${u.id}-${u.daily_limit}`}
+                        defaultValue={u.daily_limit ?? 1}
+                        onBlur={(e) => handleChangeDailyLimit(u.id, e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
                         className="w-16 text-sm font-medium border border-slate-200 px-2 py-1.5 bg-white text-slate-800 focus:outline-none focus:bg-slate-50 rounded-xl text-center"
                       />
                     ) : (
@@ -500,16 +453,15 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-800 mb-2">Role</label>
+                <label className="block text-xs font-medium text-slate-800 mb-2">Gói / Quyền</label>
                 <select
                   value={createRole}
-                  onChange={(e) => setCreateRole(e.target.value as 'free' | 'pro' | 'enterprise' | 'admin')}
+                  onChange={(e) => setCreateRole(e.target.value as UnifiedRole)}
                   className="w-full border-slate-200 px-4 py-3 text-sm focus:outline-none focus:border-slate-200 bg-slate-50 focus:bg-white font-medium transition-colors border rounded-xl"
                 >
-                  <option value="free">FREE</option>
-                  <option value="pro">PRO</option>
-                  <option value="enterprise">ENTERPRISE</option>
-                  <option value="admin">ADMIN</option>
+                  {(Object.entries(ROLE_LABEL) as [UnifiedRole, string][]).map(([val, label]) => (
+                    <option key={val} value={val}>{label}</option>
+                  ))}
                 </select>
               </div>
               {createError && <p className="text-xs font-medium text-red-600 p-3 bg-red-50 border-red-200 rounded-2xl">{createError}</p>}

@@ -66,8 +66,8 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     const payload = jwt.verify(token, JWT_SECRET) as Partial<AuthUser> & Pick<AuthUser, 'userId' | 'email' | 'role'>;
     const tokenUser: AuthUser = {
       ...payload,
-      workflowGroups: payload.workflowGroups ?? ['specialist'],
-      activeWorkflowGroup: payload.activeWorkflowGroup ?? 'specialist',
+      workflowGroups: payload.workflowGroups ?? [],
+      activeWorkflowGroup: payload.activeWorkflowGroup ?? ('' as WorkflowGroup),
       features: payload.features ?? FREE_FEATURES,
     } as AuthUser;
 

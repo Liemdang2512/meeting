@@ -4,12 +4,17 @@ import { z } from 'zod';
 // Shared icon enum — enforced at schema level so Gemini can't hallucinate
 // ============================================================
 
-const IconKeySchema = z.enum([
+const VALID_ICON_KEYS = [
   'briefcase', 'alert-triangle', 'dollar-sign', 'check-circle', 'users', 'target',
   'clock', 'file-text', 'settings', 'zap', 'shield', 'trending-up', 'map', 'list',
   'message-circle', 'calendar', 'database', 'lock', 'star', 'flag', 'package',
   'tool', 'globe', 'heart', 'eye', 'bar-chart', 'layers', 'link', 'search', 'upload',
-]).optional();
+] as const;
+
+// Accepts any string but silently drops unknown icon keys — Gemini sometimes returns values not in the list
+const IconKeySchema = z.string().optional().transform(val =>
+  val && (VALID_ICON_KEYS as readonly string[]).includes(val) ? val : undefined
+);
 
 // ============================================================
 // Mindmap schema — max 3 levels: center -> main branch -> sub-branch

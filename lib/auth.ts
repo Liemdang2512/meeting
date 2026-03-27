@@ -78,7 +78,7 @@ export async function loadApiKeyFromAccount(_userId: string): Promise<string | n
 }
 
 // Dang ky tai khoan moi: lay JWT, luu vao localStorage
-export async function register(email: string, password: string, confirmPassword: string, workflowGroups: WorkflowGroup[]): Promise<void> {
+export async function register(email: string, password: string, confirmPassword: string, workflowGroups?: string[]): Promise<void> {
   const res = await authFetch('/auth/register', {
     method: 'POST',
     body: JSON.stringify({ email, password, confirmPassword, workflowGroups }),

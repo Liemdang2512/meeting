@@ -19,34 +19,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
   };
 
   return (
-    <div className="min-h-screen" style={{ fontFamily: "'Inter', sans-serif", backgroundColor: '#f8fafc', color: '#1e293b' }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        .bg-dot-grid {
-          background-image: radial-gradient(#cbd5e1 0.8px, transparent 0.8px);
-          background-size: 24px 24px;
-        }
-        .mode-card { transition: all 0.2s ease; }
-        .mode-card.active {
-          border-color: #2563eb;
-          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
-        }
-        .shadow-soft {
-          box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
-        }
-        .shadow-xl-soft {
-          box-shadow: 0 20px 25px -5px rgba(0,0,0,0.05), 0 10px 10px -5px rgba(0,0,0,0.02);
-        }
-        .desktop-nav { display: flex; }
-        .hamburger-btn { display: none; }
-        @media (max-width: 600px) {
-          .desktop-nav { display: none !important; }
-          .hamburger-btn { display: flex !important; }
-          .brand-text { font-size: 1rem !important; }
-        }
-        details[open] summary .faq-icon { transform: rotate(45deg); }
-        details summary .faq-icon { transition: transform 0.2s; display: inline-block; }
-      `}</style>
+    <div className="min-h-screen">
 
       <div className="bg-dot-grid">
         {/* Sticky Navigation */}
@@ -62,7 +35,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
               >
                 <img src="https://neuronsai.net/assets/NAI.png" alt="NeuronsAI" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} />
                 <span style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.025em', color: '#0f172a' }}>
-                  Meeting Minute I <span style={{ color: '#3b5bdb' }}>Thư ký AI</span>
+                  Meeting Minute I <span style={{ color: '#1e40af' }}>Thư ký AI</span>
                 </span>
               </button>
 
@@ -72,7 +45,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <button onClick={() => handleNav('/login')} style={{ fontSize: '0.875rem', fontWeight: 600, color: '#475569', background: 'none', border: 'none', cursor: 'pointer' }}>Đăng nhập</button>
                 <button
                   onClick={() => handleNav('/register')}
-                  style={{ backgroundColor: '#2563eb', color: 'white', padding: '8px 20px', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(37,99,235,0.3)' }}
+                  style={{ backgroundColor: '#1e40af', color: 'white', padding: '8px 20px', borderRadius: '9999px', fontSize: '0.875rem', fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(37,99,235,0.3)' }}
                 >
                   Đăng ký
                 </button>
@@ -84,6 +57,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 onClick={() => setMobileOpen(o => !o)}
                 style={{ alignItems: 'center', justifyContent: 'center', width: '40px', height: '40px', background: 'none', border: 'none', cursor: 'pointer', flexDirection: 'column', gap: '5px', padding: 0 }}
                 aria-label="Menu"
+                aria-expanded={mobileOpen}
               >
                 <span style={{ display: 'block', width: '22px', height: '2px', background: mobileOpen ? 'transparent' : '#0f172a', transition: 'all 0.2s' }} />
                 <span style={{ display: 'block', width: '22px', height: '2px', background: '#0f172a', transform: mobileOpen ? 'rotate(45deg) translate(5px, 5px)' : 'none', transition: 'all 0.2s' }} />
@@ -99,7 +73,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
               <button onClick={() => handleNav('/login')} style={{ textAlign: 'left', padding: '12px 0', fontSize: '1rem', fontWeight: 600, color: '#475569', background: 'none', border: 'none', borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }}>Đăng nhập</button>
               <button
                 onClick={() => handleNav('/register')}
-                style={{ marginTop: '12px', padding: '14px', backgroundColor: '#2563eb', color: 'white', borderRadius: '9999px', fontSize: '1rem', fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(37,99,235,0.3)' }}
+                style={{ marginTop: '12px', padding: '14px', backgroundColor: '#1e40af', color: 'white', borderRadius: '9999px', fontSize: '1rem', fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(37,99,235,0.3)' }}
               >
                 Đăng ký miễn phí
               </button>
@@ -122,7 +96,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
                 <button
                   onClick={() => handleNav('/register')}
-                  style={{ padding: '16px 40px', backgroundColor: '#2563eb', color: 'white', borderRadius: '9999px', cursor: 'pointer', fontWeight: 700, fontSize: '1.125rem', border: 'none', boxShadow: '0 4px 14px rgba(37,99,235,0.3)' }}
+                  style={{ padding: '16px 40px', backgroundColor: '#1e40af', color: 'white', borderRadius: '9999px', cursor: 'pointer', fontWeight: 700, fontSize: '1.125rem', border: 'none', boxShadow: '0 4px 14px rgba(37,99,235,0.3)' }}
                 >
                   Bắt đầu ngay
                 </button>
@@ -154,7 +128,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                 <div style={{ display: 'flex', justifyContent: 'center', gap: '19px', marginBottom: '32px', flexWrap: 'wrap' }}>
                   {['NHANH CHÓNG', 'CHÍNH XÁC', 'DỄ SỬ DỤNG'].map((tag, i) => (
-                    <span key={i} style={{ fontSize: '0.77rem', fontWeight: 900, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.12em', padding: '6px 16px', background: '#eff6ff', borderRadius: '9999px', border: '1px solid #bfdbfe' }}>{tag}</span>
+                    <span key={i} style={{ fontSize: '0.77rem', fontWeight: 900, color: '#1e40af', textTransform: 'uppercase', letterSpacing: '0.12em', padding: '6px 16px', background: '#eff6ff', borderRadius: '9999px', border: '1px solid #bfdbfe' }}>{tag}</span>
                   ))}
                 </div>
 
@@ -166,9 +140,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
                     {/* Phóng viên */}
-                    <div className={`mode-card${activeCard === 0 ? ' active' : ''}`} onClick={() => setActiveCard(0)} style={{ padding: '24px', borderRadius: '1.5rem', border: activeCard === 0 ? '2px solid #2563eb' : '1px solid #e2e8f0', background: activeCard === 0 ? 'rgba(239,246,255,0.1)' : 'white', cursor: 'pointer' }}>
+                    <div className={`mode-card${activeCard === 0 ? ' active' : ''}`} onClick={() => setActiveCard(0)} style={{ padding: '24px', borderRadius: '1.5rem', border: activeCard === 0 ? '2px solid #1e40af' : '1px solid #e2e8f0', background: activeCard === 0 ? 'rgba(239,246,255,0.1)' : 'white', cursor: 'pointer' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
-                        <div style={{ width: '48px', height: '48px', background: '#fef3c7', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.875rem' }}>🎙️</div>
+                        <div style={{ width: '48px', height: '48px', background: '#fef3c7', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+                        </div>
                         <div>
                           <h4 style={{ fontWeight: 900, color: '#0f172a', fontSize: '1.125rem' }}>Phóng viên</h4>
                           <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#d97706', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Báo chí</p>
@@ -184,27 +160,31 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     </div>
 
                     {/* Chuyên viên */}
-                    <div className={`mode-card${activeCard === 1 ? ' active' : ''}`} onClick={() => setActiveCard(1)} style={{ padding: '24px', borderRadius: '1.5rem', border: activeCard === 1 ? '2px solid #2563eb' : '1px solid #e2e8f0', background: activeCard === 1 ? 'rgba(239,246,255,0.1)' : 'white', cursor: 'pointer' }}>
+                    <div className={`mode-card${activeCard === 1 ? ' active' : ''}`} onClick={() => setActiveCard(1)} style={{ padding: '24px', borderRadius: '1.5rem', border: activeCard === 1 ? '2px solid #1e40af' : '1px solid #e2e8f0', background: activeCard === 1 ? 'rgba(239,246,255,0.1)' : 'white', cursor: 'pointer' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
-                        <div style={{ width: '48px', height: '48px', background: '#eff6ff', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.875rem' }}>💼</div>
+                        <div style={{ width: '48px', height: '48px', background: '#eff6ff', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                        </div>
                         <div>
                           <h4 style={{ fontWeight: 900, color: '#0f172a', fontSize: '1.125rem' }}>Chuyên viên</h4>
-                          <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Doanh nghiệp</p>
+                          <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#1e40af', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Doanh nghiệp</p>
                         </div>
                       </div>
                       <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {['Không giới hạn thông tin tổng hợp', 'Tự động tạo biên bản họp', 'Tóm tắt nội dung & danh sách việc cần làm', 'Tích hợp lịch & email', 'Quy trình chuẩn'].map((item, i) => (
                           <li key={i} style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                            <span style={{ color: '#2563eb', flexShrink: 0 }}>✓</span>{item}
+                            <span style={{ color: '#1e40af', flexShrink: 0 }}>✓</span>{item}
                           </li>
                         ))}
                       </ul>
                     </div>
 
                     {/* Cán bộ */}
-                    <div className={`mode-card${activeCard === 2 ? ' active' : ''}`} onClick={() => setActiveCard(2)} style={{ padding: '24px', borderRadius: '1.5rem', border: activeCard === 2 ? '2px solid #2563eb' : '1px solid #e2e8f0', background: activeCard === 2 ? 'rgba(239,246,255,0.1)' : 'white', cursor: 'pointer' }}>
+                    <div className={`mode-card${activeCard === 2 ? ' active' : ''}`} onClick={() => setActiveCard(2)} style={{ padding: '24px', borderRadius: '1.5rem', border: activeCard === 2 ? '2px solid #1e40af' : '1px solid #e2e8f0', background: activeCard === 2 ? 'rgba(239,246,255,0.1)' : 'white', cursor: 'pointer' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
-                        <div style={{ width: '48px', height: '48px', background: '#f0fdf4', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.875rem' }}>📋</div>
+                        <div style={{ width: '48px', height: '48px', background: '#f0fdf4', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+                        </div>
                         <div>
                           <h4 style={{ fontWeight: 900, color: '#0f172a', fontSize: '1.125rem' }}>Cán bộ</h4>
                           <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Pháp lý</p>
@@ -223,7 +203,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
 
                   <button
                     onClick={() => handleNav('/register')}
-                    style={{ width: '100%', padding: '20px', marginTop: '24px', backgroundColor: '#2563eb', color: 'white', fontWeight: 700, fontSize: '1.25rem', borderRadius: '9999px', border: 'none', cursor: 'pointer', boxShadow: '0 8px 25px rgba(37,99,235,0.3)', transition: 'transform 0.2s' }}
+                    style={{ width: '100%', padding: '20px', marginTop: '24px', backgroundColor: '#1e40af', color: 'white', fontWeight: 700, fontSize: '1.25rem', borderRadius: '9999px', border: 'none', cursor: 'pointer', boxShadow: '0 8px 25px rgba(37,99,235,0.3)', transition: 'transform 0.2s' }}
                     onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.01)')}
                     onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
                   >
@@ -245,7 +225,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 {[
                   {
                     icon: (
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
                       </svg>
                     ),
@@ -255,7 +235,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   },
                   {
                     icon: (
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/>
                       </svg>
                     ),
@@ -275,7 +255,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   },
                   {
                     icon: (
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>
                       </svg>
                     ),
@@ -285,7 +265,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   },
                   {
                     icon: (
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>
                       </svg>
                     ),
@@ -388,7 +368,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
               {/* Phóng viên */}
               <div style={{ background: 'white', padding: '40px', borderRadius: '2.5rem', border: '1px solid #e2e8f0', position: 'relative' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                  <div style={{ width: '44px', height: '44px', background: '#fef3c7', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>🎙️</div>
+                  <div style={{ width: '44px', height: '44px', background: '#fef3c7', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+                  </div>
                   <div>
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>Phóng viên</h3>
                     <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#d97706', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Báo chí</p>
@@ -416,16 +398,20 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   style={{ width: '100%', padding: '14px', borderRadius: '9999px', border: '2px solid #d97706', fontWeight: 700, background: 'transparent', color: '#d97706', cursor: 'pointer', fontSize: '0.95rem', transition: 'all 0.2s' }}
                   onMouseEnter={e => { e.currentTarget.style.background = '#d97706'; e.currentTarget.style.color = 'white'; }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#d97706'; }}
+                  onFocus={e => { e.currentTarget.style.background = '#d97706'; e.currentTarget.style.color = 'white'; }}
+                  onBlur={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#d97706'; }}
                 >
-                  Dùng thử ngay
+                  Đăng ký ngay
                 </button>
               </div>
 
               {/* Chuyên viên — highlight */}
               <div style={{ background: '#0f172a', padding: '40px', borderRadius: '2.5rem', border: '1px solid #1e293b', color: 'white', position: 'relative', boxShadow: '0 25px 50px rgba(0,0,0,0.2)' }}>
-                <div style={{ position: 'absolute', top: '-16px', left: '50%', transform: 'translateX(-50%)', background: '#2563eb', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', padding: '8px 16px', borderRadius: '9999px', whiteSpace: 'nowrap' }}>Phổ biến nhất</div>
+                <div style={{ position: 'absolute', top: '-16px', left: '50%', transform: 'translateX(-50%)', background: '#1e40af', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', padding: '8px 16px', borderRadius: '9999px', whiteSpace: 'nowrap' }}>Phổ biến nhất</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                  <div style={{ width: '44px', height: '44px', background: '#1e3a5f', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>💼</div>
+                  <div style={{ width: '44px', height: '44px', background: '#1e3a5f', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                  </div>
                   <div>
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 900, margin: 0 }}>Chuyên viên</h3>
                     <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#60a5fa', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Doanh nghiệp</p>
@@ -450,18 +436,22 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </ul>
                 <button
                   onClick={() => handleNav('/register')}
-                  style={{ width: '100%', padding: '14px', borderRadius: '9999px', background: '#2563eb', color: 'white', fontWeight: 700, border: 'none', cursor: 'pointer', fontSize: '0.95rem', boxShadow: '0 4px 20px rgba(37,99,235,0.3)', transition: 'background 0.2s' }}
+                  style={{ width: '100%', padding: '14px', borderRadius: '9999px', background: '#1e40af', color: 'white', fontWeight: 700, border: 'none', cursor: 'pointer', fontSize: '0.95rem', boxShadow: '0 4px 20px rgba(37,99,235,0.3)', transition: 'background 0.2s' }}
                   onMouseEnter={e => (e.currentTarget.style.background = '#3b82f6')}
-                  onMouseLeave={e => (e.currentTarget.style.background = '#2563eb')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '#1e40af')}
+                  onFocus={e => (e.currentTarget.style.background = '#3b82f6')}
+                  onBlur={e => (e.currentTarget.style.background = '#1e40af')}
                 >
-                  Bắt đầu ngay
+                  Đăng ký ngay
                 </button>
               </div>
 
               {/* Cán bộ */}
               <div style={{ background: 'white', padding: '40px', borderRadius: '2.5rem', border: '1px solid #e2e8f0', position: 'relative' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                  <div style={{ width: '44px', height: '44px', background: '#f0fdf4', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>⚖️</div>
+                  <div style={{ width: '44px', height: '44px', background: '#f0fdf4', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+                  </div>
                   <div>
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0f172a', margin: 0 }}>Cán bộ</h3>
                     <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#16a34a', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Pháp lý</p>
@@ -489,8 +479,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   style={{ width: '100%', padding: '14px', borderRadius: '9999px', border: '2px solid #16a34a', fontWeight: 700, background: 'transparent', color: '#16a34a', cursor: 'pointer', fontSize: '0.95rem', transition: 'all 0.2s' }}
                   onMouseEnter={e => { e.currentTarget.style.background = '#16a34a'; e.currentTarget.style.color = 'white'; }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#16a34a'; }}
+                  onFocus={e => { e.currentTarget.style.background = '#16a34a'; e.currentTarget.style.color = 'white'; }}
+                  onBlur={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#16a34a'; }}
                 >
-                  Dùng thử ngay
+                  Đăng ký ngay
                 </button>
               </div>
             </div>
@@ -502,7 +494,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
               <div style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)', borderRadius: '2.5rem', padding: 'clamp(40px, 6vw, 72px)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '40px' }}>
                 <div style={{ flex: '1 1 400px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                    <div style={{ width: '48px', height: '48px', background: 'rgba(99,102,241,0.2)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.75rem' }}>🏢</div>
+                    <div style={{ width: '48px', height: '48px', background: 'rgba(99,102,241,0.2)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#818cf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>
+                    </div>
                     <span style={{ fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#818cf8' }}>Doanh nghiệp</span>
                   </div>
                   <h2 style={{ fontSize: 'clamp(1.75rem, 3vw, 2.5rem)', fontWeight: 900, color: 'white', marginBottom: '16px', lineHeight: 1.2 }}>
@@ -530,8 +524,10 @@ export function HomePage({ onNavigate }: HomePageProps) {
                       style={{ display: 'block', width: '100%', padding: '16px 32px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', fontWeight: 700, borderRadius: '9999px', border: 'none', cursor: 'pointer', fontSize: '1rem', boxShadow: '0 4px 20px rgba(99,102,241,0.4)', transition: 'opacity 0.2s', marginBottom: '12px' }}
                       onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
                       onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+                      onFocus={e => (e.currentTarget.style.opacity = '0.9')}
+                      onBlur={e => (e.currentTarget.style.opacity = '1')}
                     >
-                      Liên hệ tư vấn
+                      Liên hệ ngay
                     </button>
                     <p style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Phản hồi trong vòng 24 giờ</p>
                   </div>
@@ -572,7 +568,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   <details key={i} style={{ background: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', padding: '24px 28px', cursor: 'pointer' }}>
                     <summary style={{ fontWeight: 700, fontSize: '1rem', color: '#0f172a', listStyle: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       {q}
-                      <span className="faq-icon" style={{ color: '#2563eb', fontSize: '1.25rem', fontWeight: 400, marginLeft: '16px', flexShrink: 0 }}>+</span>
+                      <span className="faq-icon" style={{ color: '#1e40af', fontSize: '1.25rem', fontWeight: 400, marginLeft: '16px', flexShrink: 0 }}>+</span>
                     </summary>
                     <p style={{ marginTop: '16px', color: '#64748b', fontWeight: 500, lineHeight: 1.7, margin: '16px 0 0' }}>{a}</p>
                   </details>
@@ -589,7 +585,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
               <div style={{ gridColumn: 'span 1' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
                   <img src="https://neuronsai.net/assets/NAI.png" alt="NeuronsAI" style={{ height: '24px', width: 'auto', objectFit: 'contain' }} />
-                  <span style={{ fontWeight: 800, color: '#0f172a' }}>Neurons<span style={{ color: '#3b5bdb' }}>AI</span></span>
+                  <span style={{ fontWeight: 800, color: '#0f172a' }}>Neurons<span style={{ color: '#1e40af' }}>AI</span></span>
                 </div>
                 <p style={{ fontSize: '0.875rem', fontWeight: 500, color: '#64748b', lineHeight: 1.7, marginBottom: '20px' }}>
                   Meeting Minute I Thư ký họp AI là một nền tảng AI đa năng hỗ trợ các công việc tổng hợp thông tin, văn bản. Tại đây, bạn có thể tăng năng suất trong công việc văn phòng với tất cả các mô hình AI hiệu quả và quy trình làm việc tự động mới nhất.

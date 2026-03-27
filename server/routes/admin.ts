@@ -3,6 +3,27 @@ import bcrypt from 'bcryptjs';
 import sql from '../db';
 import { requireAuth, FREE_FEATURES, ALL_FEATURES } from '../auth';
 
+const VALID_ROLES = ['free', 'reporter', 'specialist', 'officer', 'admin'] as const;
+type UnifiedRole = typeof VALID_ROLES[number];
+
+// Khi đổi role → tự động set workflow_groups + features
+function groupsForRole(role: UnifiedRole): string[] {
+  if (role === 'reporter') return ['reporter'];
+  if (role === 'specialist') return ['specialist'];
+  if (role === 'officer') return ['officer'];
+  if (role === 'admin') return ['reporter', 'specialist', 'officer'];
+  return []; // free
+}
+
+function featuresForRole(role: UnifiedRole): string[] {
+  return role === 'free' ? FREE_FEATURES : ALL_FEATURES;
+}
+
+// postgres.js không infer type cho empty array — dùng sql fragment khi rỗng
+function groupsArraySql(groups: string[]) {
+  return groups.length > 0 ? sql.array(groups) : sql`ARRAY[]::text[]`;
+}
+
 const router = Router();
 
 // Middleware kiểm tra admin
@@ -55,36 +76,32 @@ router.get('/users', requireAuth, requireAdmin, async (req, res) => {
 // POST /api/admin/users — tạo user mới
 // Body: { email, password, role? }
 router.post('/users', requireAuth, requireAdmin, async (req, res) => {
-  const { email, password, role = 'user' } = req.body ?? {};
+  const { email, password, role = 'free' } = req.body ?? {};
   if (!email || !password) {
     return res.status(400).json({ error: 'Email và mật khẩu là bắt buộc' });
   }
-  if (!['free', 'pro', 'enterprise', 'admin'].includes(role)) {
-    return res.status(400).json({ error: 'Role không hợp lệ (free, pro, enterprise hoặc admin)' });
+  if (!VALID_ROLES.includes(role as UnifiedRole)) {
+    return res.status(400).json({ error: 'Role không hợp lệ (free, reporter, specialist, officer hoặc admin)' });
   }
   try {
-    // Kiểm tra email đã tồn tại chưa
-    const [existing] = await sql`
-      SELECT id FROM auth.users WHERE email = ${email}
-    `;
+    const [existing] = await sql`SELECT id FROM auth.users WHERE email = ${email}`;
     if (existing) {
       return res.status(409).json({ error: 'Email đã tồn tại' });
     }
 
     const password_hash = await bcrypt.hash(password, 12);
-
-    // Tạo user trong auth.users
     const [newUser] = await sql`
       INSERT INTO auth.users (email, password_hash, created_at)
       VALUES (${email}, ${password_hash}, NOW())
       RETURNING id, email, created_at
     `;
 
-    // Tạo profile với role + features mặc định theo role
-    const defaultFeatures = ['pro', 'enterprise', 'admin'].includes(role) ? ALL_FEATURES : FREE_FEATURES;
+    const groups = groupsForRole(role as UnifiedRole);
+    const feats = featuresForRole(role as UnifiedRole);
+    const activeGroup = groups[0] ?? '';
     await sql`
-      INSERT INTO public.profiles (user_id, role, features, created_at, updated_at)
-      VALUES (${newUser.id}, ${role}, ${sql.array(defaultFeatures)}, NOW(), NOW())
+      INSERT INTO public.profiles (user_id, role, workflow_groups, active_workflow_group, features, created_at, updated_at)
+      VALUES (${newUser.id}, ${role}, ${groupsArraySql(groups)}, ${activeGroup}, ${sql.array(feats)}, NOW(), NOW())
     `;
 
     return res.status(201).json({
@@ -113,14 +130,26 @@ router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
     }
 
     if (role) {
-      if (!['free', 'pro', 'enterprise', 'admin'].includes(role)) {
-        return res.status(400).json({ error: 'Role không hợp lệ (free, pro, enterprise hoặc admin)' });
+      if (!VALID_ROLES.includes(role as UnifiedRole)) {
+        return res.status(400).json({ error: 'Role không hợp lệ (free, reporter, specialist, officer hoặc admin)' });
       }
+      const groups = groupsForRole(role as UnifiedRole);
+      const feats = featuresForRole(role as UnifiedRole);
+      const activeGroup = groups[0] ?? '';
       const [existing] = await sql`SELECT user_id FROM public.profiles WHERE user_id = ${id}`;
       if (existing) {
-        await sql`UPDATE public.profiles SET role = ${role}, updated_at = NOW() WHERE user_id = ${id}`;
+        await sql`
+          UPDATE public.profiles
+          SET role = ${role}, workflow_groups = ${groupsArraySql(groups)},
+              active_workflow_group = ${activeGroup}, features = ${sql.array(feats)},
+              updated_at = NOW()
+          WHERE user_id = ${id}
+        `;
       } else {
-        await sql`INSERT INTO public.profiles (user_id, role, created_at, updated_at) VALUES (${id}, ${role}, NOW(), NOW())`;
+        await sql`
+          INSERT INTO public.profiles (user_id, role, workflow_groups, active_workflow_group, features, created_at, updated_at)
+          VALUES (${id}, ${role}, ${groupsArraySql(groups)}, ${activeGroup}, ${sql.array(feats)}, NOW(), NOW())
+        `;
       }
     }
 

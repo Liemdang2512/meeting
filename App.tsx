@@ -9,6 +9,7 @@ import { TranscriptionView } from './components/TranscriptionView';
 import { Spinner } from './components/Spinner';
 import { FileAudioIcon, RefreshIcon, AlertCircleIcon, DownloadIcon, CheckIcon, CopyIcon, MailIcon } from './components/Icons';
 import { LoginPage } from './components/LoginPage';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import type { MeetingInfo } from './features/minutes/types';
 import { loadMeetingInfoDraft, clearMeetingInfoDraft } from './features/minutes/storage';
 import { buildMinutesCustomPrompt } from './features/minutes/prompt';
@@ -28,14 +29,9 @@ const RegisterPage = lazy(() => import('./components/RegisterPage').then(m => ({
 const PricingPage = lazy(() => import('./features/pricing/PricingPage').then(m => ({ default: m.PricingPage })));
 const HomePage = lazy(() => import('./components/HomePage').then(m => ({ default: m.HomePage })));
 import { WorkflowGuard } from './features/workflows/WorkflowGuard';
-import { GroupSwitcher } from './features/workflows/GroupSwitcher';
 import type { WorkflowGroup } from './features/workflows/types';
 
-const WORKFLOW_CARDS: { group: WorkflowGroup; label: string; description: string }[] = [
-  { group: 'reporter', label: 'Bài phỏng vấn', description: 'Ghi chép & tổng hợp phỏng vấn báo chí' },
-  { group: 'specialist', label: 'Thư ký họp', description: 'Biên bản cuộc họp chuyên nghiệp' },
-  { group: 'officer', label: 'Thông tin vụ án', description: 'Ghi chép hồ sơ pháp lý' },
-];
+const MeetingLandingPage = lazy(() => import('./components/MeetingLandingPage').then(m => ({ default: m.MeetingLandingPage })));
 const ReporterWorkflowPage = lazy(() => import('./features/workflows/reporter/ReporterWorkflowPage'));
 const SpecialistWorkflowPage = lazy(() => import('./features/workflows/specialist/SpecialistWorkflowPage'));
 const OfficerWorkflowPage = lazy(() => import('./features/workflows/officer/OfficerWorkflowPage'));
@@ -280,7 +276,7 @@ function App() {
   const [customLanguage, setCustomLanguage] = useState('');
 
   // Chế độ workflow được chọn trong bước 1
-  const [selectedWorkflowMode, setSelectedWorkflowMode] = useState<WorkflowGroup | null>(null);
+
 
   // Progress cho chế độ chuyên sâu (3 bước)
   const [deepProgress, setDeepProgress] = useState<{ step: number; label: string } | null>(null);
@@ -359,7 +355,7 @@ function App() {
         setIsAdmin(currentUser.role === 'admin');
         // Set workflow mode mặc định theo activeWorkflowGroup
         if (currentUser.activeWorkflowGroup) {
-          setSelectedWorkflowMode(currentUser.activeWorkflowGroup as WorkflowGroup);
+
         }
       }
     };
@@ -423,10 +419,6 @@ function App() {
     } else {
       alert('Vui lòng nhập API key hợp lệ');
     }
-  };
-
-  const handleAddFiles = (files: File[]) => {
-    setPendingFiles(prev => [...prev, ...files]);
   };
 
   const handleRemoveFile = (index: number) => {
@@ -895,6 +887,12 @@ function App() {
     );
   }
 
+  if (user && (route === '/login' || route === '/register')) {
+    const dest = user.activeWorkflowGroup ? `/${user.activeWorkflowGroup}` : '/meeting';
+    navigate(dest);
+    return null;
+  }
+
   if (!user) {
     if (route === '/') {
       return (
@@ -912,8 +910,10 @@ function App() {
               setUser(loggedInUser);
               if (loggedInUser && loggedInUser.activeWorkflowGroup) {
                 navigate(`/${loggedInUser.activeWorkflowGroup}`);
-              } else {
+              } else if (loggedInUser && loggedInUser.workflowGroups && loggedInUser.workflowGroups.length > 0) {
                 navigate('/meeting');
+              } else {
+                navigate('/pricing');
               }
               if (loggedInUser) {
                 setIsAdmin(loggedInUser.role === 'admin');
@@ -937,8 +937,10 @@ function App() {
       setUser(loggedInUser);
       if (loggedInUser && loggedInUser.activeWorkflowGroup) {
         navigate(`/${loggedInUser.activeWorkflowGroup}`);
-      } else {
+      } else if (loggedInUser && loggedInUser.workflowGroups && loggedInUser.workflowGroups.length > 0) {
         navigate('/meeting');
+      } else {
+        navigate('/pricing');
       }
       if (loggedInUser) {
         setIsAdmin(loggedInUser.role === 'admin');
@@ -1008,29 +1010,29 @@ function App() {
     );
   }
 
-  if (route === '/reporter') {
+  if (route === '/reporter' || route === '/meeting/reporter') {
     return (
       <WorkflowGuard group="reporter" user={user} navigate={navigate}>
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><Spinner /></div>}>
           <ReporterWorkflowPage navigate={navigate} user={user!} />
         </Suspense>
       </WorkflowGuard>
     );
   }
-  if (route === '/specialist') {
+  if (route === '/specialist' || route === '/meeting/specialist') {
     return (
       <WorkflowGuard group="specialist" user={user} navigate={navigate}>
-        <Suspense fallback={<div>Loading...</div>}>
-          <SpecialistWorkflowPage navigate={navigate} />
+        <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><Spinner /></div>}>
+          <SpecialistWorkflowPage navigate={navigate} user={user!} />
         </Suspense>
       </WorkflowGuard>
     );
   }
-  if (route === '/officer') {
+  if (route === '/officer' || route === '/meeting/officer') {
     return (
       <WorkflowGuard group="officer" user={user} navigate={navigate}>
-        <Suspense fallback={<div>Loading...</div>}>
-          <OfficerWorkflowPage />
+        <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><Spinner /></div>}>
+          <OfficerWorkflowPage navigate={navigate} user={user!} />
         </Suspense>
       </WorkflowGuard>
     );
@@ -1088,9 +1090,6 @@ function App() {
                 <RefreshIcon className="w-3.5 h-3.5" />
                 Phiên mới
               </button>
-            )}
-            {user && user.workflowGroups && (
-              <GroupSwitcher user={user} navigate={navigate} />
             )}
             {user && (
               <QuotaBadge
@@ -1225,770 +1224,17 @@ function App() {
           {isNotesRoute && mode === 'splitter' && (
             <FileSplitPage
               onSendToTranscription={(files) => {
-                handleAddFiles(files);
+                setPendingFiles(files);
                 setMode('notes');
               }}
             />
           )}
         </Suspense>
-        {isNotesRoute && mode === 'notes' && <>
-
-          {/* API Key Input Modal */}
-          {showApiKeyInput && (
-            <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 rounded-2xl">
-              <div className="bg-white border-slate-200 max-w-md w-full p-6 space-y-4 shadow-sm rounded-xl border">
-                <div className="text-center">
-                  <h3 className="text-2xl font-sans font-medium text-slate-800 mb-2">
-                    {localStorage.getItem('gemini_api_key') ? 'Thay đổi' : 'Cấu hình'} Gemini API Key
-                  </h3>
-                  <p className="text-slate-500 font-medium text-sm">
-                    {localStorage.getItem('gemini_api_key') ? (
-                      <>Cập nhật API key mới của bạn</>
-                    ) : (
-                      <>
-                        Nhập API key của bạn từ{' '}
-                        <a
-                          href="https://aistudio.google.com/apikey"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-slate-800 border-b border-slate-200 hover:text-slate-600 font-medium transition-colors"
-                        >
-                          Google AI Studio
-                        </a>
-                      </>
-                    )}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-slate-800">API Key</label>
-                  <input
-                    type="password"
-                    value={userApiKey}
-                    onChange={(e) => setUserApiKey(e.target.value)}
-                    placeholder="AIza..."
-                    className="w-full px-4 py-3 border-slate-200 focus:border-slate-200 focus:outline-none bg-slate-50 focus:bg-white font-mono text-sm transition-colors border rounded-xl"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        handleSaveApiKey();
-                      }
-                    }}
-                  />
-                  <p className="text-xs font-medium text-slate-400">
-                    API key sẽ được lưu trong trình duyệt của bạn (localStorage)
-                  </p>
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    onClick={() => setShowApiKeyInput(false)}
-                    className="flex-1 px-4 py-3 border-slate-200 bg-white text-slate-800 font-medium shadow-sm rounded-xl transition-all border"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    onClick={handleSaveApiKey}
-                    className="flex-1 px-4 py-3 border-slate-200 bg-indigo-600 text-white font-medium shadow-sm rounded-xl hover:bg-indigo-700 transition-all border"
-                  >
-                    Lưu API Key
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* BƯỚC 1: Tải lên file */}
-          {status === TranscriptionStatus.IDLE && (
-            <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in duration-300">
-              <div className="text-center md:text-left mb-8">
-                <h2 className="text-2xl font-sans font-medium text-slate-800">Bước 1: Tải lên file Audio hoặc Video</h2>
-                <p className="text-slate-500 font-medium text-sm mt-2">Tải lên một hoặc nhiều file cần ghi chép. Hỗ trợ MP3, MP4, WAV, M4A, OGG — tối đa 100MB/file.</p>
-              </div>
-              <div className="bg-white p-6 md:p-8 border-slate-200 shadow-sm rounded-xl transition-all border">
-                <FileUpload
-                  pendingFiles={pendingFiles}
-                  onAddFiles={handleAddFiles}
-                  onRemoveFile={handleRemoveFile}
-                  onStartConvert={handleStartConvert}
-                  fileStatuses={[]}
-                  disabled={false}
-                  showStartButton={false}
-                />
-              </div>
-
-              {/* Chọn nhóm workflow — chỉ hiện nhóm user thuộc về */}
-              {user && user.workflowGroups && user.workflowGroups.length > 0 && (
-                <div className="bg-slate-50 p-6 border-slate-200 shadow-sm rounded-xl space-y-4 border">
-                  <p className="text-sm font-medium text-slate-800">Chọn loại nội dung</p>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {WORKFLOW_CARDS.filter(c => user.workflowGroups!.includes(c.group)).map(card => (
-                      <button
-                        key={card.group}
-                        onClick={() => setSelectedWorkflowMode(card.group)}
-                        className={`flex flex-col gap-1.5 p-4 border rounded-xl text-left transition-all ${
-                          selectedWorkflowMode === card.group
-                            ? 'border-indigo-400 bg-indigo-50 text-indigo-700 shadow-sm'
-                            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:shadow-sm'
-                        }`}
-                      >
-                        <span className="font-medium text-sm">{card.label}</span>
-                        <span className="text-xs text-slate-500">{card.description}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Chọn chế độ phiên âm */}
-              <div className="bg-slate-50 p-6 border-slate-200 shadow-sm rounded-xl space-y-4 border">
-                <p className="text-sm font-medium text-slate-800">Chế độ phiên âm</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    onClick={() => setTranscribeMode('basic')}
-                    className={`flex flex-col items-start gap-2 p-4 border transition-all text-left group ${transcribeMode === 'basic' ? 'border-slate-200 bg-slate-200 shadow-sm rounded-xl' : 'border-slate-200 bg-white hover:border-indigo-500 rounded-xl' }`}
-                  >
-                    <div className="flex items-center gap-2 w-full">
-                      <span className="text-xl">⚡</span>
-                      <span className="font-medium text-slate-800 text-sm">Cơ bản</span>
-                      {transcribeMode === 'basic' && (
-                        <span className="ml-auto text-xs font-medium text-slate-800 bg-white px-2 py-1 border-slate-200 rounded-sm border">Đang chọn</span>
-                      )}
-                    </div>
-                    <p className="text-xs font-medium text-slate-600">1 bước · Nhanh hơn</p>
-                    <p className="text-xs font-medium text-slate-500">Phù hợp họp nội bộ, nội dung đơn giản</p>
-                  </button>
-                  <button
-                    onClick={() => setTranscribeMode('deep')}
-                    className={`flex flex-col items-start gap-2 p-4 border transition-all text-left group ${transcribeMode === 'deep' ? 'border-slate-200 bg-indigo-600/40 shadow-sm rounded-xl' : 'border-slate-200 bg-white hover:border-indigo-500 rounded-xl' }`}
-                  >
-                    <div className="flex items-center gap-2 w-full">
-                      <span className="text-xl">🔍</span>
-                      <span className="font-medium text-slate-800 text-sm">Chuyên sâu</span>
-                      {transcribeMode === 'deep' && (
-                        <span className="ml-auto text-xs font-medium text-slate-800 bg-white px-2 py-1 border-slate-200 rounded-sm border">Đang chọn</span>
-                      )}
-                    </div>
-                    <p className="text-xs font-medium text-slate-600">3 bước · Chính xác hơn</p>
-                    <p className="text-xs font-medium text-slate-500">Họp quan trọng, đa ngôn ngữ, thuật ngữ chuyên ngành</p>
-                  </button>
-                </div>
-              </div>
-
-              {/* Chọn ngôn ngữ audio */}
-              <div className="bg-slate-50 p-6 border-slate-200 shadow-sm rounded-xl space-y-4 border">
-                <p className="text-sm font-medium text-slate-800">Ngôn ngữ trong file audio</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {([
-                    { value: 'vi', label: '🇻🇳 Tiếng Việt' },
-                    { value: 'en', label: '🇬🇧 Tiếng Anh' },
-                    { value: 'zh', label: '🇨🇳 Tiếng Trung' },
-                    { value: 'ko', label: '🇰🇷 Tiếng Hàn' },
-                    { value: 'ja', label: '🇯🇵 Tiếng Nhật' },
-                    { value: 'other', label: '🌐 Khác' },
-                  ] as { value: AudioLanguage; label: string }[]).map((lang) => (
-                    <button
-                      key={lang.value}
-                      onClick={() => setAudioLanguage(lang.value)}
-                      className={`px-3 py-2.5 border text-xs font-medium transition-all text-left ${audioLanguage === lang.value ? 'border-slate-200 bg-slate-200 text-slate-800 shadow-sm rounded-xl' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-200 hover:text-slate-800 rounded-xl' }`}
-                    >
-                      {lang.label}
-                    </button>
-                  ))}
-                </div>
-                {audioLanguage === 'other' && (
-                  <input
-                    type="text"
-                    value={customLanguage}
-                    onChange={(e) => setCustomLanguage(e.target.value)}
-                    placeholder="Nhập tên ngôn ngữ (ví dụ: Tiếng Thái...)"
-                    className="w-full px-4 py-3 border-slate-200 bg-white focus:border-slate-200 text-sm font-medium focus:outline-none transition-colors border rounded-xl"
-                  />
-                )}
-              </div>
-
-              {/* Nút chuyển xuống dưới cùng của Bước 1 */}
-              <button
-                onClick={handleStartConvert}
-                disabled={pendingFiles.length === 0}
-                className="w-full py-4 bg-indigo-600 border-slate-200 text-white font-sans font-medium text-xl shadow-sm rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed border"
-              >
-                {pendingFiles.length === 1 ? 'Chuyển văn bản' : `Chuyển ${pendingFiles.length} file`}
-              </button>
-
-              <p className="text-xs font-medium text-slate-400 text-center">Vui lòng hoàn thành bước 1 trước khi chuyển sang các bước tiếp theo</p>
-            </div>
-          )}
-
-          {/* BƯỚC 2: Ghi chép — split layout cố định */}
-          {(status === TranscriptionStatus.PROCESSING || status === TranscriptionStatus.READING_FILE) && (
-            <div className="animate-in fade-in duration-300 space-y-6">
-              <div>
-                <h2 className="text-2xl font-sans font-medium text-slate-800">Bước 2: Chuyển đổi âm thanh thành văn bản</h2>
-                <p className="text-slate-500 text-sm font-medium mt-1">AI đang lắng nghe và ghi chép từng file. Kết quả hiện ngay khi mỗi file hoàn thành.</p>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Trái: File queue với trạng thái */}
-                <div className="space-y-3">
-                  <p className="text-xs font-medium text-slate-400">Danh sách file</p>
-                  <div className="bg-slate-50 p-6 border-slate-200 shadow-sm rounded-xl border">
-                    <FileUpload
-                      pendingFiles={pendingFiles}
-                      onAddFiles={handleAddFiles}
-                      onRemoveFile={handleRemoveFile}
-                      onStartConvert={handleStartConvert}
-                      fileStatuses={fileStatuses}
-                      disabled={true}
-                    />
-                  </div>
-                </div>
-
-                {/* Phải: Kết quả từng file khi xong */}
-                <div className="space-y-3 flex flex-col h-[calc(100vh-260px)]">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-medium text-slate-400">Văn bản ghi chép</p>
-                    {completedTranscriptions.length > 1 && (
-                      <div className="flex gap-2 flex-wrap justify-end">
-                        {completedTranscriptions.map((t, i) => (
-                          <button key={i} onClick={() => setViewingIndex(i)}
-                            className={`text-xs font-medium px-3 py-1.5 border transition-all shadow-sm rounded-xl ${i === viewingIndex ? 'bg-indigo-600 text-white border-slate-200 translate-y-px shadow-none' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
-                            {t.name.length > 15 ? t.name.substring(0, 15) + '…' : t.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 overflow-hidden">
-                    {completedTranscriptions.length === 0 ? (
-                      <div className="h-full bg-slate-50 border-dashed border-slate-200 flex flex-col items-center justify-center gap-4 text-center p-8 rounded-2xl">
-                        <Spinner size="lg" className={transcribeMode === 'deep' ? 'text-slate-500' : 'text-indigo-600'} />
-                        <p className="text-slate-600 font-medium">Đã xong {currentFileIndex}/{totalFiles} file...</p>
-                        {transcribeMode === 'deep' && deepProgress ? (
-                          <div className="w-full max-w-xs space-y-2">
-                            <p className="text-slate-700 text-sm font-medium">{deepProgress.label}</p>
-                            <div className="flex gap-2 justify-center">
-                              {[1, 2, 3].map(s => (
-                                <div key={s} className={`h-2 flex-1 border transition-all ${s < deepProgress.step ? 'bg-indigo-600 border-slate-200' : s === deepProgress.step ? 'bg-indigo-300 border-indigo-500 animate-pulse' : 'bg-white border-slate-200' }`} />
-                              ))}
-                            </div>
-                            <p className="text-xs font-medium text-slate-400">Bước {deepProgress.step}/3</p>
-                          </div>
-                        ) : (
-                          <p className="text-slate-400 text-sm font-medium">Kết quả sẽ hiện tại đây khi file xong</p>
-                        )}
-                      </div>
-                    ) : (
-                      <TranscriptionView text={completedTranscriptions[viewingIndex]?.text || ''} userId={user?.userId ?? null} onMindmapCapture={(fn) => { mindmapCaptureFnRef.current = fn; }} onMindmapPdfReady={(pdf) => { mindmapPdfDataRef.current = pdf; }} />
-                    )}
-                  </div>
-                </div>
-              </div>{/* end grid */}
-            </div>
-          )}
-
-          {status === TranscriptionStatus.ERROR && (
-            <div className="max-w-xl mx-auto pt-10">
-              <div className="bg-white border-red-500 shadow-sm rounded-xl p-8 text-center space-y-6">
-                <div className="w-16 h-16 bg-red-100 border-red-500 flex items-center justify-center mx-auto text-red-600 rounded-2xl">
-                  <AlertCircleIcon className="w-8 h-8" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-sans font-medium text-red-900">Lỗi hệ thống</h3>
-                  <p className="text-red-700 font-medium mt-2">{errorMsg}</p>
-                </div>
-                <button onClick={resetApp} className="px-8 py-3 bg-red-50 border-red-500 text-red-800 font-medium hover:bg-red-100 rounded-xl transition-all">Tải lại</button>
-              </div>
-            </div>
-          )}
-
-          {/* BƯỚC 3 (multi-file): Đang tổng hợp */}
-          {status === TranscriptionStatus.SYNTHESIZING && (
-            <div className="max-w-xl mx-auto pt-16 text-center space-y-6 animate-in fade-in duration-300">
-              <Spinner size="lg" className="text-slate-500" />
-              <div>
-                <h2 className="text-2xl font-sans font-medium text-slate-800">Đang tổng hợp nội dung cuộc họp...</h2>
-                <p className="text-slate-500 font-medium mt-2">AI đang gộp {totalFiles} file ghi âm thành một văn bản liền mạch, không bỏ sót nội dung nào.</p>
-              </div>
-            </div>
-          )}
-
-          {/* Navigate back: Xem lại ghi chép từng file (bước 2) */}
-          {isNavigableState && viewStep === 2 && completedTranscriptions.length > 0 && (
-            <div className="animate-in fade-in duration-300 space-y-6">
-              <div>
-                <h2 className="text-2xl font-sans font-medium text-slate-800">Bước 2: Văn bản ghi chép từng file</h2>
-                <p className="text-slate-500 font-medium text-sm mt-1">Xem lại nội dung ghi chép của từng file ghi âm.</p>
-              </div>
-              {completedTranscriptions.length > 1 && (
-                <div className="flex gap-2 flex-wrap">
-                  {completedTranscriptions.map((t, i) => (
-                    <button key={i} onClick={() => setViewingIndex(i)}
-                      className={`text-xs font-medium px-4 py-2 border transition-all shadow-sm rounded-xl ${i === viewingIndex ? 'bg-indigo-600 text-white border-slate-200 translate-y-px shadow-none' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
-                      {t.name.length > 20 ? t.name.substring(0, 20) + '…' : t.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-              <div className="h-[calc(100vh-300px)] border-transparent rounded-2xl">
-                <TranscriptionView text={completedTranscriptions[viewingIndex]?.text || ''} userId={user?.userId ?? null} onMindmapCapture={(fn) => { mindmapCaptureFnRef.current = fn; }} onMindmapPdfReady={(pdf) => { mindmapPdfDataRef.current = pdf; }} />
-              </div>
-            </div>
-          )}
-
-          {/* Xem lại bản tổng hợp (bước 3, multi-file) */}
-          {isNavigableState && isMultiFile && viewStep === 3 && synthesizedTranscription && (
-            <div className="animate-in fade-in duration-300 space-y-6">
-              <div className="flex items-start justify-between flex-wrap gap-4">
-                <div>
-                  <h2 className="text-2xl font-sans font-medium text-slate-800">Bước 3: Tổng hợp nội dung cuộc họp</h2>
-                  <p className="text-slate-500 font-medium text-sm mt-1">
-                    AI đã gộp {totalFiles} file ghi âm thành một văn bản liên tục. Xem lại nội dung bên dưới trước khi tạo biên bản.
-                  </p>
-                </div>
-                {status !== TranscriptionStatus.COMPLETED && (
-                  <button
-                    onClick={() => { setStatus(TranscriptionStatus.COMPLETED); setViewStep(meetingInfoStep); }}
-                    className="bg-indigo-600 text-white font-sans font-medium px-8 py-3 border-slate-200 shadow-sm rounded-xl hover:bg-indigo-700 transition-all active:bg-indigo-800 whitespace-nowrap border"
-                  >
-                    Nhập thông tin cuộc họp →
-                  </button>
-                )}
-                {status === TranscriptionStatus.COMPLETED && (
-                  <button
-                    onClick={() => setViewStep(meetingInfoStep)}
-                    className="bg-indigo-600 text-white font-sans font-medium px-8 py-3 border-slate-200 shadow-sm rounded-xl hover:bg-indigo-700 transition-all active:bg-indigo-800 whitespace-nowrap border"
-                  >
-                    Nhập thông tin cuộc họp →
-                  </button>
-                )}
-              </div>
-              <div className="h-[calc(100vh-280px)] border-transparent rounded-2xl">
-                <TranscriptionView text={synthesizedTranscription} userId={user?.userId ?? null} onMindmapCapture={(fn) => { mindmapCaptureFnRef.current = fn; }} onMindmapPdfReady={(pdf) => { mindmapPdfDataRef.current = pdf; }} />
-              </div>
-            </div>
-          )}
-
-          {/* BƯỚC 3/4: Thông tin cuộc họp */}
-          {isNavigableState && viewStep === meetingInfoStep && transcription && (
-            <div className="animate-in fade-in duration-300 space-y-4">
-              <div>
-                <h2 className="text-2xl font-sans font-medium text-slate-800">
-                  {`Bước ${meetingInfoStep}: Thông tin cuộc họp`}
-                </h2>
-                <p className="text-slate-500 font-medium text-sm mt-1">
-                  Nhập thông tin cơ bản để biên bản chính xác hơn. Bạn có thể bỏ qua nếu không cần.
-                </p>
-              </div>
-
-              <MeetingInfoForm
-                initialValue={meetingInfo}
-                onChange={setMeetingInfo}
-                onSkip={() => setViewStep(biênBảnStep)}
-                onContinue={() => setViewStep(biênBảnStep)}
-              />
-            </div>
-          )}
-
-          {/* BƯỚC: Biên bản — COMPLETED / SUMMARIZING */}
-          {((isNavigableState && viewStep === biênBảnStep) || status === TranscriptionStatus.SUMMARIZING) && transcription && (
-            <div className="animate-in fade-in duration-300 space-y-6">
-              <div>
-                <h2 className="text-2xl font-sans font-medium text-slate-800">
-                  {summary
-                    ? `Bước ${biênBảnStep}: Biên bản hoàn thành`
-                    : `Bước ${biênBảnStep}: Tạo biên bản cuộc họp`}
-                </h2>
-                <p className="text-slate-500 font-medium text-sm mt-1">
-                  {summary ? 'Biên bản đã được tạo. Bạn có thể tạo lại hoặc xuất file Excel.' : 'Văn bản đã sẵn sàng. Nhấn tạo biên bản để AI tổng hợp nội dung cuộc họp.'}
-                </p>
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-                {/* Cột 1: Văn bản tổng hợp (multi-file) hoặc văn bản thô (single file) */}
-                <div className="space-y-4 flex flex-col h-[calc(100vh-280px)]">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex items-center gap-3">
-                      <span className="bg-indigo-900 text-white text-sm font-medium w-6 h-6 flex items-center justify-center rounded-2xl">1</span>
-                      <h2 className="text-lg font-medium text-slate-800">
-                        {synthesizedTranscription ? 'Nội dung tổng hợp' : 'Văn bản thô'}
-                      </h2>
-                      {synthesizedTranscription && (
-                        <span className="text-xs bg-slate-100 border-slate-200 text-slate-800 px-2.5 py-1 font-medium border rounded-2xl">
-                          {totalFiles} files đã gộp
-                        </span>
-                      )}
-                    </div>
-                    {!synthesizedTranscription && completedTranscriptions.length > 1 && (
-                      <div className="flex gap-2 flex-wrap">
-                        {completedTranscriptions.map((t, i) => (
-                          <button key={i} onClick={() => setViewingIndex(i)}
-                            className={`text-xs font-medium px-3 py-1.5 border transition-all shadow-sm rounded-xl ${i === viewingIndex ? 'bg-indigo-600 text-white border-slate-200 translate-y-px shadow-none' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
-                            {t.name.length > 12 ? t.name.substring(0, 12) + '…' : t.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 overflow-hidden border-transparent rounded-2xl">
-                    <TranscriptionView text={
-                      synthesizedTranscription
-                        ? synthesizedTranscription
-                        : completedTranscriptions.length > 1
-                          ? completedTranscriptions[viewingIndex]?.text || ''
-                          : transcription
-                    } userId={user?.userId ?? null} onMindmapCapture={(fn) => { mindmapCaptureFnRef.current = fn; }} onMindmapPdfReady={(pdf) => { mindmapPdfDataRef.current = pdf; }} />
-                  </div>
-                </div>
-
-                {/* Cột 2: Biên bản — luôn dùng toàn bộ transcription (combined) */}
-                <div className="space-y-4 flex flex-col h-[calc(100vh-280px)]">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="bg-indigo-600 text-white border-slate-200 text-sm font-medium w-6 h-6 flex items-center justify-center border rounded-2xl">2</span>
-                      <h2 className="text-lg font-medium text-slate-800">Biên bản cuộc họp</h2>
-                      {totalFiles > 1 && (
-                        <span className="text-xs bg-slate-100 border-slate-200 text-slate-800 px-2.5 py-1 font-medium border rounded-2xl">
-                          {totalFiles} files
-                        </span>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => setShowPromptEditor(!showPromptEditor)}
-                      className="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors underline decoration-2 underline-offset-4"
-                    >
-                      {showPromptEditor ? "Đóng tùy chỉnh" : "Sửa lại yêu cầu"}
-                    </button>
-                  </div>
-
-                  {/* Prompt Editor (Toggleable) */}
-                  {showPromptEditor && (
-                    <div className="bg-white border-slate-200 p-5 shadow-sm rounded-xl animate-in fade-in duration-200 border">
-                      <label className="block text-sm font-medium text-slate-800 mb-3">Cấu hình Prompt tóm tắt:</label>
-                      <textarea
-                        value={summaryPrompt}
-                        onChange={(e) => setSummaryPrompt(e.target.value)}
-                        className="w-full h-40 text-sm p-4 border-slate-200 bg-slate-50 focus:border-slate-200 focus:bg-white focus:outline-none font-mono transition-colors border rounded-2xl"
-                        placeholder="Nhập yêu cầu tóm tắt tại đây..."
-                      />
-                      <div className="mt-4 flex justify-end gap-3">
-                        <button
-                          onClick={() => setSummaryPrompt(DEFAULT_SUMMARY_PROMPT)}
-                          className="text-sm font-medium text-slate-400 hover:text-slate-700"
-                        >
-                          Khôi phục
-                        </button>
-                        <button
-                          onClick={() => setShowPromptEditor(false)}
-                          className="bg-indigo-900 text-white text-sm font-medium px-6 py-2 border-transparent hover:border-white transition-colors rounded-xl"
-                        >
-                          Lưu cấu hình
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex-1 flex flex-col min-h-0">
-                    {!summary ? (
-                      <div className="flex-1 bg-slate-50 border-dashed border-slate-200 flex flex-col items-center justify-center p-8 text-center space-y-6 rounded-2xl">
-                        <div className="w-20 h-20 bg-white border-slate-200 flex items-center justify-center text-slate-300 shadow-sm rounded-xl border">
-                          <DownloadIcon className="w-10 h-10 opacity-50" />
-                        </div>
-                        <div>
-                          <h3 className="text-slate-800 font-medium text-lg">Chưa tạo biên bản</h3>
-                          <p className="text-slate-500 font-medium text-sm mt-2">Sử dụng AI để tự động hóa biên bản từ nội dung ghi chép.</p>
-                        </div>
-                        <div className="flex flex-col sm:flex-row gap-3">
-                          <button
-                            onClick={handleGenerateSummary}
-                            disabled={status === TranscriptionStatus.SUMMARIZING || mindmapLoading}
-                            className="bg-indigo-600 text-white font-sans font-medium px-8 py-4 border-slate-200 shadow-sm rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50 border"
-                          >
-                            {status === TranscriptionStatus.SUMMARIZING
-                              ? "ĐANG XỬ LÝ..."
-                              : totalFiles > 1
-                                ? `TẠO BIÊN BẢN (${totalFiles} FILES)`
-                                : "TẠO BIÊN BẢN NGAY"}
-                          </button>
-                          <button
-                            onClick={handleGenerateMindmap}
-                            disabled={mindmapLoading || status === TranscriptionStatus.SUMMARIZING}
-                            className="bg-white text-indigo-700 font-sans font-medium px-8 py-4 border-indigo-300 shadow-sm rounded-xl hover:bg-indigo-50 transition-all disabled:opacity-50 border"
-                          >
-                            {mindmapLoading ? "ĐANG TẠO MIND MAP..." : "TẠO MIND MAP"}
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-300">
-                        <div className="flex-1 border-transparent overflow-hidden rounded-2xl">
-                          <TranscriptionView text={summary} userId={user?.userId ?? null} onMindmapCapture={(fn) => { mindmapCaptureFnRef.current = fn; }} onMindmapPdfReady={(pdf) => { mindmapPdfDataRef.current = pdf; }} />
-                        </div>
-                        <div className="mt-4 flex flex-col sm:flex-row gap-3">
-                          <button
-                            onClick={handleGenerateSummary}
-                            className="flex-1 border-slate-200 bg-white text-slate-800 font-medium py-3.5 hover:bg-slate-100 transition-colors flex items-center justify-center gap-2 shadow-sm rounded-xl border"
-                          >
-                            <RefreshIcon className="w-5 h-5" />
-                            Tạo lại
-                          </button>
-
-                          <button
-                            onClick={handleGenerateMindmap}
-                            disabled={mindmapLoading}
-                            className="flex-1 border-indigo-300 bg-white text-indigo-700 font-medium py-3.5 hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2 shadow-sm rounded-xl border disabled:opacity-50"
-                          >
-                            {mindmapLoading ? (
-                              <>
-                                <span className="animate-spin inline-block w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full" />
-                                Đang tạo...
-                              </>
-                            ) : (
-                              <>
-                                <span className="text-base">🗺</span>
-                                Tạo mind map
-                              </>
-                            )}
-                          </button>
-
-                          <button
-                            onClick={handleExportExcel}
-                            className="flex-1 bg-indigo-600 border-slate-200 text-white font-medium py-3.5 hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 shadow-sm rounded-xl border"
-                          >
-                            <DownloadIcon className="w-5 h-5" />
-                            Xuất Excel
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Mind Map section */}
-              {(mindmapLoading || mindmapTree || mindmapError) && (
-                <div className="animate-in fade-in duration-300 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-base">🧠</span>
-                    <h2 className="text-lg font-medium text-slate-800">Sơ đồ tư duy</h2>
-                    {mindmapTree && (
-                      <button
-                        onClick={resetMindmap}
-                        className="text-xs text-slate-400 hover:text-slate-600 transition-colors ml-auto"
-                      >
-                        Đóng
-                      </button>
-                    )}
-                  </div>
-                  <div className="rounded-2xl border border-slate-200 shadow-sm bg-slate-50 overflow-hidden" style={{ height: 480 }}>
-                    {mindmapLoading && (
-                      <div className="flex flex-col items-center justify-center h-full gap-4 text-slate-500 text-sm">
-                        <span className="animate-spin inline-block w-6 h-6 border-2 border-indigo-400 border-t-transparent rounded-full" />
-                        Đang phân tích và tạo sơ đồ tư duy...
-                      </div>
-                    )}
-                    {mindmapError && !mindmapLoading && (
-                      <div className="m-4 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-600">
-                        {mindmapError}
-                      </div>
-                    )}
-                    {!mindmapLoading && !mindmapError && mindmapTree && (
-                      <div className="p-4 h-full flex flex-col">
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">{mindmapTree.label}</span>
-                          <span className="text-xs text-slate-400">· {mindmapTree.children.length} nhánh chính · {mindmapTree.children.reduce((s, b) => s + (b.children?.length ?? 0), 0)} nhánh con</span>
-                        </div>
-                        <div className="flex-1">
-                          <Suspense fallback={<div className="h-full flex items-center justify-center text-slate-400 text-sm">Đang tải...</div>}>
-                            <MindmapTreeCanvasLazy tree={mindmapTree} />
-                          </Suspense>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* BƯỚC: Hoàn thành */}
-          {isNavigableState && viewStep === hoànThànhStep && (
-            <div className="animate-in fade-in duration-300 space-y-8">
-              <div>
-                <h2 className="text-2xl font-sans font-medium text-slate-800">Hoàn thành</h2>
-                <p className="text-slate-500 font-medium text-sm mt-1">Phiên làm việc đã xong. Tải xuống hoặc xem lại kết quả bên dưới.</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Card: Ghi chép */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
-                      <FileAudioIcon className="w-5 h-5 text-indigo-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-slate-800 text-sm">File ghi chép</h3>
-                      <p className="text-xs text-slate-400">{fileMeta?.name || 'Văn bản phiên âm'}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      const text = synthesizedTranscription || transcription || '';
-                      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `ghi-chep-${new Date().toISOString().slice(0,10)}.txt`;
-                      a.click();
-                      URL.revokeObjectURL(url);
-                    }}
-                    className="w-full py-2.5 bg-indigo-50 text-indigo-700 text-sm font-medium rounded-xl hover:bg-indigo-100 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <DownloadIcon className="w-4 h-4" />
-                    Tải xuống .txt
-                  </button>
-                </div>
-
-                {/* Card: Biên bản PDF */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
-                      <DownloadIcon className="w-5 h-5 text-emerald-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-slate-800 text-sm">Biên bản</h3>
-                      <p className="text-xs text-slate-400">{summary ? 'Sẵn sàng xuất' : 'Chưa tạo biên bản'}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleExportPDF}
-                      disabled={!summary}
-                      className="flex-1 py-2.5 bg-emerald-50 text-emerald-700 text-sm font-medium rounded-xl hover:bg-emerald-100 transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
-                    >
-                      <DownloadIcon className="w-4 h-4" />
-                      PDF
-                    </button>
-                    <button
-                      onClick={handleExportDocx}
-                      disabled={!summary}
-                      className="flex-1 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
-                    >
-                      <DownloadIcon className="w-4 h-4" />
-                      Word
-                    </button>
-                  </div>
-                </div>
-
-                {/* Card: Mind map */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
-                      <span className="text-lg">🗺</span>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-slate-800 text-sm">Sơ đồ tư duy</h3>
-                      <p className="text-xs text-slate-400">{mindmapTree ? 'Đã tạo' : 'Chưa tạo'}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setViewStep(biênBảnStep)}
-                    className="w-full py-2.5 bg-purple-50 text-purple-700 text-sm font-medium rounded-xl hover:bg-purple-100 transition-colors flex items-center justify-center gap-2"
-                  >
-                    {mindmapTree ? 'Xem sơ đồ' : 'Tạo sơ đồ'}
-                  </button>
-                </div>
-
-                {/* Card: Gửi email */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
-                      <MailIcon className="w-5 h-5 text-indigo-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-slate-800 text-sm">Gửi email biên bản</h3>
-                      <p className="text-xs text-slate-400">
-                        {emailSendState === 'success'
-                          ? `Đã gửi • ${emailSentCount} địa chỉ`
-                          : meetingInfo.recipientEmails.length > 0
-                          ? `${meetingInfo.recipientEmails.length} người nhận`
-                          : 'Chưa có người nhận'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Email subject field */}
-                  <div>
-                    <label className="text-xs font-medium text-slate-600 mb-1 block">Tiêu đề email</label>
-                    <input
-                      value={emailSubject}
-                      onChange={(e) => setEmailSubject(e.target.value)}
-                      className="w-full px-3 py-2 border-slate-200 focus:border-slate-200 bg-white focus:outline-none text-xs font-medium transition-colors border rounded-xl"
-                    />
-                  </div>
-
-                  {/* Send button */}
-                  <button
-                    onClick={handleSendEmail}
-                    disabled={meetingInfo.recipientEmails.length === 0 || emailSendState === 'loading' || !summary}
-                    title={meetingInfo.recipientEmails.length === 0 ? 'Nhập địa chỉ email ở bước Thông tin cuộc họp để gửi biên bản' : undefined}
-                    className={`w-full py-2.5 text-sm font-medium rounded-xl transition-colors flex items-center justify-center gap-2 ${
-                      emailSendState === 'error'
-                        ? 'bg-red-50 text-red-700 hover:bg-red-100'
-                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                    } ${(meetingInfo.recipientEmails.length === 0 || !summary) ? 'opacity-40 cursor-not-allowed' : ''} ${emailSendState === 'loading' ? 'cursor-wait' : ''}`}
-                  >
-                    {emailSendState === 'loading' && <Spinner />}
-                    {emailSendState !== 'loading' && <MailIcon className="w-4 h-4" />}
-                    {emailSendState === 'loading' ? 'Đang gửi...'
-                      : emailSendState === 'success' ? 'Gửi lại'
-                      : emailSendState === 'error' ? 'Thử lại'
-                      : 'Gửi email'}
-                  </button>
-
-                  {/* Status row */}
-                  {emailSendState === 'success' && (
-                    <p className="text-xs font-medium text-emerald-600 text-center mt-1">
-                      {`Đã gửi thành công đến ${emailSentCount} địa chỉ`}
-                    </p>
-                  )}
-                  {emailSendState === 'error' && (
-                    <p className="text-xs font-medium text-red-500 text-center mt-1">
-                      {emailError || 'Gửi thất bại. Vui lòng thử lại.'}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Mind map preview nếu đã có */}
-              {mindmapTree && (
-                <div className="rounded-2xl border border-slate-200 shadow-sm bg-slate-50 animate-in fade-in duration-300 overflow-hidden" style={{ height: 480 }}>
-                  <div className="p-4 h-full flex flex-col">
-                    <h3 className="text-sm font-medium text-slate-600 mb-3 flex items-center gap-2">
-                      <span>🧠</span> Sơ đồ tư duy — {mindmapTree.label}
-                    </h3>
-                    <div className="flex-1">
-                      <Suspense fallback={<div className="h-full flex items-center justify-center text-slate-400 text-sm">Đang tải...</div>}>
-                        <MindmapTreeCanvasLazy tree={mindmapTree} />
-                      </Suspense>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Nút tạo phiên mới */}
-              <div className="flex justify-center pt-4 border-t border-slate-100">
-                <button
-                  onClick={resetApp}
-                  className="px-8 py-3.5 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2"
-                >
-                  <RefreshIcon className="w-5 h-5" />
-                  Tạo phiên mới
-                </button>
-              </div>
-            </div>
-          )}
-
-        </>}
+        {isNotesRoute && mode === 'notes' && (
+          <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><Spinner /></div>}>
+            <MeetingLandingPage user={user} navigate={navigate} initialFiles={pendingFiles.length > 0 ? pendingFiles : undefined} />
+          </Suspense>
+        )}
       </main>
 
       {/* Toast: hết lượt */}
@@ -2024,4 +1270,12 @@ function App() {
   );
 }
 
-export default App;
+function AppWithBoundary() {
+  return (
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  );
+}
+
+export default AppWithBoundary;

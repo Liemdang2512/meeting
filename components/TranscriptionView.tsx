@@ -1,5 +1,6 @@
 import React, { useState, useRef, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { CopyIcon, CheckIcon, DownloadIcon } from './Icons';
 import { formatMinutesMarkdown } from '../lib/meetingMinutesFormatter';
 import { downloadAsDocx, downloadAsPdf } from '../lib/minutesDocxExport';
@@ -19,6 +20,7 @@ export const TranscriptionView: React.FC<TranscriptionViewProps> = ({ text, user
   const formattedText = useMemo(() => formatMinutesMarkdown(text), [text]);
   const [copied, setCopied] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [wordLoading, setWordLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'minutes' | 'mindmap'>('minutes');
   const contentRef = useRef<HTMLDivElement>(null);
   const { tree, loading: mindmapLoading, error: mindmapError, generate: generateMindmap } = useMindmapTree();
@@ -30,10 +32,24 @@ export const TranscriptionView: React.FC<TranscriptionViewProps> = ({ text, user
     }
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(formattedText);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(formattedText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback cho môi trường không hỗ trợ Clipboard API
+      const ta = document.createElement('textarea');
+      ta.value = formattedText;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleDownloadPDF = () => {
@@ -42,21 +58,30 @@ export const TranscriptionView: React.FC<TranscriptionViewProps> = ({ text, user
   };
 
   const handleDownload = async () => {
-    await downloadAsDocx(formattedText, `ghi-chep-${new Date().toISOString().slice(0, 10)}.docx`);
+    setWordLoading(true);
+    try {
+      await downloadAsDocx(formattedText, `ghi-chep-${new Date().toISOString().slice(0, 10)}.docx`);
+    } finally {
+      setWordLoading(false);
+    }
   };
 
   return (
     <div className="bg-white border-slate-200 shadow-sm rounded-xl flex flex-col h-full border">
       <div className="flex items-center justify-between px-6 py-3 border-b border-slate-200 bg-slate-50">
         {/* Tabs */}
-        <div className="flex gap-1">
+        <div className="flex gap-1" role="tablist" aria-label="Chế độ xem">
           <button
+            role="tab"
+            aria-selected={activeTab === 'minutes'}
             onClick={() => setActiveTab('minutes')}
             className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'minutes' ? 'bg-white text-slate-800 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
           >
             Biên bản
           </button>
           <button
+            role="tab"
+            aria-selected={activeTab === 'mindmap'}
             onClick={handleSwitchToMindmap}
             className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${activeTab === 'mindmap' ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-500 hover:text-slate-700'}`}
           >
@@ -85,10 +110,11 @@ export const TranscriptionView: React.FC<TranscriptionViewProps> = ({ text, user
             </button>
             <button
               onClick={handleDownload}
-              className="flex items-center gap-2 px-4 py-2 border-slate-200 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-sm rounded-xl border"
+              disabled={wordLoading}
+              className="flex items-center gap-2 px-4 py-2 border-slate-200 text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-sm rounded-xl border disabled:opacity-50"
             >
               <DownloadIcon className="w-5 h-5" />
-              Word
+              {wordLoading ? 'Đang tạo...' : 'Word'}
             </button>
           </div>
         )}
@@ -147,6 +173,7 @@ export const TranscriptionView: React.FC<TranscriptionViewProps> = ({ text, user
           className="doc-view"
         >
           <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
             components={{
               h1: ({ children }) => (
                 <h1 style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif", fontSize: '15pt', fontWeight: '700', textAlign: 'center', marginTop: '0.5em', marginBottom: '0.8em', color: '#000' }}>{children}</h1>

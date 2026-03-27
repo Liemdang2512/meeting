@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { takePendingUpload } from '../shared/fileStore';
+import { SESSION_KEY_MEETING_LANGUAGE } from '../shared/sessionKeys';
 import { Loader2 } from 'lucide-react';
 import type { AuthUser } from '../../../lib/auth';
 import type { ReporterInfo } from '../../minutes/types';
 import { loadReporterDraft } from '../../minutes/storage';
 import { WorkflowStepHeader } from '../../../components/workflows/WorkflowStepHeader';
-import { FileUpload } from '../../../components/FileUpload';
 import { TranscriptionView } from '../../../components/TranscriptionView';
 import { ReporterInfoForm } from './ReporterInfoForm';
 import { buildReporterPrompt } from './reporterPrompt';
@@ -21,7 +22,7 @@ interface ReporterWorkflowPageProps {
   user: AuthUser;
 }
 
-type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2 | 3;
 
 const REPORTER_SYSTEM_HINT =
   'Đây là phỏng vấn báo chí. Ưu tiên tên người, tổ chức, câu hỏi và câu trả lời.';
@@ -29,32 +30,22 @@ const REPORTER_SYSTEM_HINT =
 const DEFAULT_REPORTER_PROMPT =
   'Hãy tạo một bài phỏng vấn/báo chí hoàn chỉnh, chuyên nghiệp dựa trên nội dung transcript. Bao gồm: tiêu đề, giới thiệu, nội dung phỏng vấn dạng hỏi-đáp, và kết luận.';
 
+const STEP_LABELS = ['Thông tin', 'Phiên âm', 'Kết quả'];
+
 function defaultReporterInfo(): ReporterInfo {
-  return {
-    interviewTitle: '',
-    guestName: '',
-    reporter: '',
-    datetime: '',
-    location: '',
-  };
+  return { interviewTitle: '', guestName: '', reporter: '', datetime: '', location: '' };
 }
 
-const AUDIO_LANGUAGES: { value: AudioLanguage; label: string }[] = [
-  { value: 'vi', label: 'Tiếng Việt' },
-  { value: 'en', label: 'English' },
-  { value: 'zh', label: '中文' },
-  { value: 'ko', label: '한국어' },
-  { value: 'ja', label: '日本語' },
-  { value: 'other', label: 'Khác' },
-];
-
-export default function ReporterWorkflowPage({ navigate: _navigate, user }: ReporterWorkflowPageProps) {
+export default function ReporterWorkflowPage({ navigate, user }: ReporterWorkflowPageProps) {
+  const pendingRef = useRef(takePendingUpload());
   const [step, setStep] = useState<Step>(1);
-  const [files, setFiles] = useState<File[]>([]);
-  const [fileStatuses, setFileStatuses] = useState<('idle' | 'processing' | 'done' | 'error')[]>([]);
-  const [transcribeMode, setTranscribeMode] = useState<'basic' | 'deep'>('basic');
-  const [audioLanguage, setAudioLanguage] = useState<AudioLanguage>('vi');
-  const [customLanguage, setCustomLanguage] = useState('');
+  const [files] = useState<File[]>(() => pendingRef.current?.files ?? []);
+  const [audioLanguage] = useState<AudioLanguage>(() => {
+    if (pendingRef.current) return pendingRef.current.language;
+    const stored = sessionStorage.getItem(SESSION_KEY_MEETING_LANGUAGE) as AudioLanguage | null;
+    sessionStorage.removeItem(SESSION_KEY_MEETING_LANGUAGE);
+    return stored ?? 'vi';
+  });
   const [transcription, setTranscription] = useState<string | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [deepProgress, setDeepProgress] = useState<{ step: number; label: string } | null>(null);
@@ -65,15 +56,13 @@ export default function ReporterWorkflowPage({ navigate: _navigate, user }: Repo
   const [showPromptEditor, setShowPromptEditor] = useState(false);
   const [templatePrompt, setTemplatePrompt] = useState(DEFAULT_REPORTER_PROMPT);
 
-  const handleAddFiles = (incoming: File[]) => {
-    setFiles(prev => [...prev, ...incoming]);
-    setFileStatuses(prev => [...prev, ...incoming.map(() => 'idle' as const)]);
-  };
-
-  const handleRemoveFile = (index: number) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
-    setFileStatuses(prev => prev.filter((_, i) => i !== index));
-  };
+  // Redirect về landing nếu không có file
+  useEffect(() => {
+    if (files.length === 0) {
+      navigate('/meeting');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleStartConvert = async () => {
     if (files.length === 0) return;
@@ -82,53 +71,35 @@ export default function ReporterWorkflowPage({ navigate: _navigate, user }: Repo
     setIsTranscribing(true);
     setStep(2);
 
-    const initialStatuses = new Array(files.length).fill('processing') as ('idle' | 'processing' | 'done' | 'error')[];
-    setFileStatuses(initialStatuses);
+    const loggingContext: TokenLoggingContext = {
+      feature: 'minutes',
+      actionType: 'transcribe-basic',
+      metadata: {},
+    };
 
     const orderedResults: (string | null)[] = new Array(files.length).fill(null);
     const errors: { index: number; message: string }[] = [];
 
-    const loggingContext: TokenLoggingContext = {
-      feature: 'minutes',
-      actionType: transcribeMode === 'deep' ? 'transcribe-deep' : 'transcribe-basic',
-      metadata: { mode: transcribeMode },
-    };
-
     await Promise.all(
       files.map(async (file, i) => {
         try {
-          let resultText: string;
-          if (transcribeMode === 'deep') {
-            resultText = await transcribeDeep(
-              file,
-              (stepNum, label) => setDeepProgress({ step: stepNum, label }),
-              audioLanguage,
-              customLanguage || undefined,
-              loggingContext,
-              user.userId,
-              REPORTER_SYSTEM_HINT,
-            );
-            setDeepProgress(null);
-          } else {
-            resultText = await transcribeBasic(
-              file,
-              audioLanguage,
-              customLanguage || undefined,
-              loggingContext,
-              user.userId,
-              REPORTER_SYSTEM_HINT,
-            );
-          }
+          const resultText = await transcribeBasic(
+            file,
+            audioLanguage,
+            undefined,
+            loggingContext,
+            user.userId,
+            REPORTER_SYSTEM_HINT,
+          );
           orderedResults[i] = resultText;
-          setFileStatuses(prev => { const n = [...prev]; n[i] = 'done'; return n; });
         } catch (err: any) {
-          setFileStatuses(prev => { const n = [...prev]; n[i] = 'error'; return n; });
           errors.push({ index: i, message: err.message || 'Có lỗi xảy ra.' });
         }
       })
     );
 
     setIsTranscribing(false);
+    setDeepProgress(null);
 
     if (errors.length === files.length) {
       setError(`Lỗi phiên âm: ${errors[0].message}`);
@@ -146,7 +117,6 @@ export default function ReporterWorkflowPage({ navigate: _navigate, user }: Repo
     setError(null);
     setIsSummarizing(true);
     setSummary(null);
-
     try {
       const loggingContext: TokenLoggingContext = {
         feature: 'minutes',
@@ -166,100 +136,23 @@ export default function ReporterWorkflowPage({ navigate: _navigate, user }: Repo
   return (
     <div className="min-h-screen bg-slate-50 p-8">
       <div className="max-w-4xl mx-auto space-y-6">
-        <WorkflowStepHeader currentStep={step} />
+        <WorkflowStepHeader currentStep={step} steps={STEP_LABELS} />
 
-        {/* Step 1: Upload */}
+        {/* Step 1: Info Form */}
         {step === 1 && (
-          <div className="space-y-6">
-            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-              <h2 className="text-xl font-semibold text-slate-800 mb-4">Tải lên tệp âm thanh</h2>
-              <FileUpload
-                pendingFiles={files}
-                onAddFiles={handleAddFiles}
-                onRemoveFile={handleRemoveFile}
-                onStartConvert={handleStartConvert}
-                fileStatuses={fileStatuses}
-                disabled={isTranscribing}
-                showStartButton={false}
-              />
-            </div>
-
-            {/* Transcription mode selector */}
-            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-              <h3 className="text-base font-semibold text-slate-800 mb-4">Chế độ phiên âm</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setTranscribeMode('basic')}
-                  className={`flex flex-col items-start gap-2 p-4 border transition-all text-left group rounded-xl ${
-                    transcribeMode === 'basic'
-                      ? 'border-slate-200 bg-slate-100 shadow-sm'
-                      : 'border-slate-200 bg-white hover:border-[#1E3A8A]'
-                  }`}
-                >
-                  <span className="text-sm font-semibold text-slate-800">Cơ bản</span>
-                  <span className="text-xs text-slate-500">Nhanh, phù hợp phỏng vấn ngắn</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTranscribeMode('deep')}
-                  className={`flex flex-col items-start gap-2 p-4 border transition-all text-left group rounded-xl ${
-                    transcribeMode === 'deep'
-                      ? 'border-slate-200 bg-[#1E3A8A]/10 shadow-sm'
-                      : 'border-slate-200 bg-white hover:border-[#1E3A8A]'
-                  }`}
-                >
-                  <span className="text-sm font-semibold text-slate-800">Chuyên sâu</span>
-                  <span className="text-xs text-slate-500">3 bước, chất lượng cao hơn</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Language selector */}
-            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-              <h3 className="text-base font-semibold text-slate-800 mb-4">Ngôn ngữ âm thanh</h3>
-              <div className="flex flex-wrap gap-2">
-                {AUDIO_LANGUAGES.map((lang) => (
-                  <button
-                    key={lang.value}
-                    type="button"
-                    onClick={() => setAudioLanguage(lang.value)}
-                    className={`px-3 py-2.5 border text-xs font-medium transition-all text-left rounded-xl ${
-                      audioLanguage === lang.value
-                        ? 'border-slate-200 bg-slate-200 text-slate-800 shadow-sm'
-                        : 'border-slate-200 bg-white text-slate-500 hover:border-slate-200 hover:text-slate-800'
-                    }`}
-                  >
-                    {lang.label}
-                  </button>
-                ))}
-              </div>
-              {audioLanguage === 'other' && (
-                <input
-                  type="text"
-                  value={customLanguage}
-                  onChange={(e) => setCustomLanguage(e.target.value)}
-                  placeholder="Nhập ngôn ngữ (VD: Tiếng Tây Ban Nha)"
-                  className="mt-3 w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/30 focus:border-[#1E40AF] bg-white"
-                />
-              )}
-            </div>
-
+          <>
             {error && (
               <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
                 {error}
               </div>
             )}
-
-            <button
-              type="button"
-              onClick={handleStartConvert}
-              disabled={files.length === 0 || isTranscribing}
-              className="w-full py-4 bg-[#1E3A8A] text-white font-semibold text-base rounded-xl hover:bg-[#1E40AF] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-            >
-              Bắt đầu phiên âm
-            </button>
-          </div>
+            <ReporterInfoForm
+              value={info}
+              onChange={setInfo}
+              onContinue={handleStartConvert}
+              onSkip={handleStartConvert}
+            />
+          </>
         )}
 
         {/* Step 2: Transcribing */}
@@ -277,30 +170,9 @@ export default function ReporterWorkflowPage({ navigate: _navigate, user }: Repo
           </div>
         )}
 
-        {/* Step 3: Form */}
+        {/* Step 3: Result */}
         {step === 3 && (
           <div className="space-y-6">
-            {transcription && (
-              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-                <p className="text-sm font-semibold text-slate-700 mb-2">Nội dung đã phiên âm</p>
-                <div className="max-h-48 overflow-y-auto text-sm text-slate-600 whitespace-pre-wrap font-mono bg-slate-50 rounded-lg p-3">
-                  {transcription}
-                </div>
-              </div>
-            )}
-            <ReporterInfoForm
-              value={info}
-              onChange={setInfo}
-              onContinue={() => setStep(4)}
-              onSkip={() => setStep(4)}
-            />
-          </div>
-        )}
-
-        {/* Step 4: Result */}
-        {step === 4 && (
-          <div className="space-y-6">
-            {/* Prompt editor toggle */}
             <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
               <button
                 type="button"
@@ -343,7 +215,7 @@ export default function ReporterWorkflowPage({ navigate: _navigate, user }: Repo
                 )}
                 <button
                   type="button"
-                  onClick={() => setStep(3)}
+                  onClick={() => setStep(1)}
                   className="px-6 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 transition-colors"
                 >
                   Quay lại form

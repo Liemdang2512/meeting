@@ -37,19 +37,20 @@ const mockGenerateMinutesPdfBuffer = vi.mocked(generateMinutesPdfBuffer);
 const mockMarkdownToHtml = vi.mocked(markdownToHtml);
 const mockBuildEmailHtml = vi.mocked(buildEmailHtml);
 
-function createMockRes(): Response {
-  const res: Partial<Response> & { statusCode: number; body?: unknown } = {
+function createMockRes(): any {
+  const res = {
     statusCode: 200,
+    body: undefined as any,
     status(code: number) {
       this.statusCode = code;
-      return this as Response;
+      return this;
     },
     json(payload: unknown) {
       this.body = payload;
-      return this as Response;
+      return this;
     },
   };
-  return res as Response;
+  return res;
 }
 
 function getRouteHandler(router: any, path: string, method: 'get' | 'post' | 'put') {
@@ -93,9 +94,9 @@ describe('POST /api/email/send-minutes', () => {
 
   it('returns 503 if Resend API key not configured in DB', async () => {
     mockSql
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([]);
+      .mockResolvedValueOnce([] as any)
+      .mockResolvedValueOnce([] as any)
+      .mockResolvedValueOnce([] as any);
 
     const req = {
       body: { recipients: ['a@example.com'], subject: 'Test', minutesMarkdown: 'Noi dung' },
@@ -115,9 +116,9 @@ describe('POST /api/email/send-minutes', () => {
     mockMarkdownToHtml.mockReturnValue('<p>minutes html</p>');
     mockBuildEmailHtml.mockReturnValue('<html>email</html>');
     mockSql
-      .mockResolvedValueOnce([{ value: '20' }])
-      .mockResolvedValueOnce([{ value: 'sender@gmail.com' }])
-      .mockResolvedValueOnce([{ value: 'app-password' }]);
+      .mockResolvedValueOnce([{ value: '20' }] as any)
+      .mockResolvedValueOnce([{ value: 'sender@gmail.com' }] as any)
+      .mockResolvedValueOnce([{ value: 'app-password' }] as any);
 
     const mindmapPdfDataUrl = `data:application/pdf;base64,${Buffer.from('mindmap-pdf').toString('base64')}`;
     const req = {
@@ -172,9 +173,9 @@ describe('POST /api/email/send-minutes', () => {
     mockMarkdownToHtml.mockReturnValue('<p>minutes html</p>');
     mockBuildEmailHtml.mockReturnValue('<html>email</html>');
     mockSql
-      .mockResolvedValueOnce([{ value: '20' }])
-      .mockResolvedValueOnce([{ value: 'sender@gmail.com' }])
-      .mockResolvedValueOnce([{ value: 'app-password' }]);
+      .mockResolvedValueOnce([{ value: '20' }] as any)
+      .mockResolvedValueOnce([{ value: 'sender@gmail.com' }] as any)
+      .mockResolvedValueOnce([{ value: 'app-password' }] as any);
 
     const req = {
       body: {
@@ -203,7 +204,7 @@ describe('GET /api/admin/settings', () => {
     mockSql.mockResolvedValueOnce([
       { key: 'gmail_user', value: 'sender@gmail.com', updated_at: '2026-03-24' },
       { key: 'gmail_app_password', value: 'abcd1234', updated_at: '2026-03-24' },
-    ]);
+    ] as any);
 
     const req = {} as Request;
     const res = createMockRes();
@@ -239,7 +240,7 @@ describe('PUT /api/admin/settings', () => {
   });
 
   it('upserts allowed setting keys', async () => {
-    mockSql.mockResolvedValueOnce([]);
+    mockSql.mockResolvedValueOnce([] as any);
     const req = { body: { key: 'gmail_user', value: 'new@gmail.com' } } as Partial<Request> as Request;
     const res = createMockRes();
 
