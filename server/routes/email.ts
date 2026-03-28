@@ -9,6 +9,9 @@ import { buildEmailHtml } from '../lib/emailTemplate';
 const router = Router();
 
 router.post('/send-minutes', requireAuth, async (req, res) => {
+  if (req.user!.role !== 'admin') {
+    return res.status(403).json({ error: 'Chi admin moi duoc gui email bien ban' });
+  }
   try {
     const { recipients, subject, minutesMarkdown, meetingInfo, mindmapPng } = req.body;
 

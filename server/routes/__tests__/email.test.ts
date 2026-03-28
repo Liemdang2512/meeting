@@ -53,6 +53,10 @@ function createMockRes(): any {
   return res;
 }
 
+function createAdminUser() {
+  return { userId: '1', email: 'admin@test.com', role: 'admin', workflowGroups: ['specialist'], activeWorkflowGroup: 'specialist', features: [] };
+}
+
 function getRouteHandler(router: any, path: string, method: 'get' | 'post' | 'put') {
   const layer = router.stack.find((item: any) => item.route?.path === path && item.route.methods?.[method]);
   if (!layer) {
@@ -68,8 +72,20 @@ describe('POST /api/email/send-minutes', () => {
     vi.clearAllMocks();
   });
 
+  it('returns 403 for non-admin user', async () => {
+    const req = {
+      user: { userId: '1', email: 'user@test.com', role: 'specialist', workflowGroups: ['specialist'], activeWorkflowGroup: 'specialist', features: [] },
+      body: { recipients: ['a@b.com'], subject: 'Test', minutesMarkdown: '# Test' },
+    } as Partial<Request> as Request;
+    const res = createMockRes();
+    await handler(req, res);
+    expect(res.statusCode).toBe(403);
+    expect(res.body).toEqual({ error: 'Chi admin moi duoc gui email bien ban' });
+  });
+
   it('returns 400 if recipients array is empty', async () => {
     const req = {
+      user: createAdminUser(),
       body: { recipients: [], subject: 'Test', minutesMarkdown: 'Noi dung' },
     } as Partial<Request> as Request;
     const res = createMockRes();
@@ -82,6 +98,7 @@ describe('POST /api/email/send-minutes', () => {
 
   it('returns 400 if subject is missing', async () => {
     const req = {
+      user: createAdminUser(),
       body: { recipients: ['a@example.com'], minutesMarkdown: 'Noi dung' },
     } as Partial<Request> as Request;
     const res = createMockRes();
@@ -99,6 +116,7 @@ describe('POST /api/email/send-minutes', () => {
       .mockResolvedValueOnce([] as any);
 
     const req = {
+      user: createAdminUser(),
       body: { recipients: ['a@example.com'], subject: 'Test', minutesMarkdown: 'Noi dung' },
     } as Partial<Request> as Request;
     const res = createMockRes();
@@ -122,6 +140,7 @@ describe('POST /api/email/send-minutes', () => {
 
     const mindmapPdfDataUrl = `data:application/pdf;base64,${Buffer.from('mindmap-pdf').toString('base64')}`;
     const req = {
+      user: createAdminUser(),
       body: {
         recipients: ['a@example.com', 'b@example.com'],
         subject: 'Bien ban',
@@ -178,6 +197,7 @@ describe('POST /api/email/send-minutes', () => {
       .mockResolvedValueOnce([{ value: 'app-password' }] as any);
 
     const req = {
+      user: createAdminUser(),
       body: {
         recipients: ['a@example.com'],
         subject: 'Minutes',
