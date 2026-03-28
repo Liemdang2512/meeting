@@ -750,8 +750,8 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
               </div>
             </div>
 
-            {/* Email */}
-            {info.recipientEmails.length > 0 && (
+            {/* Email — chỉ hiển thị cho admin */}
+            {user.role === 'admin' && info.recipientEmails.length > 0 && (
               <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-3">
                 <h3 className="text-sm font-semibold text-slate-800">Gửi biên bản qua email</h3>
                 <p className="text-xs text-slate-500">

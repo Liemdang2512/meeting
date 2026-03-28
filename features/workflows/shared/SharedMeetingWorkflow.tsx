@@ -1897,8 +1897,8 @@ function App() {
                   </button>
                 </div>
 
-                {/* Card: Gửi email */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-3">
+                {/* Card: Gửi email — chỉ hiển thị cho admin */}
+                {isAdmin && <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-3">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
                       <MailIcon className="w-5 h-5 text-indigo-600" />
@@ -1954,7 +1954,7 @@ function App() {
                       {emailError || 'Gửi thất bại. Vui lòng thử lại.'}
                     </p>
                   )}
-                </div>
+                </div>}
               </div>
 
               {/* Mind map preview nếu đã có */}
