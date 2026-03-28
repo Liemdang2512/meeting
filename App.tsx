@@ -30,12 +30,13 @@ const PricingPage = lazy(() => import('./features/pricing/PricingPage').then(m =
 const HomePage = lazy(() => import('./components/HomePage').then(m => ({ default: m.HomePage })));
 import { WorkflowGuard } from './features/workflows/WorkflowGuard';
 import type { WorkflowGroup } from './features/workflows/types';
+import { WORKFLOW_GROUPS } from './features/workflows/types';
 
 const MeetingLandingPage = lazy(() => import('./components/MeetingLandingPage').then(m => ({ default: m.MeetingLandingPage })));
 const ReporterWorkflowPage = lazy(() => import('./features/workflows/reporter/ReporterWorkflowPage'));
 const SpecialistWorkflowPage = lazy(() => import('./features/workflows/specialist/SpecialistWorkflowPage'));
 const OfficerWorkflowPage = lazy(() => import('./features/workflows/officer/OfficerWorkflowPage'));
-const WorkflowGroupsSection = lazy(() => import('./features/settings/WorkflowGroupsSection').then(m => ({ default: m.WorkflowGroupsSection })));
+
 
 declare global {
   interface AIStudio {
@@ -1039,6 +1040,9 @@ function App() {
   }
 
   if (route === '/profile' || route === '/settings') {
+    const roleLabel = user?.role === 'admin' ? 'Admin' : user?.role === 'free' ? 'Miễn phí' : (WORKFLOW_GROUPS.find(g => g.key === user?.role)?.label ?? user?.role ?? '—');
+    const activeGroupLabel = WORKFLOW_GROUPS.find(g => g.key === user?.activeWorkflowGroup)?.label ?? user?.activeWorkflowGroup ?? '—';
+    const registeredGroups = (user?.workflowGroups ?? []).map(g => WORKFLOW_GROUPS.find(wg => wg.key === g)?.label ?? g);
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-start p-8">
         <div className="w-full max-w-lg">
@@ -1048,15 +1052,31 @@ function App() {
           >
             ← Quay lại
           </button>
-          <Suspense fallback={<div className="flex justify-center items-center h-32"><Spinner /></div>}>
-            <WorkflowGroupsSection
-              user={user}
-              onUpdate={async () => {
-                const updatedUser = await getMe();
-                setUser(updatedUser);
-              }}
-            />
-          </Suspense>
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+            <h2 className="text-lg font-semibold text-slate-900">Thông tin tài khoản</h2>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-slate-500">Email</span>
+                <span className="font-medium text-slate-800">{user?.email ?? '—'}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-slate-500">Gói tài khoản</span>
+                <span className="font-medium text-slate-800">{roleLabel}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-slate-500">Nhóm đang hoạt động</span>
+                <span className="font-medium text-slate-800">{activeGroupLabel}</span>
+              </div>
+              <div className="flex justify-between items-start py-2">
+                <span className="text-slate-500">Nhóm đã đăng ký</span>
+                <div className="flex flex-wrap gap-1.5 justify-end">
+                  {registeredGroups.length > 0 ? registeredGroups.map(label => (
+                    <span key={label} className="text-xs font-medium px-2.5 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full">{label}</span>
+                  )) : <span className="text-slate-400">—</span>}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -1219,7 +1239,7 @@ function App() {
             <MindmapPage user={user} />
           )}
           {isPricingRoute && (
-            <PricingPage currentUserRole={user?.role} />
+            <PricingPage currentUserRole={user?.role} userWorkflowGroups={user?.workflowGroups} />
           )}
           {isNotesRoute && mode === 'splitter' && (
             <FileSplitPage

@@ -30,6 +30,7 @@ const HomePage = lazy<React.FC<{ onNavigate: (path: string) => void }>>(() => im
 import { WorkflowGuard } from '../WorkflowGuard';
 import { GroupSwitcher } from '../GroupSwitcher';
 import type { WorkflowGroup } from '../types';
+import { WORKFLOW_GROUPS } from '../types';
 
 const WORKFLOW_CARDS: { group: WorkflowGroup; label: string; description: string }[] = [
   { group: 'reporter', label: 'Bài phỏng vấn', description: 'Ghi chép & tổng hợp phỏng vấn báo chí' },
@@ -39,7 +40,7 @@ const WORKFLOW_CARDS: { group: WorkflowGroup; label: string; description: string
 const ReporterWorkflowPage = lazy<React.FC<{ navigate: (path: string) => void; user: AuthUser }>>(() => import('../reporter/ReporterWorkflowPage'));
 const SpecialistWorkflowPage = lazy<React.FC<{ navigate: (path: string) => void; user: AuthUser }>>(() => import('../specialist/SpecialistWorkflowPage'));
 const OfficerWorkflowPage = lazy<React.FC<{ navigate: (path: string) => void; user: AuthUser }>>(() => import('../officer/OfficerWorkflowPage'));
-const WorkflowGroupsSection = lazy<React.FC<{ user: AuthUser; onUpdate: () => void }>>(() => import('../../settings/WorkflowGroupsSection').then(m => ({ default: m.WorkflowGroupsSection })));
+
 
 declare global {
   interface AIStudio {
@@ -1037,6 +1038,9 @@ function App() {
   }
 
   if (route === '/profile' || route === '/settings') {
+    const roleLabel = user?.role === 'admin' ? 'Admin' : user?.role === 'free' ? 'Miễn phí' : (WORKFLOW_GROUPS.find(g => g.key === user?.role)?.label ?? user?.role ?? '—');
+    const activeGroupLabel = WORKFLOW_GROUPS.find(g => g.key === user?.activeWorkflowGroup)?.label ?? user?.activeWorkflowGroup ?? '—';
+    const registeredGroups = (user?.workflowGroups ?? []).map(g => WORKFLOW_GROUPS.find(wg => wg.key === g)?.label ?? g);
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-start p-8">
         <div className="w-full max-w-lg">
@@ -1046,15 +1050,31 @@ function App() {
           >
             ← Quay lại
           </button>
-          <Suspense fallback={<div className="flex justify-center items-center h-32"><Spinner /></div>}>
-            <WorkflowGroupsSection
-              user={user}
-              onUpdate={async () => {
-                const updatedUser = await getMe();
-                setUser(updatedUser);
-              }}
-            />
-          </Suspense>
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+            <h2 className="text-lg font-semibold text-slate-900">Thông tin tài khoản</h2>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-slate-500">Email</span>
+                <span className="font-medium text-slate-800">{user?.email ?? '—'}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-slate-500">Gói tài khoản</span>
+                <span className="font-medium text-slate-800">{roleLabel}</span>
+              </div>
+              <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                <span className="text-slate-500">Nhóm đang hoạt động</span>
+                <span className="font-medium text-slate-800">{activeGroupLabel}</span>
+              </div>
+              <div className="flex justify-between items-start py-2">
+                <span className="text-slate-500">Nhóm đã đăng ký</span>
+                <div className="flex flex-wrap gap-1.5 justify-end">
+                  {registeredGroups.length > 0 ? registeredGroups.map(label => (
+                    <span key={label} className="text-xs font-medium px-2.5 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full">{label}</span>
+                  )) : <span className="text-slate-400">—</span>}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );

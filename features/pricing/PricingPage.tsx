@@ -75,9 +75,10 @@ const PLANS: Plan[] = [
 
 interface PricingPageProps {
   currentUserRole?: string;
+  userWorkflowGroups?: string[];
 }
 
-export const PricingPage: React.FC<PricingPageProps> = ({ currentUserRole }) => {
+export const PricingPage: React.FC<PricingPageProps> = ({ currentUserRole, userWorkflowGroups }) => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const handleCtaClick = (plan: Plan) => {
@@ -89,12 +90,13 @@ export const PricingPage: React.FC<PricingPageProps> = ({ currentUserRole }) => 
   };
 
   const isCurrentPlan = (plan: Plan) => {
-    // Logic subscription:
-    // - Tài khoản mới đăng ký mặc định là "free" => chưa đăng ký gói trả phí nào.
-    // - Chỉ khi đã nâng cấp role mới được tính là đang dùng gói.
     if (plan.id === 'specialist' && currentUserRole === 'pro') return true;
     if (plan.id === 'officer' && (currentUserRole === 'enterprise' || currentUserRole === 'admin')) return true;
-    return false; // free => không có gói trả phí hiện tại
+    return false;
+  };
+
+  const isRegistered = (plan: Plan) => {
+    return userWorkflowGroups?.includes(plan.id) ?? false;
   };
 
   return (
@@ -108,6 +110,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ currentUserRole }) => 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
           {PLANS.map(plan => {
             const isCurrent = isCurrentPlan(plan);
+            const registered = isRegistered(plan);
             const isBlue = plan.accent === 'blue';
             const checkColorClass = isBlue ? 'text-blue-300' : plan.accent === 'green' ? 'text-emerald-400' : 'text-amber-500';
 
@@ -124,6 +127,13 @@ export const PricingPage: React.FC<PricingPageProps> = ({ currentUserRole }) => 
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <span className="bg-blue-600 text-white text-[11px] font-semibold px-4 py-1 rounded-full tracking-wide">
                       PHỔ BIẾN NHẤT
+                    </span>
+                  </div>
+                )}
+                {registered && (
+                  <div className="absolute top-4 right-4">
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
+                      ✓ Đã đăng ký
                     </span>
                   </div>
                 )}
@@ -158,9 +168,9 @@ export const PricingPage: React.FC<PricingPageProps> = ({ currentUserRole }) => 
 
                 <button
                   onClick={() => handleCtaClick(plan)}
-                  disabled={isCurrent}
+                  disabled={isCurrent || registered}
                   className={`w-full py-3.5 font-semibold rounded-full transition-colors ${
-                    isCurrent
+                    isCurrent || registered
                       ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
                       : isBlue
                       ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-900/40'
@@ -169,7 +179,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ currentUserRole }) => 
                       : 'border border-amber-500 text-amber-600 hover:bg-amber-50'
                   }`}
                 >
-                  {isCurrent ? 'Gói hiện tại' : plan.cta}
+                  {isCurrent ? 'Gói hiện tại' : registered ? 'Đã đăng ký' : plan.cta}
                 </button>
               </div>
             );

@@ -15,6 +15,12 @@ type Feature = 'transcription' | 'summary' | 'mindmap' | 'export_pdf' | 'export_
 
 const ALL_FEATURES: Feature[] = ['transcription', 'summary', 'mindmap', 'export_pdf', 'export_docx', 'email', 'diagram'];
 
+const WORKFLOW_GROUP_LABEL: Record<string, string> = {
+  reporter: 'Phóng viên',
+  specialist: 'Chuyên viên',
+  officer: 'Cán bộ',
+};
+
 const FEATURE_LABEL: Record<Feature, string> = {
   transcription: 'Ghi âm',
   summary: 'Tóm tắt',
@@ -33,6 +39,8 @@ interface UserRow {
   features: Feature[];
   created_at: string;
   tokens_used: number;
+  workflow_groups: string[];
+  active_workflow_group: string;
 }
 
 interface UserManagementPageProps {
@@ -337,6 +345,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
                     <span className="ml-1 text-xs font-normal opacity-70">(tất cả)</span>
                   )}
                 </th>
+                <th className="text-left px-5 py-4 font-medium text-sm hidden lg:table-cell">Nhóm workflow</th>
                 <th className="text-left px-5 py-4 font-medium text-sm hidden sm:table-cell">Ngày tạo</th>
                 <th className="px-5 py-4 text-right font-medium text-sm">Thao tác</th>
               </tr>
@@ -385,6 +394,19 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
                     ) : (
                       <span className="text-xs text-slate-400 font-medium">—</span>
                     )}
+                  </td>
+                  <td className="px-5 py-4 hidden lg:table-cell">
+                    <div className="flex flex-wrap gap-1.5">
+                      {(u.workflow_groups ?? []).length > 0 ? (u.workflow_groups ?? []).map(g => (
+                        <span key={g} className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                          g === u.active_workflow_group
+                            ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                            : 'bg-slate-100 text-slate-600 border border-slate-200'
+                        }`}>
+                          {WORKFLOW_GROUP_LABEL[g] ?? g}
+                        </span>
+                      )) : <span className="text-xs text-slate-400 font-medium">—</span>}
+                    </div>
                   </td>
                   <td className="px-5 py-4 text-slate-500 text-sm font-medium hidden sm:table-cell">
                     {new Date(u.created_at).toLocaleDateString('vi-VN')}
