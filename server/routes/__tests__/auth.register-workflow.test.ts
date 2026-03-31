@@ -7,21 +7,21 @@ const BASE = {
   confirmPassword: '12345678',
 };
 
-describe('RegisterSchema workflowGroups validation', () => {
-  it('rejects empty workflowGroups array', () => {
-    const result = RegisterSchema.safeParse({ ...BASE, workflowGroups: [] });
-    expect(result.success).toBe(false);
-  });
-  it('rejects unknown group value like "hacker"', () => {
-    const result = RegisterSchema.safeParse({ ...BASE, workflowGroups: ['hacker'] });
-    expect(result.success).toBe(false);
-  });
-  it('accepts valid single group ["reporter"]', () => {
-    const result = RegisterSchema.safeParse({ ...BASE, workflowGroups: ['reporter'] });
+describe('RegisterSchema validation', () => {
+  it('accepts valid registration without plans', () => {
+    const result = RegisterSchema.safeParse({ ...BASE });
     expect(result.success).toBe(true);
   });
-  it('accepts valid multiple groups ["reporter","specialist"]', () => {
-    const result = RegisterSchema.safeParse({ ...BASE, workflowGroups: ['reporter', 'specialist'] });
-    expect(result.success).toBe(true);
+  it('rejects mismatched passwords', () => {
+    const result = RegisterSchema.safeParse({ ...BASE, confirmPassword: 'different' });
+    expect(result.success).toBe(false);
+  });
+  it('rejects short password', () => {
+    const result = RegisterSchema.safeParse({ ...BASE, password: '1234', confirmPassword: '1234' });
+    expect(result.success).toBe(false);
+  });
+  it('rejects invalid email', () => {
+    const result = RegisterSchema.safeParse({ ...BASE, email: 'not-an-email' });
+    expect(result.success).toBe(false);
   });
 });

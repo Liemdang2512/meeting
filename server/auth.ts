@@ -21,9 +21,8 @@ export const ALL_FEATURES: Feature[] = ['transcription', 'summary', 'mindmap', '
 export interface AuthUser {
   userId: string;
   email: string;
-  role: string;
-  workflowGroups: WorkflowGroup[];
-  activeWorkflowGroup: WorkflowGroup;
+  role: string; // 'free' | 'admin'
+  plans: string[]; // ['reporter', 'specialist', 'officer']
   features: Feature[];
 }
 
@@ -66,14 +65,13 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     const payload = jwt.verify(token, JWT_SECRET) as Partial<AuthUser> & Pick<AuthUser, 'userId' | 'email' | 'role'>;
     const tokenUser: AuthUser = {
       ...payload,
-      workflowGroups: payload.workflowGroups ?? [],
-      activeWorkflowGroup: payload.activeWorkflowGroup ?? ('' as WorkflowGroup),
+      plans: (payload as any).plans ?? (payload as any).workflowGroups ?? [],
       features: payload.features ?? FREE_FEATURES,
     } as AuthUser;
 
     try {
       const [profile] = await sql`
-        SELECT role, workflow_groups, active_workflow_group, features
+        SELECT role, workflow_groups, features
         FROM public.profiles
         WHERE user_id = ${tokenUser.userId}
       `;
@@ -81,8 +79,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
         req.user = {
           ...tokenUser,
           role: profile.role ?? tokenUser.role,
-          workflowGroups: profile.workflow_groups ?? tokenUser.workflowGroups,
-          activeWorkflowGroup: profile.active_workflow_group ?? tokenUser.activeWorkflowGroup,
+          plans: profile.workflow_groups ?? tokenUser.plans,
           features: profile.features?.length ? profile.features : tokenUser.features,
         };
       } else {

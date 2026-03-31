@@ -1,41 +1,46 @@
 import { describe, it, expect } from 'vitest';
 
-// Validate the group-switch logic inline (no DB/HTTP needed)
+// Validate plan management logic inline (no DB/HTTP needed)
 // Full integration tests live in tests/integration/ and require Docker DB.
 
-const VALID_GROUPS = ['reporter', 'specialist', 'officer'] as const;
-type WorkflowGroup = typeof VALID_GROUPS[number];
+const VALID_PLANS = ['reporter', 'specialist', 'officer'] as const;
+type Plan = typeof VALID_PLANS[number];
 
-function validateGroupSwitch(
-  requestedGroup: string,
-  userGroups: WorkflowGroup[]
-): { status: number; error?: string; ok?: boolean } {
-  if (!requestedGroup || !(VALID_GROUPS as readonly string[]).includes(requestedGroup)) {
-    return { status: 400, error: 'Nhóm không hợp lệ' };
+function validatePlanToggle(
+  plan: string,
+  userPlans: Plan[],
+  action: 'add' | 'remove'
+): { status: number; error?: string; plans?: Plan[] } {
+  if (!plan || !(VALID_PLANS as readonly string[]).includes(plan)) {
+    return { status: 400, error: 'Gói không hợp lệ' };
   }
-  if (!userGroups.includes(requestedGroup as WorkflowGroup)) {
-    return { status: 403, error: 'Bạn không thuộc nhóm này' };
+  if (action === 'add') {
+    const newPlans = userPlans.includes(plan as Plan) ? userPlans : [...userPlans, plan as Plan];
+    return { status: 200, plans: newPlans };
+  } else {
+    const newPlans = userPlans.filter(p => p !== plan);
+    return { status: 200, plans: newPlans };
   }
-  return { status: 200, ok: true };
 }
 
-describe('PATCH /api/profiles/active-workflow-group', () => {
-  it('rejects invalid group value', () => {
-    const result = validateGroupSwitch('hacker', ['reporter', 'specialist']);
+describe('PATCH /api/profiles/plans', () => {
+  it('rejects invalid plan value', () => {
+    const result = validatePlanToggle('hacker', ['reporter', 'specialist'], 'add');
     expect(result.status).toBe(400);
     expect(result.error).toBeTruthy();
   });
 
-  it('rejects group not in user workflowGroups', () => {
-    // user has ['reporter', 'specialist'] — 'officer' is valid enum but not in their groups
-    const result = validateGroupSwitch('officer', ['reporter', 'specialist']);
-    expect(result.status).toBe(403);
-    expect(result.error).toBeTruthy();
+  it('adds a valid plan', () => {
+    const result = validatePlanToggle('officer', ['reporter', 'specialist'], 'add');
+    expect(result.status).toBe(200);
+    expect(result.plans).toContain('officer');
+    expect(result.plans).toHaveLength(3);
   });
 
-  it('accepts group that user belongs to and returns new token', () => {
-    const result = validateGroupSwitch('specialist', ['reporter', 'specialist']);
+  it('removes a plan', () => {
+    const result = validatePlanToggle('reporter', ['reporter', 'specialist'], 'remove');
     expect(result.status).toBe(200);
-    expect(result.ok).toBe(true);
+    expect(result.plans).not.toContain('reporter');
+    expect(result.plans).toHaveLength(1);
   });
 });

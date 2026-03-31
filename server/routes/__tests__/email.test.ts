@@ -54,7 +54,7 @@ function createMockRes(): any {
 }
 
 function createAdminUser() {
-  return { userId: '1', email: 'admin@test.com', role: 'admin', workflowGroups: ['specialist'], activeWorkflowGroup: 'specialist', features: [] };
+  return { userId: '1', email: 'admin@test.com', role: 'admin', plans: ['reporter', 'specialist', 'officer'], features: [] };
 }
 
 function getRouteHandler(router: any, path: string, method: 'get' | 'post' | 'put') {
@@ -74,7 +74,7 @@ describe('POST /api/email/send-minutes', () => {
 
   it('returns 403 for non-admin user', async () => {
     const req = {
-      user: { userId: '1', email: 'user@test.com', role: 'specialist', workflowGroups: ['specialist'], activeWorkflowGroup: 'specialist', features: [] },
+      user: { userId: '1', email: 'user@test.com', role: 'free', plans: ['specialist'], features: [] },
       body: { recipients: ['a@b.com'], subject: 'Test', minutesMarkdown: '# Test' },
     } as Partial<Request> as Request;
     const res = createMockRes();
@@ -109,11 +109,13 @@ describe('POST /api/email/send-minutes', () => {
     expect(res.body).toEqual({ error: 'Tieu de email la bat buoc' });
   });
 
-  it('returns 503 if Resend API key not configured in DB', async () => {
-    mockSql
-      .mockResolvedValueOnce([] as any)
-      .mockResolvedValueOnce([] as any)
-      .mockResolvedValueOnce([] as any);
+  it('returns 503 if SMTP env vars not configured', async () => {
+    const savedHost = process.env.SMTP_HOST;
+    const savedUser = process.env.SMTP_USER;
+    const savedPass = process.env.SMTP_PASSWORD;
+    delete process.env.SMTP_HOST;
+    delete process.env.SMTP_USER;
+    delete process.env.SMTP_PASSWORD;
 
     const req = {
       user: createAdminUser(),
@@ -123,20 +125,24 @@ describe('POST /api/email/send-minutes', () => {
 
     await handler(req, res);
 
+    process.env.SMTP_HOST = savedHost;
+    process.env.SMTP_USER = savedUser;
+    process.env.SMTP_PASSWORD = savedPass;
+
     expect(res.statusCode).toBe(503);
-    expect(res.body).toEqual({ error: 'Email chua duoc cau hinh. Admin can them Gmail credentials.' });
+    expect(res.body).toEqual({ error: 'Email chưa được cấu hình. Kiểm tra SMTP_HOST, SMTP_USER, SMTP_PASSWORD trong env.' });
   });
 
-  it('calls Resend SDK with correct payload including PDF attachment', async () => {
+  it('calls nodemailer with correct payload including PDF attachment', async () => {
+    process.env.SMTP_HOST = 'smtp.example.com';
+    process.env.SMTP_USER = 'sender@gmail.com';
+    process.env.SMTP_PASSWORD = 'app-password';
+
     const sendMail = vi.fn().mockResolvedValue({ messageId: 'msg-123' });
     mockCreateTransport.mockReturnValue({ sendMail } as any);
     mockGenerateMinutesPdfBuffer.mockResolvedValue(Buffer.from('pdf-buffer'));
     mockMarkdownToHtml.mockReturnValue('<p>minutes html</p>');
     mockBuildEmailHtml.mockReturnValue('<html>email</html>');
-    mockSql
-      .mockResolvedValueOnce([{ value: '20' }] as any)
-      .mockResolvedValueOnce([{ value: 'sender@gmail.com' }] as any)
-      .mockResolvedValueOnce([{ value: 'app-password' }] as any);
 
     const mindmapPdfDataUrl = `data:application/pdf;base64,${Buffer.from('mindmap-pdf').toString('base64')}`;
     const req = {
@@ -159,8 +165,14 @@ describe('POST /api/email/send-minutes', () => {
 
     await handler(req, res);
 
+    delete process.env.SMTP_HOST;
+    delete process.env.SMTP_USER;
+    delete process.env.SMTP_PASSWORD;
+
     expect(mockCreateTransport).toHaveBeenCalledWith({
-      service: 'gmail',
+      host: 'smtp.example.com',
+      port: 465,
+      secure: true,
       auth: { user: 'sender@gmail.com', pass: 'app-password' },
     });
     expect(sendMail).toHaveBeenCalledTimes(1);
@@ -186,15 +198,15 @@ describe('POST /api/email/send-minutes', () => {
   });
 
   it('returns success response with email ID', async () => {
+    process.env.SMTP_HOST = 'smtp.example.com';
+    process.env.SMTP_USER = 'sender@gmail.com';
+    process.env.SMTP_PASSWORD = 'app-password';
+
     const sendMail = vi.fn().mockResolvedValue({ messageId: 'email-id-001' });
     mockCreateTransport.mockReturnValue({ sendMail } as any);
     mockGenerateMinutesPdfBuffer.mockResolvedValue(Buffer.from('pdf-buffer'));
     mockMarkdownToHtml.mockReturnValue('<p>minutes html</p>');
     mockBuildEmailHtml.mockReturnValue('<html>email</html>');
-    mockSql
-      .mockResolvedValueOnce([{ value: '20' }] as any)
-      .mockResolvedValueOnce([{ value: 'sender@gmail.com' }] as any)
-      .mockResolvedValueOnce([{ value: 'app-password' }] as any);
 
     const req = {
       user: createAdminUser(),
@@ -207,6 +219,10 @@ describe('POST /api/email/send-minutes', () => {
     const res = createMockRes();
 
     await handler(req, res);
+
+    delete process.env.SMTP_HOST;
+    delete process.env.SMTP_USER;
+    delete process.env.SMTP_PASSWORD;
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ ok: true, id: 'email-id-001' });

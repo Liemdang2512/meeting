@@ -9,10 +9,9 @@ vi.mock('../../lib/auth', () => ({
 import { RegisterPage } from '../RegisterPage';
 import { register } from '../../lib/auth';
 
-// Helper to click the first workflow group card (specialist)
-function selectGroup(groupLabel: RegExp) {
-  const btn = screen.getByRole('button', { name: groupLabel });
-  fireEvent.click(btn);
+function checkTerms() {
+  const checkbox = screen.getByRole('checkbox');
+  fireEvent.click(checkbox);
 }
 
 describe('RegisterPage', () => {
@@ -25,11 +24,11 @@ describe('RegisterPage', () => {
 
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^mật khẩu$/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/xác nhận mật khẩu/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^xác nhận$/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /tạo tài khoản/i })).toBeInTheDocument();
   });
 
-  it('hien thi loi khi chua chon nhom nguoi dung', async () => {
+  it('hien thi loi khi chua dong y dieu khoan', async () => {
     render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
 
     fireEvent.change(screen.getByLabelText(/email/i), {
@@ -38,14 +37,15 @@ describe('RegisterPage', () => {
     fireEvent.change(screen.getByLabelText(/^mật khẩu$/i), {
       target: { value: 'password123' },
     });
-    fireEvent.change(screen.getByLabelText(/xác nhận mật khẩu/i), {
+    fireEvent.change(screen.getByLabelText(/^xác nhận$/i), {
       target: { value: 'password123' },
     });
 
+    // Do NOT check terms
     fireEvent.click(screen.getByRole('button', { name: /tạo tài khoản/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/chọn ít nhất 1 nhóm/i)).toBeInTheDocument();
+      expect(screen.getByText(/vui lòng đồng ý/i)).toBeInTheDocument();
     });
     expect(register).not.toHaveBeenCalled();
   });
@@ -53,8 +53,7 @@ describe('RegisterPage', () => {
   it('hien thi loi khi mat khau ngan hon 8 ky tu (truoc khi goi API)', async () => {
     render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
 
-    // Select a group first to bypass group validation
-    selectGroup(/chuyên viên/i);
+    checkTerms();
 
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'user@example.com' },
@@ -62,7 +61,7 @@ describe('RegisterPage', () => {
     fireEvent.change(screen.getByLabelText(/^mật khẩu$/i), {
       target: { value: 'short' },
     });
-    fireEvent.change(screen.getByLabelText(/xác nhận mật khẩu/i), {
+    fireEvent.change(screen.getByLabelText(/^xác nhận$/i), {
       target: { value: 'short' },
     });
 
@@ -77,8 +76,7 @@ describe('RegisterPage', () => {
   it('hien thi loi khi mat khau khong khop (truoc khi goi API)', async () => {
     render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
 
-    // Select a group first to bypass group validation
-    selectGroup(/chuyên viên/i);
+    checkTerms();
 
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'user@example.com' },
@@ -86,7 +84,7 @@ describe('RegisterPage', () => {
     fireEvent.change(screen.getByLabelText(/^mật khẩu$/i), {
       target: { value: 'password123' },
     });
-    fireEvent.change(screen.getByLabelText(/xác nhận mật khẩu/i), {
+    fireEvent.change(screen.getByLabelText(/^xác nhận$/i), {
       target: { value: 'different123' },
     });
 
@@ -105,8 +103,7 @@ describe('RegisterPage', () => {
 
     render(<RegisterPage onRegisterSuccess={onRegisterSuccess} onGoToLogin={() => {}} />);
 
-    // Select specialist group
-    selectGroup(/chuyên viên/i);
+    checkTerms();
 
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'newuser@example.com' },
@@ -114,7 +111,7 @@ describe('RegisterPage', () => {
     fireEvent.change(screen.getByLabelText(/^mật khẩu$/i), {
       target: { value: 'securepass123' },
     });
-    fireEvent.change(screen.getByLabelText(/xác nhận mật khẩu/i), {
+    fireEvent.change(screen.getByLabelText(/^xác nhận$/i), {
       target: { value: 'securepass123' },
     });
 
@@ -125,7 +122,6 @@ describe('RegisterPage', () => {
         'newuser@example.com',
         'securepass123',
         'securepass123',
-        ['specialist'],
       );
       expect(onRegisterSuccess).toHaveBeenCalled();
     });
@@ -139,8 +135,7 @@ describe('RegisterPage', () => {
 
     render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
 
-    // Select a group first
-    selectGroup(/chuyên viên/i);
+    checkTerms();
 
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'user@example.com' },
@@ -148,7 +143,7 @@ describe('RegisterPage', () => {
     fireEvent.change(screen.getByLabelText(/^mật khẩu$/i), {
       target: { value: 'password123' },
     });
-    fireEvent.change(screen.getByLabelText(/xác nhận mật khẩu/i), {
+    fireEvent.change(screen.getByLabelText(/^xác nhận$/i), {
       target: { value: 'password123' },
     });
 
@@ -166,8 +161,7 @@ describe('RegisterPage', () => {
 
     render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
 
-    // Select a group first
-    selectGroup(/chuyên viên/i);
+    checkTerms();
 
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'existing@example.com' },
@@ -175,7 +169,7 @@ describe('RegisterPage', () => {
     fireEvent.change(screen.getByLabelText(/^mật khẩu$/i), {
       target: { value: 'password123' },
     });
-    fireEvent.change(screen.getByLabelText(/xác nhận mật khẩu/i), {
+    fireEvent.change(screen.getByLabelText(/^xác nhận$/i), {
       target: { value: 'password123' },
     });
 
@@ -190,7 +184,7 @@ describe('RegisterPage', () => {
     const onGoToLogin = vi.fn();
     render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={onGoToLogin} />);
 
-    fireEvent.click(screen.getByText(/đã có tài khoản/i));
+    fireEvent.click(screen.getByRole('button', { name: /đăng nhập ngay/i }));
     expect(onGoToLogin).toHaveBeenCalled();
   });
 });

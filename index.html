@@ -4,27 +4,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Meeting Minute I Thư ký AI | Tự động biên bản cuộc họp</title>
+  <title>MOMAI | Thư ký AI tự động biên bản cuộc họp</title>
   <meta name="description" content="Tự động chuyển đổi âm thanh, video thành biên bản cuộc họp chuyên nghiệp chỉ trong vài giây. Hỗ trợ phóng viên, chuyên viên và cán bộ pháp lý." />
   <meta name="robots" content="index, follow" />
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="Meeting Minute I Thư ký AI | Tự động biên bản cuộc họp" />
+  <meta property="og:title" content="MOMAI | Thư ký AI tự động biên bản cuộc họp" />
   <meta property="og:description" content="Tự động chuyển đổi âm thanh, video thành biên bản cuộc họp chuyên nghiệp chỉ trong vài giây." />
   <meta property="og:image" content="/NAI.png" />
   <meta property="og:locale" content="vi_VN" />
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Meeting Minute I Thư ký AI" />
+  <meta name="twitter:title" content="MOMAI | Thư ký AI" />
   <meta name="twitter:description" content="Tự động chuyển đổi âm thanh, video thành biên bản cuộc họp chuyên nghiệp." />
   <meta name="twitter:image" content="/NAI.png" />
 
-  <!-- Google Fonts: Inter -->
+  <!-- Google Fonts: Inter + Manrope — preconnect để giảm RTT -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
+  <!-- DNS prefetch cho BE API server — giảm connection time cho request đầu tiên -->
+  <link rel="dns-prefetch" href="//localhost:3001">
 </head>
 
 <body class="bg-slate-50 text-slate-900 antialiased font-sans">

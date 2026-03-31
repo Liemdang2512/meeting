@@ -20,7 +20,7 @@ describe('LoginPage', () => {
     render(<LoginPage onLoginSuccess={() => {}} />);
 
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/mật khẩu/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^mật khẩu$/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /đăng nhập/i })).toBeInTheDocument();
   });
 
@@ -34,7 +34,7 @@ describe('LoginPage', () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'user@example.com' },
     });
-    fireEvent.change(screen.getByLabelText(/mật khẩu/i), {
+    fireEvent.change(screen.getByLabelText(/^mật khẩu$/i), {
       target: { value: 'password123' },
     });
 
@@ -59,7 +59,7 @@ describe('LoginPage', () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'wrong@example.com' },
     });
-    fireEvent.change(screen.getByLabelText(/mật khẩu/i), {
+    fireEvent.change(screen.getByLabelText(/^mật khẩu$/i), {
       target: { value: 'wrong' },
     });
 
@@ -83,7 +83,7 @@ describe('LoginPage', () => {
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'user@example.com' },
     });
-    fireEvent.change(screen.getByLabelText(/mật khẩu/i), {
+    fireEvent.change(screen.getByLabelText(/^mật khẩu$/i), {
       target: { value: 'password123' },
     });
 

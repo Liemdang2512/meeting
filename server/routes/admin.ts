@@ -3,30 +3,24 @@ import bcrypt from 'bcryptjs';
 import sql from '../db';
 import { requireAuth, FREE_FEATURES, ALL_FEATURES } from '../auth';
 
-const VALID_ROLES = ['free', 'reporter', 'specialist', 'officer', 'admin'] as const;
-type UnifiedRole = typeof VALID_ROLES[number];
+const VALID_ROLES = ['free', 'admin'] as const;
+type SystemRole = typeof VALID_ROLES[number];
 
-// Khi đổi role → tự động set workflow_groups + features
-function groupsForRole(role: UnifiedRole): string[] {
-  if (role === 'reporter') return ['reporter'];
-  if (role === 'specialist') return ['specialist'];
-  if (role === 'officer') return ['officer'];
-  if (role === 'admin') return ['reporter', 'specialist', 'officer'];
-  return []; // free
-}
+const VALID_PLANS = ['reporter', 'specialist', 'officer'] as const;
 
-function featuresForRole(role: UnifiedRole): string[] {
-  return role === 'free' ? FREE_FEATURES : ALL_FEATURES;
+function featuresForPlans(role: string, plans: string[]): string[] {
+  if (role === 'admin' || plans.length > 0) return ALL_FEATURES;
+  return FREE_FEATURES;
 }
 
 // postgres.js không infer type cho empty array — dùng sql fragment khi rỗng
-function groupsArraySql(groups: string[]) {
-  return groups.length > 0 ? sql.array(groups) : sql`ARRAY[]::text[]`;
+function plansArraySql(plans: string[]) {
+  return plans.length > 0 ? sql.array(plans) : sql`ARRAY[]::text[]`;
 }
 
 const router = Router();
 
-// Middleware kiểm tra admin
+// Middleware kiem tra admin
 function requireAdmin(req: Request, res: Response, next: () => void) {
   if (req.user?.role !== 'admin') {
     res.status(403).json({ error: 'Chỉ admin mới có quyền thực hiện thao tác này' });
@@ -54,8 +48,7 @@ router.get('/users', requireAuth, requireAdmin, async (req, res) => {
         p.role,
         p.daily_limit,
         COALESCE(p.features, '{}') AS features,
-        COALESCE(p.workflow_groups, '{specialist}') AS workflow_groups,
-        COALESCE(p.active_workflow_group, 'specialist') AS active_workflow_group,
+        COALESCE(p.workflow_groups, '{}') AS plans,
         COALESCE(t.tokens_used, 0) AS tokens_used
       FROM auth.users u
       LEFT JOIN public.profiles p ON p.user_id = u.id
@@ -74,14 +67,17 @@ router.get('/users', requireAuth, requireAdmin, async (req, res) => {
 });
 
 // POST /api/admin/users — tạo user mới
-// Body: { email, password, role? }
+// Body: { email, password, role?, plans? }
 router.post('/users', requireAuth, requireAdmin, async (req, res) => {
-  const { email, password, role = 'free' } = req.body ?? {};
+  const { email, password, role = 'free', plans = [] } = req.body ?? {};
   if (!email || !password) {
     return res.status(400).json({ error: 'Email và mật khẩu là bắt buộc' });
   }
-  if (!VALID_ROLES.includes(role as UnifiedRole)) {
-    return res.status(400).json({ error: 'Role không hợp lệ (free, reporter, specialist, officer hoặc admin)' });
+  if (!VALID_ROLES.includes(role as SystemRole)) {
+    return res.status(400).json({ error: 'Role không hợp lệ (free hoặc admin)' });
+  }
+  if (!Array.isArray(plans) || !plans.every((p: string) => VALID_PLANS.includes(p as any))) {
+    return res.status(400).json({ error: 'Plans không hợp lệ' });
   }
   try {
     const [existing] = await sql`SELECT id FROM auth.users WHERE email = ${email}`;
@@ -96,111 +92,98 @@ router.post('/users', requireAuth, requireAdmin, async (req, res) => {
       RETURNING id, email, created_at
     `;
 
-    const groups = groupsForRole(role as UnifiedRole);
-    const feats = featuresForRole(role as UnifiedRole);
-    const activeGroup = groups[0] ?? '';
+    const feats = featuresForPlans(role, plans);
     await sql`
-      INSERT INTO public.profiles (user_id, role, workflow_groups, active_workflow_group, features, created_at, updated_at)
-      VALUES (${newUser.id}, ${role}, ${groupsArraySql(groups)}, ${activeGroup}, ${sql.array(feats)}, NOW(), NOW())
+      INSERT INTO public.profiles (user_id, role, workflow_groups, features, created_at, updated_at)
+      VALUES (${newUser.id}, ${role}, ${plansArraySql(plans)}, ${sql.array(feats)}, NOW(), NOW())
     `;
 
     return res.status(201).json({
-      user: { id: newUser.id, email: newUser.email, role, created_at: newUser.created_at },
+      user: { id: newUser.id, email: newUser.email, role, plans, created_at: newUser.created_at },
     });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }
 });
 
-// PUT /api/admin/users/:id — cập nhật role hoặc password
-// Body: { role?, password? }
+// PUT /api/admin/users/:id — cập nhật role, plans, password, features
+// Body: { role?, plans?, password?, daily_limit?, features? }
 router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
   const { id } = req.params;
-  const { role, password, daily_limit, features, workflow_groups } = req.body ?? {};
+  const { role, plans, password, daily_limit, features } = req.body ?? {};
 
   // Không cho xóa role admin của chính mình
   if (req.user?.userId === id && role && role !== 'admin') {
     return res.status(400).json({ error: 'Không thể tự hạ quyền của chính mình' });
   }
 
+  // Validate inputs sớm trước khi chạm DB
+  if (role !== undefined && !VALID_ROLES.includes(role as SystemRole)) {
+    return res.status(400).json({ error: 'Role không hợp lệ (free hoặc admin)' });
+  }
+  if (plans !== undefined && (!Array.isArray(plans) || !plans.every((p: string) => VALID_PLANS.includes(p as any)))) {
+    return res.status(400).json({ error: 'Plans không hợp lệ (reporter, specialist, officer)' });
+  }
+  if (daily_limit !== undefined && daily_limit !== null && (!Number.isInteger(daily_limit) || daily_limit < 1)) {
+    return res.status(400).json({ error: 'daily_limit phải là số nguyên >= 1 hoặc null' });
+  }
+  if (features !== undefined && !Array.isArray(features)) {
+    return res.status(400).json({ error: 'features phải là mảng' });
+  }
+  if (password && password.length < 6) {
+    return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 6 ký tự' });
+  }
+
   try {
-    const [user] = await sql`SELECT id FROM auth.users WHERE id = ${id}`;
-    if (!user) {
+    // 1 query duy nhất lấy cả user + profile — thay vì nhiều SELECT rải rác
+    const [existing] = await sql`
+      SELECT u.id, p.user_id AS profile_exists, p.role AS current_role, p.workflow_groups AS current_plans
+      FROM auth.users u
+      LEFT JOIN public.profiles p ON p.user_id = u.id
+      WHERE u.id = ${id}
+    `;
+    if (!existing) {
       return res.status(404).json({ error: 'User không tồn tại' });
     }
 
-    if (role) {
-      if (!VALID_ROLES.includes(role as UnifiedRole)) {
-        return res.status(400).json({ error: 'Role không hợp lệ (free, reporter, specialist, officer hoặc admin)' });
-      }
-      const groups = groupsForRole(role as UnifiedRole);
-      const feats = featuresForRole(role as UnifiedRole);
-      const activeGroup = groups[0] ?? '';
-      const [existing] = await sql`SELECT user_id FROM public.profiles WHERE user_id = ${id}`;
-      if (existing) {
+    const hasProfile = !!existing.profile_exists;
+
+    // Tính toán role/plans/features mới từ state hiện tại
+    const effectiveRole = role ?? existing.current_role ?? 'free';
+    const effectivePlans = plans ?? existing.current_plans ?? [];
+    const needsProfileUpdate = role !== undefined || plans !== undefined || daily_limit !== undefined || features !== undefined;
+
+    if (needsProfileUpdate) {
+      // Tính features dựa trên role + plans cuối cùng
+      const effectiveFeatures = features ?? featuresForPlans(effectiveRole, effectivePlans);
+
+      if (hasProfile) {
+        // UPDATE — chỉ set những cột nào thực sự được truyền vào
         await sql`
-          UPDATE public.profiles
-          SET role = ${role}, workflow_groups = ${groupsArraySql(groups)},
-              active_workflow_group = ${activeGroup}, features = ${sql.array(feats)},
-              updated_at = NOW()
+          UPDATE public.profiles SET
+            role = ${role ?? existing.current_role ?? 'free'},
+            workflow_groups = ${plansArraySql(effectivePlans)},
+            features = ${sql.array(effectiveFeatures)},
+            daily_limit = ${daily_limit !== undefined ? daily_limit : sql`daily_limit`},
+            updated_at = NOW()
           WHERE user_id = ${id}
         `;
       } else {
+        // INSERT — user chưa có profile
         await sql`
-          INSERT INTO public.profiles (user_id, role, workflow_groups, active_workflow_group, features, created_at, updated_at)
-          VALUES (${id}, ${role}, ${groupsArraySql(groups)}, ${activeGroup}, ${sql.array(feats)}, NOW(), NOW())
+          INSERT INTO public.profiles (user_id, role, workflow_groups, features, daily_limit, created_at, updated_at)
+          VALUES (
+            ${id}, ${effectiveRole}, ${plansArraySql(effectivePlans)},
+            ${sql.array(effectiveFeatures)}, ${daily_limit ?? null}, NOW(), NOW()
+          )
         `;
       }
     }
 
-    if (daily_limit !== undefined) {
-      if (daily_limit !== null && (!Number.isInteger(daily_limit) || daily_limit < 1)) {
-        return res.status(400).json({ error: 'daily_limit phải là số nguyên >= 1 hoặc null' });
-      }
-      const [existing] = await sql`SELECT user_id FROM public.profiles WHERE user_id = ${id}`;
-      if (existing) {
-        await sql`UPDATE public.profiles SET daily_limit = ${daily_limit}, updated_at = NOW() WHERE user_id = ${id}`;
-      } else {
-        await sql`INSERT INTO public.profiles (user_id, daily_limit, created_at, updated_at) VALUES (${id}, ${daily_limit}, NOW(), NOW())`;
-      }
-    }
-
-    if (workflow_groups !== undefined) {
-      if (!Array.isArray(workflow_groups) || workflow_groups.length < 1) {
-        return res.status(400).json({ error: 'workflow_groups phải có ít nhất 1 nhóm' });
-      }
-      const valid = ['reporter', 'specialist', 'officer'];
-      if (!workflow_groups.every((g: string) => valid.includes(g))) {
-        return res.status(400).json({ error: 'Nhóm không hợp lệ' });
-      }
-      const [existing] = await sql`SELECT user_id, active_workflow_group FROM public.profiles WHERE user_id = ${id}`;
-      if (existing) {
-        // Nếu active_workflow_group không còn trong danh sách mới, reset về nhóm đầu tiên
-        const newActive = workflow_groups.includes(existing.active_workflow_group)
-          ? existing.active_workflow_group
-          : workflow_groups[0];
-        await sql`UPDATE public.profiles SET workflow_groups = ${sql.array(workflow_groups)}, active_workflow_group = ${newActive}, updated_at = NOW() WHERE user_id = ${id}`;
-      }
-    }
-
-    if (features !== undefined) {
-      if (!Array.isArray(features)) {
-        return res.status(400).json({ error: 'features phải là mảng' });
-      }
-      const [existing] = await sql`SELECT user_id FROM public.profiles WHERE user_id = ${id}`;
-      if (existing) {
-        await sql`UPDATE public.profiles SET features = ${sql.array(features)}, updated_at = NOW() WHERE user_id = ${id}`;
-      }
-    }
-
+    // Đổi password riêng (bảng khác)
     if (password) {
-      if (password.length < 6) {
-        return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 6 ký tự' });
-      }
       const password_hash = await bcrypt.hash(password, 12);
-      await sql`
-        UPDATE auth.users SET password_hash = ${password_hash} WHERE id = ${id}
-      `;
+      await sql`UPDATE auth.users SET password_hash = ${password_hash} WHERE id = ${id}`;
     }
 
     return res.json({ ok: true });

@@ -69,16 +69,16 @@ export function EmailRecipientsInput({ value, onChange, maxRecipients = 20 }: Em
 
   const count = value.length;
   const counterClass = count >= maxRecipients
-    ? 'text-red-500'
+    ? 'text-error'
     : count >= 18
     ? 'text-amber-500'
-    : 'text-slate-400';
+    : 'text-on-surface-variant/60';
 
   return (
     <div className="space-y-2">
       {/* Label row */}
       <div className="flex items-center justify-between">
-        <label className="block text-sm font-medium text-slate-800">
+        <label className="block text-sm font-medium text-on-surface">
           Người nhận email
         </label>
         <span className={`text-xs font-medium ${counterClass}`}>
@@ -92,7 +92,7 @@ export function EmailRecipientsInput({ value, onChange, maxRecipients = 20 }: Em
         onChange={(e) => setInputVal(e.target.value)}
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
-        className="w-full px-4 py-3 border-slate-200 focus:border-slate-200 bg-white focus:outline-none text-sm font-medium transition-colors border rounded-xl"
+        className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/20 focus:border-primary/40 focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm font-medium text-on-surface placeholder:text-on-surface-variant/50 transition-colors rounded-xl"
         placeholder="Nhập email rồi nhấn Enter hoặc dấu phẩy..."
       />
 
@@ -102,13 +102,13 @@ export function EmailRecipientsInput({ value, onChange, maxRecipients = 20 }: Em
           {value.map((email) => (
             <span
               key={email}
-              className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-50 text-indigo-700 text-xs font-medium rounded-lg"
+              className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary text-xs font-medium rounded-lg"
             >
               {email}
               <button
                 type="button"
                 onClick={() => onChange(value.filter((e) => e !== email))}
-                className="w-4 h-4 text-indigo-400 hover:text-red-500 cursor-pointer transition-colors inline-flex items-center justify-center"
+                className="w-4 h-4 text-primary/60 hover:text-error cursor-pointer transition-colors inline-flex items-center justify-center"
               >
                 &times;
               </button>
@@ -118,7 +118,7 @@ export function EmailRecipientsInput({ value, onChange, maxRecipients = 20 }: Em
       )}
 
       {/* Error row */}
-      {error && <p className="text-xs font-medium text-red-500 mt-1">{error}</p>}
+      {error && <p className="text-xs font-medium text-error mt-1">{error}</p>}
     </div>
   );
 }

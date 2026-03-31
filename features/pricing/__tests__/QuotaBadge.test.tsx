@@ -16,11 +16,12 @@ describe('QuotaBadge', () => {
     vi.clearAllMocks();
   });
 
-  it('không render gì khi quota chưa load (null state)', () => {
+  it('hiển thị skeleton loading khi quota chưa load', () => {
     // authFetch never resolves during this test
     mockAuthFetch.mockReturnValue(new Promise(() => {}));
     const { container } = render(<QuotaBadge />);
-    expect(container.firstChild).toBeNull();
+    // Component renders a skeleton span while loading
+    expect(container.firstChild).not.toBeNull();
   });
 
   it('hiển thị "Unlimited" khi role !== "free" (unlimited: true)', async () => {

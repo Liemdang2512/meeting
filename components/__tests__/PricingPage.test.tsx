@@ -16,9 +16,9 @@ describe('PricingPage', () => {
     expect(screen.queryByRole('button', { name: 'Gói hiện tại' })).not.toBeInTheDocument();
   });
 
-  it('gói Chuyên viên có nút "Nâng cấp ngay" mở UpgradeModal khi click', () => {
+  it('gói Chuyên viên có nút "Đăng ký ngay" mở UpgradeModal khi click', () => {
     render(<PricingPage currentUserRole="free" />);
-    const upgradeBtn = screen.getAllByRole('button', { name: 'Nâng cấp ngay' })[1];
+    const upgradeBtn = screen.getAllByRole('button', { name: 'Đăng ký ngay' })[1];
     expect(upgradeBtn).toBeTruthy();
     fireEvent.click(upgradeBtn);
     // After click, UpgradeModal should be open - check for modal content
@@ -32,9 +32,9 @@ describe('PricingPage', () => {
     expect(btn).toBeDisabled();
   });
 
-  it('khi currentUserRole="free" thì cả 3 gói đều là "Nâng cấp ngay"', () => {
+  it('khi currentUserRole="free" thì cả 3 gói đều là "Đăng ký ngay"', () => {
     render(<PricingPage currentUserRole="free" />);
-    const upgradeButtons = screen.getAllByRole('button', { name: 'Nâng cấp ngay' });
+    const upgradeButtons = screen.getAllByRole('button', { name: 'Đăng ký ngay' });
     expect(upgradeButtons).toHaveLength(3);
   });
 

@@ -71,8 +71,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     role text DEFAULT 'free',
     created_at timestamptz DEFAULT now() NOT NULL,
     updated_at timestamptz,
-    workflow_groups text[] NOT NULL DEFAULT '{specialist}',
-    active_workflow_group text NOT NULL DEFAULT 'specialist',
+    workflow_groups text[] NOT NULL DEFAULT '{}',
     features text[] NOT NULL DEFAULT '{}'
 );
 

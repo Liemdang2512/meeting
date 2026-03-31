@@ -15,11 +15,6 @@ router.post('/login', async (req, res) => {
     return res.status(400).json({ error: 'Email và mật khẩu là bắt buộc' });
   }
   try {
-    // Ensure password_hash column exists (idempotent)
-    await sql`
-      ALTER TABLE auth.users ADD COLUMN IF NOT EXISTS password_hash text
-    `;
-
     const [user] = await sql`
       SELECT id, email, password_hash FROM auth.users WHERE email = ${email}
     `;
@@ -30,16 +25,15 @@ router.post('/login', async (req, res) => {
     if (!valid) {
       return res.status(401).json({ error: 'Email hoặc mật khẩu không đúng' });
     }
-    // Get role and workflow groups from profiles
+    // Get role and plans from profiles
     const [profile] = await sql`
-      SELECT role, workflow_groups, active_workflow_group, features FROM public.profiles WHERE user_id = ${user.id}
+      SELECT role, workflow_groups, features FROM public.profiles WHERE user_id = ${user.id}
     `;
     const role = profile?.role ?? 'free';
-    const workflowGroups = profile?.workflow_groups ?? [];
-    const activeWorkflowGroup = profile?.active_workflow_group ?? '';
+    const plans: string[] = profile?.workflow_groups ?? [];
     const features: Feature[] = profile?.features?.length ? profile.features : FREE_FEATURES;
-    const token = signToken({ userId: user.id, email: user.email, role, workflowGroups, activeWorkflowGroup, features });
-    return res.json({ token, user: { id: user.id, email: user.email, role, workflowGroups, activeWorkflowGroup, features } });
+    const token = signToken({ userId: user.id, email: user.email, role, plans, features });
+    return res.json({ token, user: { id: user.id, email: user.email, role, plans, features } });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }
@@ -57,7 +51,6 @@ export const RegisterSchema = z.object({
   email: z.string().email('Email không hợp lệ'),
   password: z.string().min(8, 'Mật khẩu phải có ít nhất 8 ký tự'),
   confirmPassword: z.string(),
-  workflowGroups: z.array(z.enum(['reporter', 'specialist', 'officer'])).min(1, 'Chọn ít nhất 1 nhóm').optional(),
 }).refine(d => d.password === d.confirmPassword, {
   message: 'Mật khẩu xác nhận không khớp',
   path: ['confirmPassword'],
@@ -85,13 +78,13 @@ router.post('/register', registerLimiter, async (req, res) => {
         RETURNING id, email
       `;
       await tx`
-        INSERT INTO public.profiles (user_id, role, workflow_groups, active_workflow_group, features, created_at, updated_at)
-        VALUES (${u.id}, 'free', ARRAY[]::text[], '', ${sql.array(FREE_FEATURES)}, NOW(), NOW())
+        INSERT INTO public.profiles (user_id, role, workflow_groups, features, created_at, updated_at)
+        VALUES (${u.id}, 'free', ARRAY[]::text[], ${sql.array(FREE_FEATURES)}, NOW(), NOW())
       `;
       return u;
     });
-    const token = signToken({ userId: newUser.id, email: newUser.email, role: 'free', workflowGroups: [], activeWorkflowGroup: '' as any, features: FREE_FEATURES });
-    return res.status(201).json({ token, user: { id: newUser.id, email: newUser.email, role: 'free', workflowGroups: [], activeWorkflowGroup: '', features: FREE_FEATURES } });
+    const token = signToken({ userId: newUser.id, email: newUser.email, role: 'free', plans: [], features: FREE_FEATURES });
+    return res.status(201).json({ token, user: { id: newUser.id, email: newUser.email, role: 'free', plans: [], features: FREE_FEATURES } });
   } catch (err: any) {
     if (err.statusCode === 409) {
       return res.status(409).json({ error: err.message });
@@ -109,22 +102,20 @@ router.post('/logout', (_req, res) => {
 router.get('/me', requireAuth, async (req, res) => {
   try {
     const [profile] = await sql`
-      SELECT role, workflow_groups, active_workflow_group, features
+      SELECT role, workflow_groups, features
       FROM public.profiles
       WHERE user_id = ${req.user!.userId}
     `;
 
     const role = profile?.role ?? req.user!.role ?? 'free';
-    const workflowGroups = profile?.workflow_groups ?? req.user!.workflowGroups ?? [];
-    const activeWorkflowGroup = profile?.active_workflow_group ?? req.user!.activeWorkflowGroup ?? '';
+    const plans: string[] = profile?.workflow_groups ?? req.user!.plans ?? [];
     const features: Feature[] = profile?.features?.length ? profile.features : (req.user!.features ?? FREE_FEATURES);
 
     const freshUser = {
       userId: req.user!.userId,
       email: req.user!.email,
       role,
-      workflowGroups,
-      activeWorkflowGroup,
+      plans,
       features,
     };
 

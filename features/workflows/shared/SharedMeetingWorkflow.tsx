@@ -358,9 +358,9 @@ function App() {
         }
         // Kiem tra admin tu role trong JWT
         setIsAdmin(currentUser.role === 'admin');
-        // Set workflow mode mặc định theo activeWorkflowGroup
-        if (currentUser.activeWorkflowGroup) {
-          setSelectedWorkflowMode(currentUser.activeWorkflowGroup as WorkflowGroup);
+        // Set workflow mode mặc định theo plans
+        if (currentUser.plans && currentUser.plans.length > 0) {
+          setSelectedWorkflowMode(currentUser.plans[0] as WorkflowGroup);
         }
       }
     };
@@ -911,9 +911,7 @@ function App() {
             onRegisterSuccess={async () => {
               const loggedInUser = await getMe();
               setUser(loggedInUser);
-              if (loggedInUser && loggedInUser.activeWorkflowGroup) {
-                navigate(`/${loggedInUser.activeWorkflowGroup}`);
-              } else {
+              if (loggedInUser) {
                 navigate('/meeting');
               }
               if (loggedInUser) {
@@ -936,9 +934,7 @@ function App() {
       // Sau khi dang nhap thanh cong, lay user info va cap nhat state
       const loggedInUser = await getMe();
       setUser(loggedInUser);
-      if (loggedInUser && loggedInUser.activeWorkflowGroup) {
-        navigate(`/${loggedInUser.activeWorkflowGroup}`);
-      } else {
+      if (loggedInUser) {
         navigate('/meeting');
       }
       if (loggedInUser) {
@@ -1038,9 +1034,8 @@ function App() {
   }
 
   if (route === '/profile' || route === '/settings') {
-    const roleLabel = user?.role === 'admin' ? 'Admin' : user?.role === 'free' ? 'Miễn phí' : (WORKFLOW_GROUPS.find(g => g.key === user?.role)?.label ?? user?.role ?? '—');
-    const activeGroupLabel = WORKFLOW_GROUPS.find(g => g.key === user?.activeWorkflowGroup)?.label ?? user?.activeWorkflowGroup ?? '—';
-    const registeredGroups = (user?.workflowGroups ?? []).map(g => WORKFLOW_GROUPS.find(wg => wg.key === g)?.label ?? g);
+    const roleLabel = user?.role === 'admin' ? 'Admin' : 'Free';
+    const planLabels = (user?.plans ?? []).map(p => WORKFLOW_GROUPS.find(wg => wg.key === p)?.label ?? p);
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-start p-8">
         <div className="w-full max-w-lg">
@@ -1058,17 +1053,13 @@ function App() {
                 <span className="font-medium text-slate-800">{user?.email ?? '—'}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                <span className="text-slate-500">Gói tài khoản</span>
+                <span className="text-slate-500">Quyền</span>
                 <span className="font-medium text-slate-800">{roleLabel}</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                <span className="text-slate-500">Nhóm đang hoạt động</span>
-                <span className="font-medium text-slate-800">{activeGroupLabel}</span>
-              </div>
               <div className="flex justify-between items-start py-2">
-                <span className="text-slate-500">Nhóm đã đăng ký</span>
+                <span className="text-slate-500">Gói đã đăng ký</span>
                 <div className="flex flex-wrap gap-1.5 justify-end">
-                  {registeredGroups.length > 0 ? registeredGroups.map(label => (
+                  {planLabels.length > 0 ? planLabels.map((label: string) => (
                     <span key={label} className="text-xs font-medium px-2.5 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full">{label}</span>
                   )) : <span className="text-slate-400">—</span>}
                 </div>
@@ -1109,7 +1100,7 @@ function App() {
                 Phiên mới
               </button>
             )}
-            {user && user.workflowGroups && (
+            {user && (user.plans?.length ?? 0) > 1 && (
               <GroupSwitcher user={user} navigate={navigate} />
             )}
             {user && (
@@ -1336,12 +1327,12 @@ function App() {
                 />
               </div>
 
-              {/* Chọn nhóm workflow — chỉ hiện nhóm user thuộc về */}
-              {user && user.workflowGroups && user.workflowGroups.length > 0 && (
+              {/* Chọn gói — chỉ hiện gói user đã đăng ký */}
+              {user && (user.plans?.length ?? 0) > 0 && (
                 <div className="bg-slate-50 p-6 border-slate-200 shadow-sm rounded-xl space-y-4 border">
                   <p className="text-sm font-medium text-slate-800">Chọn loại nội dung</p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {WORKFLOW_CARDS.filter(c => user.workflowGroups!.includes(c.group)).map(card => (
+                    {WORKFLOW_CARDS.filter(c => user.role === 'admin' || user.plans?.includes(c.group)).map(card => (
                       <button
                         key={card.group}
                         onClick={() => setSelectedWorkflowMode(card.group)}

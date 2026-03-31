@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { takePendingUpload } from '../shared/fileStore';
 import { SESSION_KEY_MEETING_LANGUAGE } from '../shared/sessionKeys';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Info, Mic, CheckCircle2 } from 'lucide-react';
 import type { AuthUser } from '../../../lib/auth';
 import type { ReporterInfo } from '../../minutes/types';
 import { loadReporterDraft } from '../../minutes/storage';
@@ -30,7 +30,11 @@ const REPORTER_SYSTEM_HINT =
 const DEFAULT_REPORTER_PROMPT =
   'Hãy tạo một bài phỏng vấn/báo chí hoàn chỉnh, chuyên nghiệp dựa trên nội dung transcript. Bao gồm: tiêu đề, giới thiệu, nội dung phỏng vấn dạng hỏi-đáp, và kết luận.';
 
-const STEP_LABELS = ['Thông tin', 'Phiên âm', 'Kết quả'];
+const STEP_LABELS = [
+  { label: 'Thông tin', icon: <Info size={18} /> },
+  { label: 'Phiên âm', icon: <Mic size={18} /> },
+  { label: 'Kết quả', icon: <CheckCircle2 size={18} /> },
+];
 
 function defaultReporterInfo(): ReporterInfo {
   return { interviewTitle: '', guestName: '', reporter: '', datetime: '', location: '' };
@@ -134,8 +138,7 @@ export default function ReporterWorkflowPage({ navigate, user }: ReporterWorkflo
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 py-4">
         <WorkflowStepHeader currentStep={step} steps={STEP_LABELS} />
 
         {/* Step 1: Info Form */}
@@ -157,14 +160,14 @@ export default function ReporterWorkflowPage({ navigate, user }: ReporterWorkflo
 
         {/* Step 2: Transcribing */}
         {step === 2 && (
-          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+          <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-6 shadow-sm">
             <div className="flex flex-col items-center justify-center py-12 gap-4">
-              <Loader2 className="w-10 h-10 text-[#1E3A8A] animate-spin" />
-              <p className="text-base font-medium text-slate-700">
+              <Loader2 className="w-10 h-10 text-primary animate-spin" />
+              <p className="text-base font-medium text-on-surface">
                 {deepProgress ? deepProgress.label : 'Đang phiên âm...'}
               </p>
               {deepProgress && (
-                <p className="text-sm text-slate-400">Bước {deepProgress.step}/3</p>
+                <p className="text-sm text-outline">Bước {deepProgress.step}/3</p>
               )}
             </div>
           </div>
@@ -173,22 +176,22 @@ export default function ReporterWorkflowPage({ navigate, user }: ReporterWorkflo
         {/* Step 3: Result */}
         {step === 3 && (
           <div className="space-y-6">
-            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-6 shadow-sm">
               <button
                 type="button"
                 onClick={() => setShowPromptEditor((v) => !v)}
-                className="text-sm font-semibold text-[#1E3A8A] hover:text-[#1E40AF] transition-colors"
+                className="text-sm font-semibold text-primary hover:text-primary-dim transition-colors"
               >
                 {showPromptEditor ? 'Ẩn tùy chỉnh prompt' : 'Tùy chỉnh prompt'}
               </button>
               {showPromptEditor && (
                 <div className="mt-4 space-y-2">
-                  <label className="block text-sm font-semibold text-slate-700">Prompt tạo bài viết</label>
+                  <label className="block text-sm font-semibold text-on-surface">Prompt tạo bài viết</label>
                   <textarea
                     value={templatePrompt}
                     onChange={(e) => setTemplatePrompt(e.target.value)}
                     rows={5}
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm font-normal focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/30 focus:border-[#1E40AF] bg-white resize-vertical"
+                    className="w-full px-4 py-3 border border-outline-variant/20 rounded-xl text-sm font-normal focus:outline-none focus:ring-2 focus:ring-[#1E40AF]/30 focus:border-[#1E40AF] bg-surface-container-lowest resize-vertical"
                   />
                 </div>
               )}
@@ -199,7 +202,7 @@ export default function ReporterWorkflowPage({ navigate, user }: ReporterWorkflo
                     type="button"
                     onClick={handleSummarize}
                     disabled={isSummarizing}
-                    className="px-6 py-3 bg-[#1E3A8A] text-white font-semibold rounded-xl hover:bg-[#1E40AF] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-3 nebula-gradient text-white font-semibold rounded-xl hover:brightness-110 transition-colors shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Tổng hợp bài phỏng vấn
                   </button>
@@ -208,7 +211,7 @@ export default function ReporterWorkflowPage({ navigate, user }: ReporterWorkflo
                   <button
                     type="button"
                     onClick={handleSummarize}
-                    className="px-6 py-3 border border-slate-200 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-colors"
+                    className="px-6 py-3 border border-outline-variant/20 text-on-surface font-semibold rounded-xl hover:bg-surface-container-low transition-colors"
                   >
                     Tạo lại
                   </button>
@@ -216,7 +219,7 @@ export default function ReporterWorkflowPage({ navigate, user }: ReporterWorkflo
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="px-6 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 transition-colors"
+                  className="px-6 py-3 border border-outline-variant/20 text-on-surface-variant font-semibold rounded-xl hover:bg-surface-container-low transition-colors"
                 >
                   Quay lại form
                 </button>
@@ -230,10 +233,10 @@ export default function ReporterWorkflowPage({ navigate, user }: ReporterWorkflo
             )}
 
             {isSummarizing && (
-              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+              <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-6 shadow-sm">
                 <div className="flex flex-col items-center justify-center py-8 gap-4">
-                  <Loader2 className="w-8 h-8 text-[#1E3A8A] animate-spin" />
-                  <p className="text-base font-medium text-slate-700">Đang tổng hợp bài viết...</p>
+                  <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                  <p className="text-base font-medium text-on-surface">Đang tổng hợp bài viết...</p>
                 </div>
               </div>
             )}
@@ -251,7 +254,6 @@ export default function ReporterWorkflowPage({ navigate, user }: ReporterWorkflo
             )}
           </div>
         )}
-      </div>
     </div>
   );
 }

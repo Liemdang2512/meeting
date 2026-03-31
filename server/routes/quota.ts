@@ -13,16 +13,18 @@ router.get('/', requireAuth, async (req, res) => {
     return res.json({ role: user.role, unlimited: true });
   }
   try {
-    const [profile] = await sql`
-      SELECT daily_limit FROM public.profiles WHERE user_id = ${user.userId}
+    // 1 LEFT JOIN thay vì 2 queries riêng — giảm 1 DB roundtrip
+    const [result] = await sql`
+      SELECT
+        COALESCE(p.daily_limit, ${DEFAULT_FREE_DAILY_LIMIT}) AS daily_limit,
+        COALESCE(d.count, 0) AS used
+      FROM public.profiles p
+      LEFT JOIN public.daily_conversion_usage d
+        ON d.user_id = p.user_id AND d.usage_date = CURRENT_DATE
+      WHERE p.user_id = ${user.userId}
     `;
-    const dailyLimit = profile?.daily_limit ?? DEFAULT_FREE_DAILY_LIMIT;
-    const [row] = await sql`
-      SELECT count FROM public.daily_conversion_usage
-      WHERE user_id = ${user.userId}
-        AND usage_date = (CURRENT_DATE AT TIME ZONE 'UTC')
-    `;
-    const used = row?.count ?? 0;
+    const dailyLimit = result?.daily_limit ?? DEFAULT_FREE_DAILY_LIMIT;
+    const used = result?.used ?? 0;
     return res.json({
       role: 'free',
       used,

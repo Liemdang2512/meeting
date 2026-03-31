@@ -4,20 +4,23 @@ import { transcribeBasic, transcribeDeep, summarizeTranscript, synthesizeTranscr
 import { getMe, logout as signOut, loadApiKeyFromAccount, saveApiKeyToAccount } from './lib/auth';
 import type { AuthUser } from './lib/auth';
 import { authFetch } from './lib/api';
-import { FileUpload } from './components/FileUpload';
-import { TranscriptionView } from './components/TranscriptionView';
 import { Spinner } from './components/Spinner';
 import { FileAudioIcon, RefreshIcon, AlertCircleIcon, DownloadIcon, CheckIcon, CopyIcon, MailIcon } from './components/Icons';
+import { FileText, Scissors, GitBranch, Zap, BarChart2, Users, Settings, User as UserIcon } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import type { MeetingInfo } from './features/minutes/types';
 import { loadMeetingInfoDraft, clearMeetingInfoDraft } from './features/minutes/storage';
 import { buildMinutesCustomPrompt } from './features/minutes/prompt';
-import { MeetingInfoForm } from './features/minutes/components/MeetingInfoForm';
+// Lazy load MeetingInfoForm — chỉ dùng trong meeting flow, không cần trong main bundle
+const MeetingInfoForm = lazy(() => import('./features/minutes/components/MeetingInfoForm').then(m => ({ default: m.MeetingInfoForm })));
+// useMindmapTree cần direct import vì được gọi trong App() root component
+// TODO: Tách App thành AppShell + MeetingApp để hook chỉ chạy khi route /meeting
 import { useMindmapTree } from './features/mindmap/hooks/useMindmapTree';
 import { downloadAsDocx, downloadAsPdf } from './lib/minutesDocxExport';
 import { QuotaBadge } from './features/pricing/QuotaBadge';
 import { QuotaUpgradeModal } from './features/pricing/QuotaUpgradeModal';
+
 
 // Lazy load các route pages - chỉ tải khi user navigate đến
 const FileSplitPage = lazy(() => import('./features/file-split').then(m => ({ default: m.FileSplitPage })));
@@ -29,7 +32,7 @@ const RegisterPage = lazy(() => import('./components/RegisterPage').then(m => ({
 const PricingPage = lazy(() => import('./features/pricing/PricingPage').then(m => ({ default: m.PricingPage })));
 const HomePage = lazy(() => import('./components/HomePage').then(m => ({ default: m.HomePage })));
 import { WorkflowGuard } from './features/workflows/WorkflowGuard';
-import type { WorkflowGroup } from './features/workflows/types';
+
 import { WORKFLOW_GROUPS } from './features/workflows/types';
 
 const MeetingLandingPage = lazy(() => import('./components/MeetingLandingPage').then(m => ({ default: m.MeetingLandingPage })));
@@ -120,118 +123,6 @@ Tóm tắt các nội dung chính đã thảo luận, chia theo từng chủ đ�
 - Phần "Kế hoạch triển khai" phải dạng BẢNG với 2 cột: Chi tiết công việc | Phụ trách thực hiện.
 - Nội dung trao đổi phải được chia thành các MỤC rõ ràng (Nội dung 01, 02, 03...).`;
 
-function EmailSettingsSection() {
-  const [gmailUser, setGmailUser] = useState('');
-  const [gmailPass, setGmailPass] = useState('');
-  const [maxRecipients, setMaxRecipients] = useState('20');
-  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [loadedGmailUser, setLoadedGmailUser] = useState('');
-  const [loadedPassMasked, setLoadedPassMasked] = useState('');
-
-  useEffect(() => {
-    authFetch('/admin/settings').then(r => r.json()).then(data => {
-      if (data.settings) {
-        for (const s of data.settings) {
-          if (s.key === 'gmail_user') setLoadedGmailUser(s.value);
-          if (s.key === 'gmail_app_password') setLoadedPassMasked(s.value);
-          if (s.key === 'email_max_recipients') setMaxRecipients(s.value);
-        }
-      }
-    }).catch(() => {});
-  }, []);
-
-  const handleSave = async () => {
-    setSaveState('saving');
-    try {
-      if (gmailUser) {
-        await authFetch('/admin/settings', { method: 'PUT', body: JSON.stringify({ key: 'gmail_user', value: gmailUser }) });
-      }
-      if (gmailPass) {
-        await authFetch('/admin/settings', { method: 'PUT', body: JSON.stringify({ key: 'gmail_app_password', value: gmailPass }) });
-      }
-      if (maxRecipients) {
-        await authFetch('/admin/settings', { method: 'PUT', body: JSON.stringify({ key: 'email_max_recipients', value: maxRecipients }) });
-      }
-      setSaveState('saved');
-      setTimeout(() => setSaveState('idle'), 2000);
-      const resp = await authFetch('/admin/settings');
-      const data = await resp.json();
-      if (data.settings) {
-        for (const s of data.settings) {
-          if (s.key === 'gmail_user') setLoadedGmailUser(s.value);
-          if (s.key === 'gmail_app_password') setLoadedPassMasked(s.value);
-        }
-      }
-      setGmailUser('');
-      setGmailPass('');
-    } catch {
-      setSaveState('idle');
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <h2 className="text-lg font-medium text-slate-800">Cấu hình gửi email (Gmail SMTP)</h2>
-
-      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-        {/* Gmail account */}
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-slate-800">Gmail</label>
-          {loadedGmailUser && (
-            <p className="text-xs text-slate-400">Hiện tại: {loadedGmailUser}</p>
-          )}
-          <input
-            type="email"
-            value={gmailUser}
-            onChange={(e) => setGmailUser(e.target.value)}
-            className="w-full px-4 py-3 border-slate-200 focus:border-slate-200 bg-white focus:outline-none text-sm font-medium transition-colors border rounded-xl"
-            placeholder="youraccount@gmail.com"
-          />
-        </div>
-
-        {/* App Password */}
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-slate-800">Gmail App Password</label>
-          {loadedPassMasked && (
-            <p className="text-xs text-slate-400">Hiện tại: {loadedPassMasked}</p>
-          )}
-          <input
-            type="password"
-            value={gmailPass}
-            onChange={(e) => setGmailPass(e.target.value)}
-            className="w-full px-4 py-3 border-slate-200 focus:border-slate-200 bg-white focus:outline-none text-sm font-medium transition-colors border rounded-xl"
-            placeholder="xxxx xxxx xxxx xxxx"
-          />
-          <p className="text-xs text-slate-400">
-            Tạo App Password tại: myaccount.google.com → Security → 2-Step Verification → App passwords
-          </p>
-        </div>
-
-        {/* Max recipients */}
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-slate-800">Giới hạn người nhận tối đa</label>
-          <input
-            type="number"
-            value={maxRecipients}
-            onChange={(e) => setMaxRecipients(e.target.value)}
-            min={1}
-            max={100}
-            className="w-full px-4 py-3 border-slate-200 focus:border-slate-200 bg-white focus:outline-none text-sm font-medium transition-colors border rounded-xl"
-          />
-        </div>
-
-        {/* Save button */}
-        <button
-          onClick={handleSave}
-          disabled={saveState === 'saving'}
-          className="px-6 py-3 bg-indigo-600 text-white font-sans font-medium border-slate-200 shadow-sm rounded-xl hover:bg-indigo-700 transition-all active:bg-indigo-800 border"
-        >
-          {saveState === 'saving' ? 'Đang lưu...' : saveState === 'saved' ? 'Đã lưu' : 'Lưu cấu hình'}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 function App() {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -354,10 +245,7 @@ function App() {
         }
         // Kiem tra admin tu role trong JWT
         setIsAdmin(currentUser.role === 'admin');
-        // Set workflow mode mặc định theo activeWorkflowGroup
-        if (currentUser.activeWorkflowGroup) {
 
-        }
       }
     };
 
@@ -889,8 +777,7 @@ function App() {
   }
 
   if (user && (route === '/login' || route === '/register')) {
-    const dest = user.activeWorkflowGroup ? `/${user.activeWorkflowGroup}` : '/meeting';
-    navigate(dest);
+    navigate('/meeting');
     return null;
   }
 
@@ -909,9 +796,7 @@ function App() {
             onRegisterSuccess={async () => {
               const loggedInUser = await getMe();
               setUser(loggedInUser);
-              if (loggedInUser && loggedInUser.activeWorkflowGroup) {
-                navigate(`/${loggedInUser.activeWorkflowGroup}`);
-              } else if (loggedInUser && loggedInUser.workflowGroups && loggedInUser.workflowGroups.length > 0) {
+              if (loggedInUser) {
                 navigate('/meeting');
               } else {
                 navigate('/pricing');
@@ -936,9 +821,7 @@ function App() {
       // Sau khi dang nhap thanh cong, lay user info va cap nhat state
       const loggedInUser = await getMe();
       setUser(loggedInUser);
-      if (loggedInUser && loggedInUser.activeWorkflowGroup) {
-        navigate(`/${loggedInUser.activeWorkflowGroup}`);
-      } else if (loggedInUser && loggedInUser.workflowGroups && loggedInUser.workflowGroups.length > 0) {
+      if (loggedInUser) {
         navigate('/meeting');
       } else {
         navigate('/pricing');
@@ -998,10 +881,13 @@ function App() {
   const isNotesRoute = route === '/meeting';
   const isAdminRoute = route === '/admin/token-usage';
   const isUserMgmtRoute = route === '/admin/users';
-  const isEmailSettingsRoute = route === '/admin/email-settings';
-  const isMindmapRoute = route === '/mindmap';
+const isMindmapRoute = route === '/mindmap';
   const isPricingRoute = route === '/pricing';
   const isHomeRoute = route === '/';
+  const isReporterRoute = route === '/reporter' || route === '/meeting/reporter';
+  const isSpecialistRoute = route === '/specialist' || route === '/meeting/specialist';
+  const isOfficerRoute = route === '/officer' || route === '/meeting/officer';
+  const isWorkflowRoute = isReporterRoute || isSpecialistRoute || isOfficerRoute;
 
   if (isHomeRoute) {
     return (
@@ -1011,38 +897,10 @@ function App() {
     );
   }
 
-  if (route === '/reporter' || route === '/meeting/reporter') {
-    return (
-      <WorkflowGuard group="reporter" user={user} navigate={navigate}>
-        <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><Spinner /></div>}>
-          <ReporterWorkflowPage navigate={navigate} user={user!} />
-        </Suspense>
-      </WorkflowGuard>
-    );
-  }
-  if (route === '/specialist' || route === '/meeting/specialist') {
-    return (
-      <WorkflowGuard group="specialist" user={user} navigate={navigate}>
-        <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><Spinner /></div>}>
-          <SpecialistWorkflowPage navigate={navigate} user={user!} />
-        </Suspense>
-      </WorkflowGuard>
-    );
-  }
-  if (route === '/officer' || route === '/meeting/officer') {
-    return (
-      <WorkflowGuard group="officer" user={user} navigate={navigate}>
-        <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><Spinner /></div>}>
-          <OfficerWorkflowPage navigate={navigate} user={user!} />
-        </Suspense>
-      </WorkflowGuard>
-    );
-  }
 
   if (route === '/profile' || route === '/settings') {
-    const roleLabel = user?.role === 'admin' ? 'Admin' : user?.role === 'free' ? 'Miễn phí' : (WORKFLOW_GROUPS.find(g => g.key === user?.role)?.label ?? user?.role ?? '—');
-    const activeGroupLabel = WORKFLOW_GROUPS.find(g => g.key === user?.activeWorkflowGroup)?.label ?? user?.activeWorkflowGroup ?? '—';
-    const registeredGroups = (user?.workflowGroups ?? []).map(g => WORKFLOW_GROUPS.find(wg => wg.key === g)?.label ?? g);
+    const roleLabel = user?.role === 'admin' ? 'Admin' : 'Free';
+    const planLabels = (user?.plans ?? []).map(p => WORKFLOW_GROUPS.find(wg => wg.key === p)?.label ?? p);
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-start p-8">
         <div className="w-full max-w-lg">
@@ -1060,17 +918,16 @@ function App() {
                 <span className="font-medium text-slate-800">{user?.email ?? '—'}</span>
               </div>
               <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                <span className="text-slate-500">Gói tài khoản</span>
+                <span className="text-slate-500">Quyền</span>
                 <span className="font-medium text-slate-800">{roleLabel}</span>
               </div>
-              <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                <span className="text-slate-500">Nhóm đang hoạt động</span>
-                <span className="font-medium text-slate-800">{activeGroupLabel}</span>
+              <div className="py-2 border-b border-slate-100">
+                <QuotaBadge variant="card" />
               </div>
               <div className="flex justify-between items-start py-2">
-                <span className="text-slate-500">Nhóm đã đăng ký</span>
+                <span className="text-slate-500">Gói đã đăng ký</span>
                 <div className="flex flex-wrap gap-1.5 justify-end">
-                  {registeredGroups.length > 0 ? registeredGroups.map(label => (
+                  {planLabels.length > 0 ? planLabels.map(label => (
                     <span key={label} className="text-xs font-medium px-2.5 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-full">{label}</span>
                   )) : <span className="text-slate-400">—</span>}
                 </div>
@@ -1083,148 +940,157 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Modern Flat Header */}
-      <header className="bg-white text-slate-800 sticky top-0 z-10 border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="min-h-screen bg-background flex">
+
+      {/* ── Sidebar ── */}
+      <aside className="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant/20 py-6 z-40">
+        {/* Logo */}
+        <div className="px-6 mb-8">
           <button
-            type="button"
-            onClick={() => {
-              navigate('/meeting');
-              setMode('notes');
-            }}
-            className="flex items-center gap-3 text-left hover:opacity-90 transition-opacity"
-            aria-label="Về trang chủ"
+            onClick={() => { navigate('/meeting'); setMode('notes'); }}
+            className="flex items-center gap-3 w-full text-left hover:opacity-90 transition-opacity"
           >
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shrink-0 border-slate-200 border">
-              <FileAudioIcon className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl nebula-gradient flex items-center justify-center text-white shadow-lg shadow-primary/20">
+              <FileAudioIcon className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-lg font-sans font-medium leading-tight">Meeting Minutes - MoMai</h1>
-              <p className="text-slate-500 text-xs font-medium leading-tight">Trợ lý họp</p>
+              <h1 className="text-xl font-bold text-on-surface font-headline">MOMAI</h1>
+              <p className="text-[10px] tracking-widest uppercase text-on-surface-variant font-semibold">Meeting Minute</p>
             </div>
           </button>
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            {status !== TranscriptionStatus.IDLE && (
-              <button onClick={resetApp} className="flex items-center gap-1.5 bg-slate-50 text-slate-800 hover:bg-slate-100 border-slate-200 text-sm font-medium px-4 py-2 transition-colors border rounded-xl">
-                <RefreshIcon className="w-3.5 h-3.5" />
-                Phiên mới
+        </div>
+
+        {/* Nav items */}
+        <nav className="flex-1 px-4 overflow-y-auto">
+          <div className="space-y-1">
+            {([
+              { label: 'Ghi chép', icon: <FileText size={18} />, active: (isNotesRoute || isWorkflowRoute) && mode !== 'splitter', onClick: () => { navigate('/meeting'); setMode('notes'); } },
+              { label: 'Cắt file', icon: <Scissors size={18} />, active: isNotesRoute && mode === 'splitter', onClick: () => { navigate('/meeting'); setMode('splitter'); } },
+              { label: 'Sơ đồ tư duy', icon: <GitBranch size={18} />, active: isMindmapRoute, onClick: () => navigate('/mindmap') },
+              { label: 'Nâng cấp', icon: <Zap size={18} />, active: isPricingRoute, onClick: () => navigate('/pricing') },
+            ] as const).map(item => (
+              <button
+                key={item.label}
+                onClick={item.onClick}
+                className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                  item.active
+                    ? 'nebula-gradient text-white shadow-md shadow-primary/20'
+                    : 'text-on-surface-variant hover:bg-surface-container hover:scale-[1.02]'
+                }`}
+              >
+                {item.icon}
+                {item.label}
               </button>
+            ))}
+
+            {isAdmin && (
+              <>
+                <div className="pt-4 pb-1 px-4">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-outline">Admin</p>
+                </div>
+                {([
+                  { label: 'Token Usage', icon: <BarChart2 size={18} />, active: isAdminRoute, onClick: () => navigate('/admin/token-usage') },
+                  { label: 'Quản lý tài khoản', icon: <Users size={18} />, active: isUserMgmtRoute, onClick: () => navigate('/admin/users') },
+                ] as const).map(item => (
+                  <button
+                    key={item.label}
+                    onClick={item.onClick}
+                    className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                      item.active
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-on-surface-variant hover:bg-surface-container hover:scale-[1.02]'
+                    }`}
+                  >
+                    {item.icon}
+                    {item.label}
+                  </button>
+                ))}
+              </>
             )}
+          </div>
+
+          {/* New Session CTA */}
+          <div className="mt-8">
+            <button
+              onClick={resetApp}
+              className="w-full py-3 nebula-gradient text-white rounded-full font-bold text-sm shadow-md hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+            >
+              + Phiên mới
+            </button>
+          </div>
+        </nav>
+
+        {/* Bottom actions */}
+        <div className="px-4 border-t border-outline-variant/10 pt-4 space-y-1">
+          {user && (
+            <div className="px-4 pb-2">
+              <QuotaBadge variant="card" onQuotaExhausted={() => showQuotaModalIfNotDismissed()} />
+            </div>
+          )}
+          <button
+            onClick={() => navigate('/profile')}
+            className="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container px-4 py-3 rounded-xl w-full transition-colors text-sm font-semibold"
+          >
+            <UserIcon size={18} />
+            Profile & Settings
+          </button>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 text-on-surface-variant hover:bg-surface-container px-4 py-3 rounded-xl w-full transition-colors text-sm font-semibold"
+          >
+            Đăng xuất
+          </button>
+        </div>
+      </aside>
+
+      {/* ── Main area (right of sidebar) ── */}
+      <div className="flex-1 flex flex-col md:ml-64">
+
+        {/* Top Header */}
+        <header className="flex justify-between items-center w-full px-6 py-3 bg-surface-container-lowest/80 backdrop-blur-xl sticky top-0 z-30 border-b border-outline-variant/10 shadow-sm">
+          {/* Mobile: logo */}
+          <button
+            onClick={() => { navigate('/meeting'); setMode('notes'); }}
+            className="md:hidden flex items-center gap-2 font-bold font-headline text-on-surface"
+          >
+            <div className="w-7 h-7 rounded-lg nebula-gradient flex items-center justify-center">
+              <FileAudioIcon className="w-4 h-4 text-white" />
+            </div>
+            MOMAI
+          </button>
+
+          {/* Desktop: active page label + quota */}
+          <div className="hidden md:flex items-center gap-3 text-sm font-bold text-primary">
+            <span className="border-b-2 border-primary pb-1">
+              {isNotesRoute && mode !== 'splitter' && 'Ghi chép'}
+              {isNotesRoute && mode === 'splitter' && 'Cắt file'}
+              {isReporterRoute && 'Bài phỏng vấn'}
+              {isSpecialistRoute && 'Thư ký Cuộc họp'}
+              {isOfficerRoute && 'Thông tin Dự án'}
+              {isMindmapRoute && 'Sơ đồ tư duy'}
+              {isPricingRoute && 'Nâng cấp'}
+              {isAdminRoute && 'Token Usage (Admin)'}
+              {isUserMgmtRoute && 'Quản lý tài khoản'}
+            </span>
             {user && (
-              <QuotaBadge
-                onQuotaExhausted={() => showQuotaModalIfNotDismissed()}
-              />
+              <QuotaBadge onQuotaExhausted={() => showQuotaModalIfNotDismissed()} />
             )}
+          </div>
+
+          {/* Right: avatar */}
+          <div className="flex items-center gap-3">
             <button
               onClick={() => navigate('/profile')}
-              className="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors px-3 py-2"
+              className="w-8 h-8 rounded-full nebula-gradient flex items-center justify-center text-white text-xs font-bold shadow-md shadow-primary/20 hover:opacity-90 transition-opacity"
+              title="Profile"
             >
-              Profile
-            </button>
-            <button onClick={handleLogout} className="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors px-3 py-2">
-              Đăng xuất
+              {user?.email?.[0]?.toUpperCase() ?? 'U'}
             </button>
           </div>
-        </div>
-        
-        {/* Navigation Tabs - Flat Style */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 bg-slate-50 border-t border-slate-200">
-          <div className="flex gap-2 overflow-x-auto py-2 scrollbar-none">
-            <button
-              onClick={() => {
-                navigate('/meeting');
-                setMode('notes');
-              }}
-              className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isNotesRoute ? 'bg-indigo-900 text-white' : 'text-slate-600 hover:bg-slate-200 hover:text-slate-800' }`}
-            >
-              Ghi chép
-            </button>
-            <button
-              onClick={() => {
-                navigate('/meeting');
-                setMode('splitter');
-              }}
-              className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isNotesRoute && mode === 'splitter' ? 'bg-indigo-900 text-white' : 'text-slate-600 hover:bg-slate-200 hover:text-slate-800' }`}
-            >
-              Cắt file
-            </button>
-            <button
-              onClick={() => navigate('/mindmap')}
-              className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isMindmapRoute ? 'bg-indigo-900 text-white' : 'text-slate-600 hover:bg-slate-200 hover:text-slate-800' }`}
-            >
-              Sơ đồ tư duy
-            </button>
-            <button
-              onClick={() => navigate("/pricing")}
-              className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isPricingRoute ? "bg-indigo-900 text-white" : "text-slate-600 hover:bg-slate-200 hover:text-slate-800"}`}
-            >
-              Nâng cấp
-            </button>
-            {isAdmin && (
-              <button
-                onClick={() => navigate('/admin/token-usage')}
-                className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isAdminRoute ? 'bg-indigo-700 text-white rounded-xl' : 'text-slate-600 hover:bg-slate-200 hover:text-slate-800 rounded-xl' }`}
-              >
-                Sử dụng token (Admin)
-              </button>
-            )}
-            {isAdmin && (
-              <button
-                onClick={() => navigate('/admin/users')}
-                className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isUserMgmtRoute ? 'bg-indigo-700 text-white rounded-xl' : 'text-slate-600 hover:bg-slate-200 hover:text-slate-800 rounded-xl' }`}
-              >
-                Quản lý tài khoản
-              </button>
-            )}
-            {isAdmin && (
-              <button
-                onClick={() => navigate('/admin/email-settings')}
-                className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isEmailSettingsRoute ? 'bg-indigo-700 text-white rounded-xl' : 'text-slate-600 hover:bg-slate-200 hover:text-slate-800 rounded-xl'}`}
-              >
-                Email Settings
-              </button>
-            )}
-          </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Step indicator — clickable cho các bước đã hoàn thành */}
-      <div className="bg-white border-b border-slate-200 sticky top-[72px] lg:top-[76px] z-10 transition-all">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 overflow-x-auto scrollbar-none">
-          <div className="flex items-center justify-start sm:justify-center min-w-max">
-            {steps.map((step, idx) => {
-              const isActivelyProcessing = status === TranscriptionStatus.PROCESSING ||
-                status === TranscriptionStatus.READING_FILE ||
-                status === TranscriptionStatus.SYNTHESIZING ||
-                status === TranscriptionStatus.SUMMARIZING;
-              const isNavigable = step.n >= 2 && step.n <= currentStep && !isActivelyProcessing;
-              const isViewing = step.n === viewStep && !isActivelyProcessing && step.n > 1;
-              return (
-                <div key={step.n} className="flex items-center">
-                  <div
-                    className={`flex flex-col items-center ${isNavigable ? 'cursor-pointer group' : ''}`}
-                    onClick={() => isNavigable && setViewStep(step.n)}
-                    title={isNavigable ? `Xem lại: ${step.label}` : undefined}
-                  >
-                    <div className={`w-9 h-9 flex items-center justify-center text-sm font-medium border transition-all duration-300 ${currentStep > step.n ? 'bg-indigo-600 text-white border-slate-200' : ''} ${currentStep === step.n ? 'bg-indigo-600 text-white border-slate-200 ring-2 ring-offset-2 ring-indigo-500' : ''} ${currentStep < step.n ? 'bg-white border-slate-200 text-slate-400' : ''} ${isViewing && currentStep > step.n ? 'ring-2 ring-offset-2 ring-indigo-300' : ''} ${isNavigable ? 'group- group- rounded-xl' : ''} `}>
-                      {currentStep > step.n ? '✓' : step.n}
-                    </div>
-                    <span className={`text-xs mt-2 font-medium whitespace-nowrap transition-colors duration-300 ${currentStep >= step.n ? 'text-slate-800' : 'text-slate-400'} ${isViewing ? 'underline decoration-2 underline-offset-4' : ''} `}>
-                      {step.label}
-                    </span>
-                  </div>
-                  {idx < steps.length - 1 && (
-                    <div className={`w-12 sm:w-20 lg:w-24 h-0.5 mx-2 sm:mx-3 mb-6 transition-all duration-500 border-t ${currentStep > step.n ? 'border-indigo-500' : 'border-slate-100 border-dashed'}`} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
 
-      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-6">
         <Suspense fallback={<div className="flex justify-center items-center h-64"><Spinner /></div>}>
           {isAdminRoute && user && (
             <TokenUsageAdminPage currentUserId={user.userId} isAdmin={isAdmin} />
@@ -1232,14 +1098,26 @@ function App() {
           {isUserMgmtRoute && user && (
             <UserManagementPage currentUserId={user.userId} isAdmin={isAdmin} />
           )}
-          {isEmailSettingsRoute && user && isAdmin && (
-            <EmailSettingsSection />
-          )}
           {isMindmapRoute && (
-            <MindmapPage user={user} />
+            <MindmapPage user={user} navigate={navigate} />
           )}
           {isPricingRoute && (
-            <PricingPage currentUserRole={user?.role} userWorkflowGroups={user?.workflowGroups} />
+            <PricingPage currentUserRole={user?.role} userPlans={user?.plans} />
+          )}
+          {isReporterRoute && user && (
+            <WorkflowGuard group="reporter" user={user} navigate={navigate}>
+              <ReporterWorkflowPage navigate={navigate} user={user} />
+            </WorkflowGuard>
+          )}
+          {isSpecialistRoute && user && (
+            <WorkflowGuard group="specialist" user={user} navigate={navigate}>
+              <SpecialistWorkflowPage navigate={navigate} user={user} />
+            </WorkflowGuard>
+          )}
+          {isOfficerRoute && user && (
+            <WorkflowGuard group="officer" user={user} navigate={navigate}>
+              <OfficerWorkflowPage navigate={navigate} user={user} />
+            </WorkflowGuard>
           )}
           {isNotesRoute && mode === 'splitter' && (
             <FileSplitPage
@@ -1259,7 +1137,7 @@ function App() {
 
       {/* Toast: hết lượt */}
       {quotaToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+        <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
           <div className="bg-amber-50 border border-amber-300 text-amber-800 text-sm font-medium px-5 py-3.5 rounded-2xl shadow-lg flex items-center gap-3">
             <span className="text-base">⚡</span>
             <span>Bạn đã hết lượt hôm nay. Hãy nâng cấp để tiếp tục.</span>
@@ -1285,6 +1163,34 @@ function App() {
           navigate('/pricing');
         }}
       />
+
+      </div> {/* end md:ml-64 */}
+
+      {/* ── Mobile Bottom Navigation ── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-surface-container-lowest/95 backdrop-blur-xl border-t border-outline-variant/20 pb-safe">
+        <div className="flex items-center justify-around px-2 py-2">
+          {[
+            { label: 'Ghi chép', icon: <FileText size={20} />, active: (isNotesRoute || isWorkflowRoute) && mode !== 'splitter', onClick: () => { navigate('/meeting'); setMode('notes'); } },
+            { label: 'Cắt file', icon: <Scissors size={20} />, active: isNotesRoute && mode === 'splitter', onClick: () => { navigate('/meeting'); setMode('splitter'); } },
+            { label: 'Sơ đồ', icon: <GitBranch size={20} />, active: isMindmapRoute, onClick: () => navigate('/mindmap') },
+            { label: 'Nâng cấp', icon: <Zap size={20} />, active: isPricingRoute, onClick: () => navigate('/pricing') },
+            { label: 'Tôi', icon: <UserIcon size={20} />, active: route === '/profile', onClick: () => navigate('/profile') },
+          ].map(item => (
+            <button
+              key={item.label}
+              onClick={item.onClick}
+              className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all duration-200 min-w-[56px] ${
+                item.active
+                  ? 'text-primary'
+                  : 'text-on-surface-variant'
+              }`}
+            >
+              {item.icon}
+              <span className="text-[10px] font-semibold">{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
 
     </div>
   );

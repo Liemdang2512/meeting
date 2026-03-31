@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Check, Shield, Lock } from 'lucide-react';
 import { UpgradeModal } from './UpgradeModal';
 
 interface Plan {
@@ -19,10 +20,10 @@ const PLANS: Plan[] = [
   {
     id: 'reporter',
     name: 'Phóng viên',
-    subtitle: 'BÁO CHÍ',
-    icon: '📰',
+    subtitle: 'Báo chí',
+    icon: 'news',
     price: '399.000',
-    unit: '₫ / tháng',
+    unit: '₫/tháng',
     features: [
       'Ghi chép không giới hạn',
       'Phỏng vấn & họp báo tự động',
@@ -30,17 +31,17 @@ const PLANS: Plan[] = [
       'Xuất PDF, DOCX, TXT',
       '100+ ngôn ngữ',
     ],
-    cta: 'Nâng cấp ngay',
+    cta: 'Đăng ký ngay',
     ctaAction: 'upgrade',
     accent: 'amber',
   },
   {
     id: 'specialist',
     name: 'Chuyên viên',
-    subtitle: 'DOANH NGHIỆP',
-    icon: '💼',
+    subtitle: 'Doanh nghiệp',
+    icon: 'work',
     price: '299.000',
-    unit: '₫ / tháng',
+    unit: '₫/tháng',
     features: [
       'Ghi chép không giới hạn',
       'Tự động tạo biên bản họp',
@@ -48,7 +49,7 @@ const PLANS: Plan[] = [
       'Tích hợp lịch & email',
       'Xuất hàng loạt',
     ],
-    cta: 'Nâng cấp ngay',
+    cta: 'Đăng ký ngay',
     ctaAction: 'upgrade',
     highlight: true,
     accent: 'blue',
@@ -56,10 +57,10 @@ const PLANS: Plan[] = [
   {
     id: 'officer',
     name: 'Cán bộ',
-    subtitle: 'PHÁP LÝ',
-    icon: '⚖️',
+    subtitle: 'Pháp lý',
+    icon: 'gavel',
     price: '499.000',
-    unit: '₫ / tháng',
+    unit: '₫/tháng',
     features: [
       'Ghi chép độ chính xác cao nhất',
       'Nhận diện thuật ngữ pháp lý',
@@ -67,7 +68,7 @@ const PLANS: Plan[] = [
       'Mã hóa & bảo mật tối đa',
       'Xuất định dạng tòa án',
     ],
-    cta: 'Nâng cấp ngay',
+    cta: 'Đăng ký ngay',
     ctaAction: 'upgrade',
     accent: 'green',
   },
@@ -75,10 +76,10 @@ const PLANS: Plan[] = [
 
 interface PricingPageProps {
   currentUserRole?: string;
-  userWorkflowGroups?: string[];
+  userPlans?: string[];
 }
 
-export const PricingPage: React.FC<PricingPageProps> = ({ currentUserRole, userWorkflowGroups }) => {
+export const PricingPage: React.FC<PricingPageProps> = ({ currentUserRole, userPlans }) => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const handleCtaClick = (plan: Plan) => {
@@ -96,72 +97,139 @@ export const PricingPage: React.FC<PricingPageProps> = ({ currentUserRole, userW
   };
 
   const isRegistered = (plan: Plan) => {
-    return userWorkflowGroups?.includes(plan.id) ?? false;
+    return userPlans?.includes(plan.id) ?? false;
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center space-y-3 mb-10">
-          <h1 className="text-4xl font-semibold text-slate-900">Bảng giá theo nhóm người dùng</h1>
-          <p className="text-slate-500 text-base">Chọn gói phù hợp cho nhu cầu công việc của bạn</p>
+    <div className="min-h-screen bg-surface font-body text-on-surface py-12 px-4 md:px-8">
+      <div className="max-w-7xl mx-auto">
+
+        {/* Header Section */}
+        <div className="text-center mb-16">
+          <h1 className="font-headline font-extrabold text-4xl md:text-5xl text-on-surface mb-6 tracking-tight">
+            Chọn gói giải pháp{' '}
+            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              Phù hợp
+            </span>
+          </h1>
+          <p className="text-on-surface-variant max-w-2xl mx-auto text-lg leading-relaxed">
+            Tối ưu hóa quy trình ghi chép và tóm tắt cuộc họp với sức mạnh AI của MOMAI. Chọn gói dịch vụ được thiết kế riêng cho nhu cầu của bạn.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-          {PLANS.map(plan => {
+        {/* Pricing Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
+
+          {PLANS.map((plan) => {
             const isCurrent = isCurrentPlan(plan);
             const registered = isRegistered(plan);
-            const isBlue = plan.accent === 'blue';
-            const checkColorClass = isBlue ? 'text-blue-300' : plan.accent === 'green' ? 'text-emerald-400' : 'text-amber-500';
+            const isHighlight = plan.highlight;
+            const isSecondary = plan.accent === 'green';
+
+            if (isHighlight) {
+              // Featured card (dark / "Phổ biến nhất")
+              return (
+                <div
+                  key={plan.id}
+                  className="relative bg-inverse-surface text-on-primary rounded-xl p-8 shadow-2xl flex flex-col z-10 md:scale-105 border-2 border-primary"
+                  style={{ height: '105%' }}
+                >
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-primary to-secondary text-white text-[10px] font-bold tracking-widest px-4 py-1 rounded-full uppercase">
+                    Phổ biến nhất
+                  </div>
+
+                  <div className="mb-8">
+                    <div className="flex items-center gap-3 mb-1">
+                      <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                      </div>
+                      <div>
+                        <h3 className="font-headline font-bold text-xl text-white">{plan.name}</h3>
+                        <p className="text-xs font-bold uppercase tracking-wider text-blue-300">{plan.subtitle}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mb-8">
+                    <div className="flex items-baseline gap-1 text-white">
+                      <span className="text-4xl font-extrabold font-headline">{plan.price}</span>
+                      <span className="text-white/60 font-medium text-sm">{plan.unit}</span>
+                    </div>
+                  </div>
+
+                  <ul className="space-y-4 mb-10 flex-grow">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-3">
+                        <Check className="text-primary-fixed w-4 h-4 mt-0.5 shrink-0" />
+                        <span className="text-sm text-on-primary/80">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <button
+                    onClick={() => handleCtaClick(plan)}
+                    disabled={isCurrent || registered}
+                    className={`w-full py-4 px-6 rounded-full font-bold shadow-lg shadow-indigo-500/30 transition-all active:scale-[0.98] ${
+                      isCurrent || registered
+                        ? 'bg-white/20 text-white/50 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-primary to-secondary text-white hover:opacity-90'
+                    }`}
+                  >
+                    {isCurrent ? 'Gói hiện tại' : registered ? 'Đã đăng ký' : plan.cta}
+                  </button>
+                </div>
+              );
+            }
+
+            // Standard cards
+            const checkColor = isSecondary ? 'text-secondary' : 'text-primary';
+            const borderColor = isSecondary ? 'border-secondary' : 'border-primary';
+            const ctaTextColor = isSecondary ? 'text-secondary' : 'text-primary';
+            const ctaHover = isSecondary ? 'hover:bg-secondary/5' : 'hover:bg-primary/5';
+            const iconBg = isSecondary ? 'bg-secondary-container/20' : 'bg-primary-container/20';
+            const iconColor = isSecondary ? 'text-secondary' : 'text-primary';
 
             return (
               <div
                 key={plan.id}
-                className={`rounded-[28px] border p-8 space-y-6 flex flex-col relative transition-all ${
-                  isBlue
-                    ? 'bg-gradient-to-b from-[#08122F] to-[#070E26] border-blue-700 text-white shadow-2xl shadow-blue-950/40'
-                    : 'bg-white border-slate-200 text-slate-900 shadow-sm'
-                }`}
+                className="bg-surface-container-lowest rounded-xl p-8 shadow-sm border border-outline-variant/10 flex flex-col h-full transform hover:-translate-y-1 transition-transform duration-300 relative"
               >
-                {plan.highlight && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-blue-600 text-white text-[11px] font-semibold px-4 py-1 rounded-full tracking-wide">
-                      PHỔ BIẾN NHẤT
-                    </span>
-                  </div>
-                )}
                 {registered && (
                   <div className="absolute top-4 right-4">
                     <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
-                      ✓ Đã đăng ký
+                      <Check className="w-3 h-3" /> Đã đăng ký
                     </span>
                   </div>
                 )}
 
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-base ${isBlue ? 'bg-white/10' : 'bg-slate-100'}`}>
-                      <span aria-hidden="true">{plan.icon}</span>
+                <div className="mb-8">
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className={`w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center shrink-0`}>
+                      {plan.id === 'reporter' ? (
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+                      ) : (
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+                      )}
                     </div>
                     <div>
-                      <h2 className={`text-[2rem] font-bold leading-none ${isBlue ? 'text-white' : 'text-slate-900'}`}>{plan.name}</h2>
-                      <p className={`text-xs font-semibold tracking-wide mt-1 ${isBlue ? 'text-blue-300' : plan.accent === 'green' ? 'text-emerald-600' : 'text-amber-600'}`}>
-                        {plan.subtitle}
-                      </p>
+                      <h3 className="font-headline font-bold text-xl text-on-surface">{plan.name}</h3>
+                      <p className={`text-xs font-bold uppercase tracking-wider ${plan.id === 'reporter' ? 'text-amber-500' : 'text-green-600'}`}>{plan.subtitle}</p>
                     </div>
-                  </div>
-
-                  <div className="flex items-end gap-2">
-                    <span className={`text-5xl font-black tracking-tight ${isBlue ? 'text-white' : 'text-slate-900'}`}>{plan.price}</span>
-                    <span className={`${isBlue ? 'text-slate-300' : 'text-slate-500'} font-medium pb-2`}>{plan.unit}</span>
                   </div>
                 </div>
 
-                <ul className="space-y-3 flex-1 pt-2">
-                  {plan.features.map(feature => (
-                    <li key={feature} className={`flex items-start gap-2 text-sm ${isBlue ? 'text-slate-100' : 'text-slate-700'}`}>
-                      <span className={`mt-0.5 shrink-0 font-bold ${checkColorClass}`}>✓</span>
-                      {feature}
+                <div className="mb-8">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-extrabold font-headline">{plan.price}</span>
+                    <span className="text-on-surface-variant font-medium text-sm">{plan.unit}</span>
+                  </div>
+                </div>
+
+                <ul className="space-y-4 mb-10 flex-grow">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-3">
+                      <Check className={`${checkColor} w-4 h-4 mt-0.5 shrink-0`} />
+                      <span className="text-sm text-on-surface-variant">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -169,14 +237,10 @@ export const PricingPage: React.FC<PricingPageProps> = ({ currentUserRole, userW
                 <button
                   onClick={() => handleCtaClick(plan)}
                   disabled={isCurrent || registered}
-                  className={`w-full py-3.5 font-semibold rounded-full transition-colors ${
+                  className={`w-full py-4 px-6 rounded-full border-2 font-bold transition-colors active:scale-95 ${
                     isCurrent || registered
-                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                      : isBlue
-                      ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-900/40'
-                      : plan.accent === 'green'
-                      ? 'border border-emerald-500 text-emerald-600 hover:bg-emerald-50'
-                      : 'border border-amber-500 text-amber-600 hover:bg-amber-50'
+                      ? 'bg-surface-container-low text-on-surface-variant border-outline-variant cursor-not-allowed'
+                      : `${borderColor} ${ctaTextColor} ${ctaHover}`
                   }`}
                 >
                   {isCurrent ? 'Gói hiện tại' : registered ? 'Đã đăng ký' : plan.cta}
@@ -186,7 +250,36 @@ export const PricingPage: React.FC<PricingPageProps> = ({ currentUserRole, userW
           })}
         </div>
 
-        <p className="text-center text-slate-400 text-sm mt-8">
+        {/* Trust Section */}
+        <div className="mt-24 grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+          <div className="bg-surface-container-low rounded-xl p-8 flex flex-col justify-center">
+            <h2 className="font-headline font-bold text-2xl text-on-surface mb-4">Cam kết bảo mật tuyệt đối</h2>
+            <p className="text-on-surface-variant leading-relaxed">
+              Dữ liệu của bạn được xử lý bằng các mô hình AI riêng tư, không bao giờ được sử dụng để huấn luyện mô hình công cộng. Chúng tôi tuân thủ các tiêu chuẩn bảo mật quốc tế khắt khe nhất.
+            </p>
+            <div className="flex gap-4 mt-6">
+              <div className="flex items-center gap-2">
+                <Shield className="text-primary w-5 h-5 fill-primary" />
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">ISO 27001</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Lock className="text-primary w-5 h-5 fill-primary" />
+                <span className="text-xs font-bold uppercase tracking-wider text-primary">AES-256</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-xl min-h-[300px] bg-surface-container-highest flex items-end">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-secondary/30" />
+            <div className="relative z-10 p-8">
+              <p className="text-on-surface font-medium italic">
+                "MoMai AI đã giúp đội ngũ pháp lý của chúng tôi tiết kiệm hơn 15 giờ ghi chép mỗi tuần."
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-center text-on-surface-variant text-sm mt-12">
           Giá chưa bao gồm VAT · Hủy gói bất cứ lúc nào · Cần tư vấn? Liên hệ hỗ trợ
         </p>
       </div>

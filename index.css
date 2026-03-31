@@ -1,8 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @import "./styles/tokens.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Stitch Design System */
+.nebula-gradient {
+  background: linear-gradient(135deg, #4e45e4 0%, #742fe5 100%);
+}
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(24px);
+}
 
 /* HomePage utility classes */
 .bg-dot-grid {
@@ -29,6 +38,16 @@
 }
 details[open] summary .faq-icon { transform: rotate(45deg); }
 details summary .faq-icon { transition: transform 0.2s; display: inline-block; }
+
+/* Pricing buttons */
+.pricing-btn-amber { background: transparent; color: #d97706; border: 2px solid #d97706; transition: background 0.2s, color 0.2s; }
+.pricing-btn-amber:hover, .pricing-btn-amber:focus { background: #d97706; color: white; }
+.pricing-btn-blue { background: #1e40af; color: white; border: none; transition: background 0.2s; }
+.pricing-btn-blue:hover, .pricing-btn-blue:focus { background: #3b82f6; }
+.pricing-btn-green { background: transparent; color: #16a34a; border: 2px solid #16a34a; transition: background 0.2s, color 0.2s; }
+.pricing-btn-green:hover, .pricing-btn-green:focus { background: #16a34a; color: white; }
+.pricing-btn-enterprise { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border: none; box-shadow: 0 4px 20px rgba(99,102,241,0.4); transition: opacity 0.2s; }
+.pricing-btn-enterprise:hover, .pricing-btn-enterprise:focus { opacity: 0.9; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

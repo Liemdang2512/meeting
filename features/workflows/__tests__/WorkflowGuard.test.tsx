@@ -5,15 +5,14 @@ import type { AuthUser } from '../../../lib/auth';
 
 const mockUser: AuthUser = {
   userId: '1', email: 'a@b.com', role: 'free',
-  workflowGroups: ['reporter', 'specialist'],
-  activeWorkflowGroup: 'reporter',
+  plans: ['reporter', 'specialist'],
   features: ['transcription', 'summary'],
 };
 
 describe('WorkflowGuard', () => {
   const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
 
-  it('renders children when user has matching group', () => {
+  it('renders children when user has matching plan', () => {
     const nav = vi.fn();
     const { getByText } = render(
       <WorkflowGuard group="reporter" user={mockUser} navigate={nav}>
@@ -24,7 +23,7 @@ describe('WorkflowGuard', () => {
     expect(nav).not.toHaveBeenCalled();
   });
 
-  it('redirects when user does not have matching group', () => {
+  it('redirects when user does not have matching plan', () => {
     const nav = vi.fn();
     const { container } = render(
       <WorkflowGuard group="officer" user={mockUser} navigate={nav}>
@@ -46,7 +45,7 @@ describe('WorkflowGuard', () => {
     expect(nav).toHaveBeenCalledWith('/login');
   });
 
-  it('multi-group user can access any of their groups', () => {
+  it('multi-plan user can access any of their plans', () => {
     const nav = vi.fn();
     const { getByText } = render(
       <WorkflowGuard group="specialist" user={mockUser} navigate={nav}>

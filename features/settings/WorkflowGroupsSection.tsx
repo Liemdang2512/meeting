@@ -4,51 +4,39 @@ import type { WorkflowGroup } from '../../lib/auth';
 import { authFetch, setToken } from '../../lib/api';
 import { WORKFLOW_GROUPS } from '../workflows/types';
 
-interface WorkflowGroupsSectionProps {
+interface PlanSelectionSectionProps {
   user: AuthUser;
   onUpdate: () => void;
 }
 
-export function WorkflowGroupsSection({ user, onUpdate }: WorkflowGroupsSectionProps) {
-  const [selected, setSelected] = useState<WorkflowGroup[]>([...user.workflowGroups]);
+export function WorkflowGroupsSection({ user, onUpdate }: PlanSelectionSectionProps) {
+  const [selected, setSelected] = useState<WorkflowGroup[]>([...(user.plans ?? []) as WorkflowGroup[]]);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [error, setError] = useState<string>('');
 
-  const toggleGroup = (group: WorkflowGroup) => {
+  const togglePlan = (plan: WorkflowGroup) => {
     setError('');
-    setSelected(prev => {
-      if (prev.includes(group)) {
-        if (prev.length <= 1) {
-          setError('Phải giữ ít nhất 1 nhóm');
-          return prev;
-        }
-        return prev.filter(g => g !== group);
-      } else {
-        return [...prev, group];
-      }
-    });
+    setSelected(prev =>
+      prev.includes(plan) ? prev.filter(p => p !== plan) : [...prev, plan]
+    );
   };
 
   const hasChanges = () => {
     const sorted = [...selected].sort();
-    const orig = [...user.workflowGroups].sort();
+    const orig = [...(user.plans ?? [])].sort();
     return JSON.stringify(sorted) !== JSON.stringify(orig);
   };
 
   const handleSave = async () => {
-    if (selected.length === 0) {
-      setError('Phải giữ ít nhất 1 nhóm');
-      return;
-    }
-    const add = selected.filter(g => !user.workflowGroups.includes(g));
-    const remove = user.workflowGroups.filter(g => !selected.includes(g));
+    const add = selected.filter(p => !(user.plans ?? []).includes(p));
+    const remove = (user.plans ?? []).filter(p => !selected.includes(p as WorkflowGroup));
 
     if (add.length === 0 && remove.length === 0) return;
 
     setSaveState('saving');
     setError('');
     try {
-      const res = await authFetch('/profiles/workflow-groups', {
+      const res = await authFetch('/profiles/plans', {
         method: 'PATCH',
         body: JSON.stringify({ add, remove }),
       });
@@ -70,42 +58,26 @@ export function WorkflowGroupsSection({ user, onUpdate }: WorkflowGroupsSectionP
     }
   };
 
-  const roleLabel = user.role === 'free'
-    ? 'FREE'
-    : user.role === 'pro'
-      ? 'PRO'
-      : user.role === 'enterprise'
-        ? 'ENTERPRISE'
-        : user.role?.toUpperCase();
-  const activeLabel = WORKFLOW_GROUPS.find(g => g.key === user.activeWorkflowGroup)?.label ?? user.activeWorkflowGroup;
-  const registeredLabels = WORKFLOW_GROUPS
-    .filter(g => user.workflowGroups.includes(g.key))
+  const roleLabel = user.role === 'admin' ? 'ADMIN' : 'FREE';
+  const planLabels = WORKFLOW_GROUPS
+    .filter(g => (user.plans ?? []).includes(g.key))
     .map(g => g.label);
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-medium text-slate-800">Profile</h2>
+      <h2 className="text-lg font-medium text-slate-800">Gói đăng ký</h2>
 
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-3">
         <p className="text-sm text-slate-700">
-          Gói hiện tại: <span className="font-semibold text-[#1E3A8A]">{roleLabel}</span>
+          Tài khoản: <span className="font-semibold text-[#1E3A8A]">{roleLabel}</span>
         </p>
         <p className="text-sm text-slate-700">
-          Nhóm đang sử dụng: <span className="font-semibold">{activeLabel}</span>
-        </p>
-        <p className="text-sm text-slate-700">
-          Nhóm đã đăng ký: <span className="font-semibold">{registeredLabels.join(', ') || 'Chưa có'}</span>
-        </p>
-        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-          Chỉ các nhóm đã đăng ký mới có thể mở workflow. Nhóm chưa đăng ký sẽ hiển thị thông báo.
+          Gói đang có: <span className="font-semibold">{planLabels.length > 0 ? planLabels.join(', ') : 'Chưa có gói'}</span>
         </p>
       </div>
 
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-        <p className="text-sm text-slate-600">
-          Cập nhật nhóm đã đăng ký của bạn. Bạn có thể thuộc nhiều nhóm cùng một lúc.
-        </p>
-
+        <p className="text-sm font-medium text-slate-700">Chọn các gói muốn đăng ký:</p>
         <div className="grid gap-3">
           {WORKFLOW_GROUPS.map(({ key, label, description }) => {
             const isActive = selected.includes(key);
@@ -113,7 +85,7 @@ export function WorkflowGroupsSection({ user, onUpdate }: WorkflowGroupsSectionP
               <button
                 key={key}
                 type="button"
-                onClick={() => toggleGroup(key)}
+                onClick={() => togglePlan(key)}
                 className={`w-full text-left px-4 py-4 rounded-xl border-2 transition-all ${
                   isActive
                     ? 'border-indigo-500 bg-indigo-50'

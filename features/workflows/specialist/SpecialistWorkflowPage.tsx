@@ -1,4 +1,5 @@
 import React, { useCallback, useState, useEffect, useRef } from 'react';
+import { Info, Mic, FileText, CheckCircle2 } from 'lucide-react';
 import { takePendingUpload } from '../shared/fileStore';
 import { SESSION_KEY_MEETING_LANGUAGE } from '../shared/sessionKeys';
 import { TranscriptionView } from '../../../components/TranscriptionView';
@@ -100,7 +101,12 @@ const DEFAULT_SPECIALIST_PROMPT = `Hãy tạo BIÊN BẢN CUỘC HỌP (Meeting 
 - Phần "Kết luận" tóm tắt kết quả thực sự đạt được, không lặp lại nội dung trao đổi`;
 
 
-const STEPS = ['Thông tin cuộc họp', 'Ghi chép', 'Biên bản', 'Hoàn thành'];
+const STEPS = [
+  { label: 'Thông tin cuộc họp', icon: <Info size={18} /> },
+  { label: 'Ghi chép', icon: <Mic size={18} /> },
+  { label: 'Biên bản', icon: <FileText size={18} /> },
+  { label: 'Hoàn thành', icon: <CheckCircle2 size={18} /> },
+];
 
 interface FileResult {
   name: string;
@@ -411,11 +417,10 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-4xl mx-auto px-4 py-10">
+    <div className="max-w-4xl mx-auto px-4 py-4">
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-slate-900">Thư ký họp - Biên bản cuộc họp</h1>
-          <p className="text-sm text-slate-500 mt-1">
+          <h1 className="text-2xl font-semibold text-on-surface">Thư ký họp - Biên bản cuộc họp</h1>
+          <p className="text-sm text-on-surface-variant mt-1">
             Nhập thông tin, ghi chép và tạo biên bản cuộc họp chuyên nghiệp.
           </p>
         </div>
@@ -431,7 +436,7 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
         />
 
         {errorMsg && (
-          <div className="mb-6 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
+          <div className="mb-6 px-4 py-3 bg-error/10 border border-error/20 rounded-xl text-sm text-error">
             {errorMsg}
           </div>
         )}
@@ -453,17 +458,17 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
             {/* Progress header — chỉ hiện khi đang chạy */}
             {(isTranscribing || isSynthesizing) && (
               <>
-                <div className="bg-white border border-slate-200 rounded-xl px-6 py-4 shadow-sm flex items-center justify-between">
+                <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl px-6 py-4 shadow-sm flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-5 h-5 border-2 border-[#1E3A8A] border-t-transparent rounded-full animate-spin shrink-0" />
-                    <span className="text-sm font-medium text-slate-700">
+                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin shrink-0" />
+                    <span className="text-sm font-medium text-on-surface">
                       {isSynthesizing
                         ? `Đang tổng hợp ${files.length} file bằng AI…`
                         : `Đang ghi chép song song ${files.length} file…`}
                     </span>
                   </div>
                   {!isSynthesizing && (
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-on-surface-variant/60">
                       {doneCount}/{files.length} xong{errorCount > 0 ? `, ${errorCount} lỗi` : ''}
                     </span>
                   )}
@@ -471,29 +476,29 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
 
                 {/* Per-file status */}
                 {!isSynthesizing && fileResults.map((result, i) => (
-                  <div key={i} className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                    <div className="flex items-center gap-3 px-5 py-3 border-b border-slate-100">
+                  <div key={i} className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl shadow-sm overflow-hidden">
+                    <div className="flex items-center gap-3 px-5 py-3 border-b border-outline-variant/10">
                       {result.status === 'pending' && (
                         <div className="w-4 h-4 rounded-full border-2 border-slate-300 shrink-0" />
                       )}
                       {result.status === 'running' && (
-                        <div className="w-4 h-4 border-2 border-[#1E3A8A] border-t-transparent rounded-full animate-spin shrink-0" />
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin shrink-0" />
                       )}
                       {result.status === 'done' && (
-                        <svg className="w-4 h-4 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-4 h-4 text-primary shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                         </svg>
                       )}
                       {result.status === 'error' && (
-                        <svg className="w-4 h-4 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-4 h-4 text-error shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       )}
-                      <span className="text-sm font-medium text-slate-700 truncate flex-1">{result.name}</span>
+                      <span className="text-sm font-medium text-on-surface truncate flex-1">{result.name}</span>
                       <span className={`text-xs font-medium shrink-0 ${
-                        result.status === 'done' ? 'text-emerald-600' :
-                        result.status === 'error' ? 'text-red-500' :
-                        result.status === 'running' ? 'text-[#1E3A8A]' : 'text-slate-400'
+                        result.status === 'done' ? 'text-primary' :
+                        result.status === 'error' ? 'text-error' :
+                        result.status === 'running' ? 'text-primary' : 'text-outline'
                       }`}>
                         {result.status === 'pending' ? 'Chờ…' :
                          result.status === 'running' ? 'Đang ghi chép…' :
@@ -502,18 +507,18 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
                     </div>
                     {result.status === 'done' && result.text && (
                       <div className="px-5 py-4 max-h-48 overflow-y-auto">
-                        <p className="text-xs text-slate-500 whitespace-pre-wrap leading-relaxed">{result.text}</p>
+                        <p className="text-xs text-on-surface-variant whitespace-pre-wrap leading-relaxed">{result.text}</p>
                       </div>
                     )}
                     {result.status === 'error' && result.errorMsg && (
-                      <div className="px-5 py-3 text-xs text-red-600">{result.errorMsg}</div>
+                      <div className="px-5 py-3 text-xs text-error">{result.errorMsg}</div>
                     )}
                   </div>
                 ))}
 
                 {isSynthesizing && (
-                  <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm text-center">
-                    <p className="text-xs text-slate-400">AI đang đọc và tổng hợp nội dung từ nhiều file thành một bản nhất quán…</p>
+                  <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-6 shadow-sm text-center">
+                    <p className="text-xs text-outline">AI đang đọc và tổng hợp nội dung từ nhiều file thành một bản nhất quán…</p>
                   </div>
                 )}
               </>
@@ -522,16 +527,16 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
             {/* Khi ghi chép xong — hiển thị nội dung + nút Tạo biên bản */}
             {!isTranscribing && !isSynthesizing && effectiveTranscript && (
               <>
-                <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                  <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 border-b border-outline-variant/10 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                       </svg>
-                      <h2 className="text-base font-semibold text-slate-800">Nội dung ghi chép</h2>
+                      <h2 className="text-base font-semibold text-on-surface">Nội dung ghi chép</h2>
                     </div>
                     {files.length > 1 && (
-                      <span className="text-xs text-slate-400">{files.length} file đã tổng hợp</span>
+                      <span className="text-xs text-outline">{files.length} file đã tổng hợp</span>
                     )}
                   </div>
                   <div className="px-6 py-4 max-h-[520px] overflow-y-auto">
@@ -539,11 +544,11 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
                   </div>
                 </div>
 
-                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4">
+                <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-6 shadow-sm space-y-4">
                   <button
                     type="button"
                     onClick={() => setShowPromptEditor(v => !v)}
-                    className="text-sm font-medium text-[#1E3A8A] hover:text-[#1E40AF] transition-colors"
+                    className="text-sm font-medium text-primary hover:text-primary-dim transition-colors"
                   >
                     {showPromptEditor ? 'Ẩn' : 'Chỉnh sửa'} prompt tạo biên bản
                   </button>
@@ -552,15 +557,15 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
                       value={summaryPrompt}
                       onChange={e => setSummaryPrompt(e.target.value)}
                       rows={5}
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none font-mono resize-none"
+                      className="w-full px-4 py-3 border border-outline-variant/20 rounded-xl text-sm focus:outline-none font-mono resize-none bg-surface-container-lowest"
                     />
                   )}
                   <div className="flex flex-col items-center gap-2 pt-2">
-                    <p className="text-sm text-slate-600">Ghi chép hoàn tất. Bấm để tạo biên bản cuộc họp.</p>
+                    <p className="text-sm text-on-surface-variant">Ghi chép hoàn tất. Bấm để tạo biên bản cuộc họp.</p>
                     <button
                       type="button"
                       onClick={handleGenerateSummary}
-                      className="px-6 py-3 bg-[#1E3A8A] text-white font-medium rounded-xl shadow-sm hover:bg-[#1E40AF] transition-all"
+                      className="px-6 py-3 nebula-gradient text-white font-semibold rounded-xl shadow-lg shadow-primary/20 hover:brightness-110 transition-all"
                     >
                       Tạo biên bản
                     </button>
@@ -575,30 +580,30 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
         {step === 3 && (
           <div className="space-y-6">
             {isSummarizing && (
-              <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm text-center space-y-3">
-                <div className="animate-spin w-8 h-8 border-4 border-[#1E3A8A] border-t-transparent rounded-full mx-auto" />
-                <p className="text-sm font-medium text-slate-600">Đang tạo biên bản…</p>
+              <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-8 shadow-sm text-center space-y-3">
+                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
+                <p className="text-sm font-medium text-on-surface-variant">Đang tạo biên bản…</p>
               </div>
             )}
 
             {summary && !isSummarizing && (
               <>
                 {/* BB content */}
-                <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                  <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-2">
-                    <h2 className="text-base font-semibold text-slate-800">Biên bản cuộc họp</h2>
+                <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl shadow-sm overflow-hidden">
+                  <div className="px-6 py-4 border-b border-outline-variant/10 flex items-center justify-between flex-wrap gap-2">
+                    <h2 className="text-base font-semibold text-on-surface">Biên bản cuộc họp</h2>
                     <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={handleExportPdf}
-                        className="px-3 py-1.5 text-xs font-medium border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-all"
+                        className="px-3 py-1.5 text-xs font-medium border border-outline-variant/20 text-on-surface-variant rounded-lg hover:bg-surface-container-low transition-all"
                       >
                         Xuất PDF
                       </button>
                       <button
                         type="button"
                         onClick={handleExportDocx}
-                        className="px-3 py-1.5 text-xs font-medium border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-all"
+                        className="px-3 py-1.5 text-xs font-medium border border-outline-variant/20 text-on-surface-variant rounded-lg hover:bg-surface-container-low transition-all"
                       >
                         Xuất DOCX
                       </button>
@@ -610,11 +615,11 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
                 </div>
 
                 {/* Tạo lại + Hoàn thành */}
-                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">
+                <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-4 shadow-sm space-y-3">
                   <button
                     type="button"
                     onClick={() => setShowPromptEditor(v => !v)}
-                    className="text-sm font-medium text-[#1E3A8A] hover:text-[#1E40AF] transition-colors"
+                    className="text-sm font-medium text-primary hover:text-primary-dim transition-colors"
                   >
                     {showPromptEditor ? 'Ẩn' : 'Chỉnh sửa'} prompt tạo biên bản
                   </button>
@@ -623,14 +628,14 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
                       value={summaryPrompt}
                       onChange={e => setSummaryPrompt(e.target.value)}
                       rows={5}
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none font-mono resize-none"
+                      className="w-full px-4 py-3 border border-outline-variant/20 rounded-xl text-sm focus:outline-none font-mono resize-none bg-surface-container-lowest"
                     />
                   )}
                   <button
                     type="button"
                     onClick={handleRegenerateSummary}
                     disabled={isSummarizing}
-                    className="text-sm font-medium text-slate-600 hover:text-slate-800 transition-colors disabled:opacity-50"
+                    className="text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors disabled:opacity-50"
                   >
                     Tạo lại biên bản
                   </button>
@@ -640,7 +645,7 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
                   <button
                     type="button"
                     onClick={() => setStep(4)}
-                    className="px-6 py-3 bg-[#1E3A8A] text-white font-medium rounded-xl shadow-sm hover:bg-[#1E40AF] transition-all"
+                    className="px-6 py-3 nebula-gradient text-white font-semibold rounded-xl shadow-lg shadow-primary/20 hover:brightness-110 transition-all"
                   >
                     Hoàn thành →
                   </button>
@@ -655,20 +660,20 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
           <div className="space-y-6">
             {/* 1. Nội dung ghi chép */}
             {effectiveTranscript && (
-              <details className="group bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+              <details className="group bg-surface-container-lowest border border-outline-variant/20 rounded-xl shadow-sm overflow-hidden">
                 <summary className="px-6 py-4 flex items-center justify-between cursor-pointer select-none list-none">
                   <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-500 text-xs font-bold flex items-center justify-center">1</span>
-                    <h2 className="text-base font-semibold text-slate-800">Nội dung ghi chép</h2>
+                    <span className="w-6 h-6 rounded-full bg-surface-container text-on-surface-variant text-xs font-bold flex items-center justify-center">1</span>
+                    <h2 className="text-base font-semibold text-on-surface">Nội dung ghi chép</h2>
                     {files.length > 1 && (
-                      <span className="text-xs text-slate-400 ml-1">{files.length} file</span>
+                      <span className="text-xs text-outline ml-1">{files.length} file</span>
                     )}
                   </div>
-                  <svg className="w-4 h-4 text-slate-400 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 text-outline transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </summary>
-                <div className="px-6 py-4 border-t border-slate-100 max-h-[400px] overflow-y-auto">
+                <div className="px-6 py-4 border-t border-outline-variant/10 max-h-[400px] overflow-y-auto">
                   <TranscriptionView text={effectiveTranscript} userId={user.userId} />
                 </div>
               </details>
@@ -676,24 +681,24 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
 
             {/* 2. Biên bản cuộc họp */}
             {summary && (
-              <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between flex-wrap gap-2">
+              <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl shadow-sm overflow-hidden">
+                <div className="px-6 py-4 border-b border-outline-variant/10 flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-[#EFF6FF] text-[#1E3A8A] text-xs font-bold flex items-center justify-center">2</span>
-                    <h2 className="text-base font-semibold text-slate-800">Biên bản cuộc họp</h2>
+                    <span className="w-6 h-6 rounded-full bg-primary-fixed/30 text-on-primary-fixed-variant text-xs font-bold flex items-center justify-center">2</span>
+                    <h2 className="text-base font-semibold text-on-surface">Biên bản cuộc họp</h2>
                   </div>
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={handleExportPdf}
-                      className="px-3 py-1.5 text-xs font-medium border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-all"
+                      className="px-3 py-1.5 text-xs font-medium border border-outline-variant/20 text-on-surface-variant rounded-lg hover:bg-surface-container-low transition-all"
                     >
                       Xuất PDF
                     </button>
                     <button
                       type="button"
                       onClick={handleExportDocx}
-                      className="px-3 py-1.5 text-xs font-medium border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 transition-all"
+                      className="px-3 py-1.5 text-xs font-medium border border-outline-variant/20 text-on-surface-variant rounded-lg hover:bg-surface-container-low transition-all"
                     >
                       Xuất DOCX
                     </button>
@@ -704,11 +709,11 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
                 </div>
 
                 {/* Prompt editor + regenerate */}
-                <div className="px-6 pb-4 border-t border-slate-100 pt-4 space-y-3">
+                <div className="px-6 pb-4 border-t border-outline-variant/10 pt-4 space-y-3">
                   <button
                     type="button"
                     onClick={() => setShowPromptEditor(v => !v)}
-                    className="text-sm font-medium text-[#1E3A8A] hover:text-[#1E40AF] transition-colors"
+                    className="text-sm font-medium text-primary hover:text-primary-dim transition-colors"
                   >
                     {showPromptEditor ? 'Ẩn' : 'Chỉnh sửa'} prompt
                   </button>
@@ -717,14 +722,14 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
                       value={summaryPrompt}
                       onChange={e => setSummaryPrompt(e.target.value)}
                       rows={5}
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none font-mono resize-none"
+                      className="w-full px-4 py-3 border border-outline-variant/20 rounded-xl text-sm focus:outline-none font-mono resize-none bg-surface-container-lowest"
                     />
                   )}
                   <button
                     type="button"
                     onClick={handleRegenerateSummary}
                     disabled={isSummarizing}
-                    className="text-sm font-medium text-slate-600 hover:text-slate-800 transition-colors disabled:opacity-50"
+                    className="text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors disabled:opacity-50"
                   >
                     {isSummarizing ? 'Đang tạo lại…' : 'Tạo lại biên bản'}
                   </button>
@@ -733,17 +738,17 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
             )}
 
             {/* 3. Sơ đồ tư duy */}
-            <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-500 text-xs font-bold flex items-center justify-center">3</span>
-                <h2 className="text-base font-semibold text-slate-800">Sơ đồ tư duy</h2>
+            <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-outline-variant/10 flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-surface-container text-on-surface-variant text-xs font-bold flex items-center justify-center">3</span>
+                <h2 className="text-base font-semibold text-on-surface">Sơ đồ tư duy</h2>
               </div>
               <div className="px-6 py-6 flex flex-col items-center gap-3 text-center">
-                <p className="text-sm text-slate-500">Tạo sơ đồ tư duy từ nội dung biên bản để dễ theo dõi các điểm chính.</p>
+                <p className="text-sm text-on-surface-variant">Tạo sơ đồ tư duy từ nội dung biên bản để dễ theo dõi các điểm chính.</p>
                 <button
                   type="button"
                   onClick={() => navigate('/mindmap')}
-                  className="px-5 py-2.5 text-sm font-medium bg-[#1E3A8A] text-white rounded-xl shadow-sm hover:bg-[#1E40AF] transition-all"
+                  className="px-5 py-2.5 text-sm font-medium nebula-gradient text-white rounded-xl shadow-lg shadow-primary/20 hover:brightness-110 transition-all"
                 >
                   Tạo sơ đồ tư duy
                 </button>
@@ -752,25 +757,25 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
 
             {/* Email — chỉ hiển thị cho admin */}
             {user.role === 'admin' && info.recipientEmails.length > 0 && (
-              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-3">
-                <h3 className="text-sm font-semibold text-slate-800">Gửi biên bản qua email</h3>
-                <p className="text-xs text-slate-500">
+              <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl p-6 shadow-sm space-y-3">
+                <h3 className="text-sm font-semibold text-on-surface">Gửi biên bản qua email</h3>
+                <p className="text-xs text-on-surface-variant">
                   Gửi tới: {info.recipientEmails.join(', ')}
                 </p>
                 {emailSendState === 'success' ? (
-                  <p className="text-sm text-emerald-600 font-medium">
+                  <p className="text-sm text-primary font-medium">
                     Đã gửi thành công đến {emailSentCount} người nhận.
                   </p>
                 ) : (
                   <>
                     {emailSendState === 'error' && (
-                      <p className="text-xs text-red-600">{emailError}</p>
+                      <p className="text-xs text-error">{emailError}</p>
                     )}
                     <button
                       type="button"
                       onClick={handleSendEmail}
                       disabled={emailSendState === 'loading' || !summary}
-                      className="px-5 py-2.5 text-sm font-medium bg-[#1E3A8A] text-white rounded-xl shadow-sm hover:bg-[#1E40AF] transition-all disabled:opacity-50"
+                      className="px-5 py-2.5 text-sm font-medium nebula-gradient text-white rounded-xl shadow-lg shadow-primary/20 hover:brightness-110 transition-all disabled:opacity-50"
                     >
                       {emailSendState === 'loading' ? 'Đang gửi…' : 'Gửi email'}
                     </button>
@@ -784,21 +789,20 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
               <button
                 type="button"
                 onClick={() => setStep(3)}
-                className="px-5 py-2.5 text-sm font-medium text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all"
+                className="px-5 py-2.5 text-sm font-medium text-on-surface-variant border border-outline-variant/20 rounded-xl hover:bg-surface-container-low transition-all"
               >
                 ← Xem biên bản
               </button>
               <button
                 type="button"
                 onClick={handleNewSession}
-                className="px-5 py-2.5 text-sm font-medium bg-[#1E3A8A] text-white rounded-xl shadow-sm hover:bg-[#1E40AF] transition-all"
+                className="px-5 py-2.5 text-sm font-medium nebula-gradient text-white rounded-xl shadow-lg shadow-primary/20 hover:brightness-110 transition-all"
               >
                 Cuộc họp mới
               </button>
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }

@@ -50,7 +50,8 @@ router.get('/', async (req, res) => {
     const rows = await sql`
       SELECT
         l.*,
-        u.email
+        u.email,
+        COUNT(*) OVER() AS total_count
       FROM public.token_usage_logs l
       JOIN auth.users u ON u.id = l.user_id
       WHERE 1=1
@@ -60,7 +61,8 @@ router.get('/', async (req, res) => {
       ORDER BY l.created_at DESC
       LIMIT ${pageSizeNum} OFFSET ${offset}
     `;
-    return res.json(rows);
+    const total = Number(rows[0]?.total_count ?? 0);
+    return res.json({ rows, total, page: pageNum, pageSize: pageSizeNum });
   } catch (err: any) {
     return res.status(500).json({ error: err.message });
   }

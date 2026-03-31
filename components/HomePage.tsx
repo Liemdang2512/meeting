@@ -35,7 +35,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
               >
                 <img src="https://neuronsai.net/assets/NAI.png" alt="NeuronsAI" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} />
                 <span style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.025em', color: '#0f172a' }}>
-                  Meeting Minute I <span style={{ color: '#1e40af' }}>Thư ký AI</span>
+                  <span style={{ color: '#1e40af' }}>MOMAI</span>
                 </span>
               </button>
 
@@ -111,7 +111,6 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 {/* Dashboard Title */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
                   <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase' }}>GIỚI THIỆU</h2>
-                  <div />
                 </div>
 
                 {/* Video Demo */}
@@ -153,7 +152,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                       <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {['Không giới hạn thông tin tổng hợp', 'Phỏng vấn và viết bài tự động', 'Nhận diện nội dung', 'Chuyển đổi nhiều định dạng', '100+ ngôn ngữ'].map((item, i) => (
                           <li key={i} style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                            <span style={{ color: '#d97706', flexShrink: 0 }}>✓</span>{item}
+                            <span style={{ color: '#d97706', flexShrink: 0, display: 'flex' }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>{item}
                           </li>
                         ))}
                       </ul>
@@ -173,7 +172,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                       <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {['Không giới hạn thông tin tổng hợp', 'Tự động tạo biên bản họp', 'Tóm tắt nội dung & danh sách việc cần làm', 'Tích hợp lịch & email', 'Quy trình chuẩn'].map((item, i) => (
                           <li key={i} style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                            <span style={{ color: '#1e40af', flexShrink: 0 }}>✓</span>{item}
+                            <span style={{ color: '#1e40af', flexShrink: 0, display: 'flex' }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>{item}
                           </li>
                         ))}
                       </ul>
@@ -193,7 +192,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                       <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {['Ghi chép biên bản với độ chính xác cao', 'Nhận diện thuật ngữ pháp lý', 'Đánh dấu thời gian từng câu', 'Nhận diện giọng địa phương', 'Quy trình chuẩn tòa án'].map((item, i) => (
                           <li key={i} style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b', display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                            <span style={{ color: '#16a34a', flexShrink: 0 }}>✓</span>{item}
+                            <span style={{ color: '#16a34a', flexShrink: 0, display: 'flex' }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>{item}
                           </li>
                         ))}
                       </ul>
@@ -377,7 +376,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   </div>
                 </div>
                 <div style={{ marginBottom: '24px' }}>
-                  <span style={{ fontSize: '2.75rem', fontWeight: 900, color: '#0f172a' }}>399.000</span>
+                  <span style={{ fontSize: '2.75rem', fontWeight: 900, color: '#0f172a' }}>199.000</span>
                   <span style={{ fontSize: '1rem', fontWeight: 700, color: '#94a3b8' }}> ₫ / tháng</span>
                 </div>
                 <ul style={{ textAlign: 'left', listStyle: 'none', padding: 0, marginBottom: '32px' }}>
@@ -395,11 +394,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </ul>
                 <button
                   onClick={() => handleNav('/register')}
-                  style={{ width: '100%', padding: '14px', borderRadius: '9999px', border: '2px solid #d97706', fontWeight: 700, background: 'transparent', color: '#d97706', cursor: 'pointer', fontSize: '0.95rem', transition: 'all 0.2s' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#d97706'; e.currentTarget.style.color = 'white'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#d97706'; }}
-                  onFocus={e => { e.currentTarget.style.background = '#d97706'; e.currentTarget.style.color = 'white'; }}
-                  onBlur={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#d97706'; }}
+                  className="pricing-btn-amber"
+                  style={{ width: '100%', padding: '14px', borderRadius: '9999px', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem' }}
                 >
                   Đăng ký ngay
                 </button>
@@ -418,7 +414,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   </div>
                 </div>
                 <div style={{ marginBottom: '24px' }}>
-                  <span style={{ fontSize: '2.75rem', fontWeight: 900 }}>299.000</span>
+                  <span style={{ fontSize: '2.75rem', fontWeight: 900 }}>499.000</span>
                   <span style={{ fontSize: '1rem', fontWeight: 700, color: '#64748b' }}> ₫ / tháng</span>
                 </div>
                 <ul style={{ textAlign: 'left', listStyle: 'none', padding: 0, marginBottom: '32px' }}>
@@ -430,17 +426,14 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     'Xuất hàng loạt',
                   ].map(item => (
                     <li key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontWeight: 600, marginBottom: '12px', fontSize: '0.875rem' }}>
-                      <span style={{ color: '#60a5fa', marginTop: '2px' }}>✓</span> {item}
+                      <span style={{ color: '#60a5fa', flexShrink: 0, display: 'flex' }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> {item}
                     </li>
                   ))}
                 </ul>
                 <button
                   onClick={() => handleNav('/register')}
-                  style={{ width: '100%', padding: '14px', borderRadius: '9999px', background: '#1e40af', color: 'white', fontWeight: 700, border: 'none', cursor: 'pointer', fontSize: '0.95rem', boxShadow: '0 4px 20px rgba(37,99,235,0.3)', transition: 'background 0.2s' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#3b82f6')}
-                  onMouseLeave={e => (e.currentTarget.style.background = '#1e40af')}
-                  onFocus={e => (e.currentTarget.style.background = '#3b82f6')}
-                  onBlur={e => (e.currentTarget.style.background = '#1e40af')}
+                  className="pricing-btn-blue"
+                  style={{ width: '100%', padding: '14px', borderRadius: '9999px', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem', boxShadow: '0 4px 20px rgba(37,99,235,0.3)' }}
                 >
                   Đăng ký ngay
                 </button>
@@ -458,7 +451,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   </div>
                 </div>
                 <div style={{ marginBottom: '24px' }}>
-                  <span style={{ fontSize: '2.75rem', fontWeight: 900, color: '#0f172a' }}>499.000</span>
+                  <span style={{ fontSize: '2.75rem', fontWeight: 900, color: '#0f172a' }}>999.000</span>
                   <span style={{ fontSize: '1rem', fontWeight: 700, color: '#94a3b8' }}> ₫ / tháng</span>
                 </div>
                 <ul style={{ textAlign: 'left', listStyle: 'none', padding: 0, marginBottom: '32px' }}>
@@ -476,11 +469,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </ul>
                 <button
                   onClick={() => handleNav('/register')}
-                  style={{ width: '100%', padding: '14px', borderRadius: '9999px', border: '2px solid #16a34a', fontWeight: 700, background: 'transparent', color: '#16a34a', cursor: 'pointer', fontSize: '0.95rem', transition: 'all 0.2s' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#16a34a'; e.currentTarget.style.color = 'white'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#16a34a'; }}
-                  onFocus={e => { e.currentTarget.style.background = '#16a34a'; e.currentTarget.style.color = 'white'; }}
-                  onBlur={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#16a34a'; }}
+                  className="pricing-btn-green"
+                  style={{ width: '100%', padding: '14px', borderRadius: '9999px', fontWeight: 700, cursor: 'pointer', fontSize: '0.95rem' }}
                 >
                   Đăng ký ngay
                 </button>
@@ -508,7 +498,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexWrap: 'wrap', gap: '12px 32px', marginBottom: '8px' }}>
                     {['Triển khai on-premise / cloud riêng', 'Tích hợp API không giới hạn', 'Quản lý nhóm & phân quyền', 'SLA 99.9% uptime', 'Hỗ trợ kỹ thuật ưu tiên'].map(item => (
                       <li key={item} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.875rem', fontWeight: 600, color: '#cbd5e1' }}>
-                        <span style={{ color: '#818cf8' }}>✓</span> {item}
+                        <span style={{ color: '#818cf8', flexShrink: 0, display: 'flex' }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> {item}
                       </li>
                     ))}
                   </ul>
@@ -521,11 +511,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                     <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#64748b', marginBottom: '32px' }}>₫ / tháng · tùy chỉnh theo nhu cầu</div>
                     <button
                       onClick={() => handleNav('/register')}
-                      style={{ display: 'block', width: '100%', padding: '16px 32px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: 'white', fontWeight: 700, borderRadius: '9999px', border: 'none', cursor: 'pointer', fontSize: '1rem', boxShadow: '0 4px 20px rgba(99,102,241,0.4)', transition: 'opacity 0.2s', marginBottom: '12px' }}
-                      onMouseEnter={e => (e.currentTarget.style.opacity = '0.9')}
-                      onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-                      onFocus={e => (e.currentTarget.style.opacity = '0.9')}
-                      onBlur={e => (e.currentTarget.style.opacity = '1')}
+                      className="pricing-btn-enterprise"
+                    style={{ display: 'block', width: '100%', padding: '16px 32px', fontWeight: 700, borderRadius: '9999px', cursor: 'pointer', fontSize: '1rem', marginBottom: '12px' }}
                     >
                       Liên hệ ngay
                     </button>
@@ -545,8 +532,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {[
                   {
-                    q: 'MoMai hỗ trợ những định dạng file nào?',
-                    a: 'MoMai hỗ trợ MP3, MP4, WAV, M4A, MOV và nhiều định dạng âm thanh, video phổ biến khác. Bạn cũng có thể tải lên file dài đến 5 giờ.',
+                    q: 'MOMAI hỗ trợ những định dạng file nào?',
+                    a: 'MOMAI hỗ trợ MP3, MP4, WAV, M4A, MOV và nhiều định dạng âm thanh, video phổ biến khác. Bạn cũng có thể tải lên file dài đến 5 giờ.',
                   },
                   {
                     q: 'Độ chính xác của AI đạt mức nào?',
@@ -588,7 +575,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   <span style={{ fontWeight: 800, color: '#0f172a' }}>Neurons<span style={{ color: '#1e40af' }}>AI</span></span>
                 </div>
                 <p style={{ fontSize: '0.875rem', fontWeight: 500, color: '#64748b', lineHeight: 1.7, marginBottom: '20px' }}>
-                  Meeting Minute I Thư ký họp AI là một nền tảng AI đa năng hỗ trợ các công việc tổng hợp thông tin, văn bản. Tại đây, bạn có thể tăng năng suất trong công việc văn phòng với tất cả các mô hình AI hiệu quả và quy trình làm việc tự động mới nhất.
+                  MOMAI là nền tảng AI đa năng hỗ trợ ghi chép, tổng hợp thông tin và tự động hóa công việc văn phòng. Tăng năng suất với các mô hình AI hiệu quả và quy trình làm việc tự động mới nhất.
                 </p>
                 {/* Social icons */}
                 <div style={{ display: 'flex', gap: '12px' }}>
