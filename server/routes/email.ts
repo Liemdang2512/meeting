@@ -26,21 +26,24 @@ router.post('/send-minutes', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Noi dung bien ban la bat buoc' });
     }
 
-    // Check max recipients from settings (default 20)
-    const [maxSetting] = await sql`SELECT value FROM public.app_settings WHERE key = 'email_max_recipients'`;
-    const maxRecipients = maxSetting ? parseInt(maxSetting.value, 10) : 20;
+    // Check max recipients (env var hoặc default 20)
+    const maxRecipients = parseInt(process.env.SMTP_MAX_RECIPIENTS ?? '20', 10);
     if (recipients.length > maxRecipients) {
-      return res.status(400).json({ error: `Toi da ${maxRecipients} nguoi nhan` });
+      return res.status(400).json({ error: `Tối đa ${maxRecipients} người nhận` });
     }
 
-    // Load Gmail credentials from DB
-    const [gmailUserSetting] = await sql`SELECT value FROM public.app_settings WHERE key = 'gmail_user'`;
-    const [gmailPassSetting] = await sql`SELECT value FROM public.app_settings WHERE key = 'gmail_app_password'`;
-    if (!gmailUserSetting || !gmailPassSetting) {
-      return res.status(503).json({ error: 'Email chua duoc cau hinh. Admin can them Gmail credentials.' });
+    // Đọc SMTP config từ env vars
+    const smtpHost = process.env.SMTP_HOST;
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPassword = process.env.SMTP_PASSWORD;
+    const smtpPort = parseInt(process.env.SMTP_PORT ?? '465', 10);
+    const smtpSecure = (process.env.SMTP_SECURE ?? 'true') === 'true';
+
+    if (!smtpHost || !smtpUser || !smtpPassword) {
+      return res.status(503).json({ error: 'Email chưa được cấu hình. Kiểm tra SMTP_HOST, SMTP_USER, SMTP_PASSWORD trong env.' });
     }
 
-    const fromEmail = gmailUserSetting.value;
+    const fromEmail = smtpUser;
 
     // Generate PDF Buffer
     const pdfBuffer = await generateMinutesPdfBuffer({
@@ -65,12 +68,14 @@ router.post('/send-minutes', requireAuth, async (req, res) => {
       hasMindmap,
     });
 
-    // Send via Gmail SMTP
+    // Send via cPanel SMTP
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpSecure,
       auth: {
-        user: gmailUserSetting.value,
-        pass: gmailPassSetting.value,
+        user: smtpUser,
+        pass: smtpPassword,
       },
     });
 
