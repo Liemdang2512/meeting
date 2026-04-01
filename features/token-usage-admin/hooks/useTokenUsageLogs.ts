@@ -102,8 +102,9 @@ export const useTokenUsageLogs = (options: UseTokenUsageLogsOptions): UseTokenUs
         setLogs([]);
         return;
       }
-      const data: any[] = await res.json();
-      const mappedLogs: TokenUsageLog[] = data.map((row) => ({
+      const data = await res.json();
+      const rows: any[] = Array.isArray(data) ? data : (data.rows ?? []);
+      const mappedLogs: TokenUsageLog[] = rows.map((row) => ({
         id: row.id,
         userId: row.user_id,
         userEmail: row.email ?? null,
