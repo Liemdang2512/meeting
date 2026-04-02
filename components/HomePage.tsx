@@ -454,9 +454,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
               backgroundSize: '36px 36px',
             }}
           />
-          <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-10 lg:px-12 py-8 lg:py-10 h-full flex items-center">
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-10 lg:px-12 py-3 lg:py-4 h-full flex items-center">
             <div
-              className="w-full p-6 lg:p-10 relative overflow-hidden"
+              className="w-full px-6 py-3 lg:px-10 lg:py-4 relative overflow-hidden"
             style={{
               background: 'transparent',
             }}
