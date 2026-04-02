@@ -357,11 +357,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
             {/* Phóng viên */}
             <div className="bg-surface-container-lowest p-10 rounded-xl flex flex-col items-center text-center hover:shadow-xl hover:border-primary/20 border border-transparent transition-all duration-200" style={{ boxShadow: '0 16px 48px rgba(31,47,84,0.06)' }}>
               <div className="text-xs font-body font-semibold text-outline uppercase tracking-widest mb-4">Dành cho nhà báo</div>
-              <h3 className="font-headline font-bold mb-2 text-on-surface" style={{ fontSize: 'clamp(1.25rem, 2.5vw, 1.5rem)' }}>PHÓNG VIÊN</h3>
+              <h3 className="font-body font-bold mb-2 text-on-surface" style={{ fontSize: 'clamp(1.25rem, 2.5vw, 1.5rem)' }}>PHÓNG VIÊN</h3>
               <div className="mb-8">
                 <span className="text-xs text-on-surface-variant font-body">Bắt đầu từ:</span>
                 <div className="flex items-baseline gap-1 justify-center">
-                  <span className="text-4xl font-bold font-headline text-primary">399.000đ</span>
+                  <span className="text-4xl font-extrabold font-headline text-primary">399.000đ</span>
                 </div>
               </div>
               <div className="mb-10 flex-grow w-full flex justify-center">
@@ -387,11 +387,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
             <div className="bg-white p-10 rounded-xl flex flex-col items-center text-center relative z-10 border-2 border-primary/10 hover:shadow-2xl transition-all duration-200 md:scale-105" style={{ boxShadow: '0 32px 80px rgba(52,36,205,0.12)' }}>
               <div className="absolute signature-gradient text-white px-6 py-1 rounded-full text-xs font-semibold font-body uppercase tracking-wider" style={{ top: '-16px', left: '50%', transform: 'translateX(-50%)' }}>Phổ biến nhất</div>
               <div className="text-xs font-body font-semibold text-primary uppercase tracking-widest mb-4">Dành cho văn phòng</div>
-              <h3 className="font-headline font-bold mb-2 text-on-surface" style={{ fontSize: 'clamp(1.25rem, 2.5vw, 1.5rem)' }}>CHUYÊN VIÊN</h3>
+              <h3 className="font-body font-bold mb-2 text-on-surface" style={{ fontSize: 'clamp(1.25rem, 2.5vw, 1.5rem)' }}>CHUYÊN VIÊN</h3>
               <div className="mb-8">
                 <span className="text-xs text-on-surface-variant font-body">Bắt đầu từ:</span>
                 <div className="flex items-baseline gap-1 justify-center">
-                  <span className="text-4xl font-bold font-headline text-primary">299.000đ</span>
+                  <span className="text-4xl font-extrabold font-headline text-primary">299.000đ</span>
                 </div>
               </div>
               <div className="mb-10 flex-grow w-full flex justify-center">
@@ -416,11 +416,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
             {/* Cán bộ viên chức */}
             <div className="bg-surface-container-lowest p-10 rounded-xl flex flex-col items-center text-center hover:shadow-xl hover:border-primary/20 border border-transparent transition-all duration-200" style={{ boxShadow: '0 16px 48px rgba(31,47,84,0.06)' }}>
               <div className="text-xs font-body font-semibold text-outline uppercase tracking-widest mb-4">Dành cho nhà nước</div>
-              <h3 className="font-headline font-bold mb-2 text-on-surface" style={{ fontSize: 'clamp(1.25rem, 2.5vw, 1.5rem)' }}>CÁN BỘ VIÊN CHỨC</h3>
+              <h3 className="font-body font-bold mb-2 text-on-surface" style={{ fontSize: 'clamp(1.25rem, 2.5vw, 1.5rem)' }}>CÁN BỘ VIÊN CHỨC</h3>
               <div className="mb-8">
                 <span className="text-xs text-on-surface-variant font-body">Bắt đầu từ:</span>
                 <div className="flex items-baseline gap-1 justify-center">
-                  <span className="text-4xl font-bold font-headline text-primary">499.000đ</span>
+                  <span className="text-4xl font-extrabold font-headline text-primary">499.000đ</span>
                 </div>
               </div>
               <div className="mb-10 flex-grow w-full flex justify-center">
@@ -447,7 +447,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
       </section>
 
       {/* Business Solutions */}
-      <section className="py-8 lg:py-16 overflow-hidden">
+      <section className="py-8 lg:py-12 overflow-hidden lg:min-h-[calc(100vh-80px)] lg:flex lg:items-center">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-10 lg:px-12">
           <div className="bg-[#1f2f54] rounded-xl p-16 relative overflow-hidden">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 relative z-10">
