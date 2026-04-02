@@ -447,9 +447,29 @@ export function HomePage({ onNavigate }: HomePageProps) {
       </section>
 
       {/* Business Solutions */}
-      <section className="py-8 lg:py-12 overflow-hidden lg:min-h-[calc(100vh-80px)] lg:flex lg:items-center">
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-10 lg:px-12">
-          <div className="bg-[#1f2f54] rounded-xl p-16 relative overflow-hidden">
+      <section className="py-0 overflow-hidden lg:min-h-[calc(100vh-80px)] lg:flex lg:items-stretch">
+        <div
+          className="w-full relative overflow-hidden"
+          style={{
+            background:
+              'radial-gradient(circle at 70% 30%, rgba(78,69,228,0.22) 0%, transparent 48%), linear-gradient(180deg, #1f2f54 0%, #182544 100%)',
+          }}
+        >
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage:
+                'linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)',
+              backgroundSize: '36px 36px',
+            }}
+          />
+          <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-10 lg:px-12 py-8 lg:py-12 h-full flex items-center">
+            <div
+              className="w-full p-6 lg:p-10 relative overflow-hidden"
+            style={{
+              background: 'transparent',
+            }}
+          >
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 relative z-10">
               <div>
                 <h2 className="font-headline text-white font-extrabold mb-8 uppercase" style={{ fontSize: 'clamp(2rem, 4vw, 3rem)' }}>GIẢI PHÁP DÀNH CHO DOANH NGHIỆP</h2>
@@ -481,11 +501,17 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   Liên hệ tư vấn
                 </button>
               </div>
-              <div className="hidden lg:flex items-center justify-center">
-                <img src="/enterprise-illustration.png" alt="Giải pháp doanh nghiệp" className="max-h-[480px] w-auto object-contain rounded-2xl" style={{ filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.3))' }} />
+              <div className="hidden lg:flex items-center justify-center relative min-h-[460px]">
+                <img
+                  src="/enterprise-illustration.png"
+                  alt="Minh hoa he sinh thai doanh nghiep"
+                  className="max-h-[560px] w-auto object-contain"
+                  style={{ filter: 'drop-shadow(0 30px 50px rgba(0,0,0,0.35))' }}
+                />
               </div>
             </div>
             <div className="absolute rounded-full" style={{ top: '-96px', right: '-96px', width: '384px', height: '384px', background: '#3424cd', filter: 'blur(120px)', opacity: 0.2 }} />
+            </div>
           </div>
         </div>
       </section>
