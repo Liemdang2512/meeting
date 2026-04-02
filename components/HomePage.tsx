@@ -232,9 +232,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
         </div>
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-10 lg:px-12 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-7 z-10">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-surface-container-low rounded-full mb-8">
-              <span className="material-symbols-outlined text-primary" style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1, 'wght' 300" }}>workspace_premium</span>
-              <span className="text-xs font-label font-bold uppercase tracking-[0.2em] text-on-surface-variant">Được ủng hộ bởi: 500 chuyên viên, phóng viên tại Việt Nam</span>
+            <div className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full mb-8 signature-gradient shadow-lg shadow-primary/20">
+              <span className="material-symbols-outlined text-white" style={{ fontSize: '18px', fontVariationSettings: "'FILL' 1, 'wght' 400" }}>workspace_premium</span>
+              <span className="text-xs font-body font-semibold uppercase tracking-[0.15em] text-white">Được ủng hộ bởi: <strong className="font-extrabold">500+</strong> chuyên viên, phóng viên tại Việt Nam</span>
             </div>
             <h1 className="font-headline font-extrabold leading-[1.1] text-on-background tracking-tighter mb-8" style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)' }}>
               Thư ký AI dành cho bạn
@@ -274,9 +274,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   allowFullScreen
                 />
               </div>
-              <div className="absolute bg-primary text-on-primary p-4 lg:p-6 rounded-lg shadow-xl" style={{ bottom: '-16px', right: '8px' }}>
-                <div className="text-3xl lg:text-4xl font-black">98%+</div>
-                <div className="text-xs font-label uppercase tracking-widest" style={{ opacity: 0.8 }}>Độ chính xác</div>
+              <div className="absolute bg-primary text-on-primary px-4 py-2.5 lg:px-5 lg:py-3 rounded-xl shadow-lg" style={{ bottom: '-12px', right: '8px' }}>
+                <div className="text-xl lg:text-2xl font-bold font-headline leading-tight">98%+</div>
+                <div className="text-[10px] font-body uppercase tracking-wider" style={{ opacity: 0.7 }}>Độ chính xác</div>
               </div>
             </div>
           </div>
@@ -284,25 +284,34 @@ export function HomePage({ onNavigate }: HomePageProps) {
       </header>
 
       {/* Social Proof */}
-      <section className="py-12 lg:py-16" style={{ background: '#1a1535' }}>
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-10 lg:px-12">
-          <h2 className="text-center text-xs font-label font-bold uppercase tracking-[0.3em] mb-10" style={{ color: 'rgba(255,255,255,0.45)' }}>ĐƯỢC TIN DÙNG BỞI</h2>
-          <div className="flex flex-wrap justify-center items-center gap-12 lg:gap-16">
+      <section className="relative -mt-2 py-6 lg:py-8 overflow-hidden" style={{ background: '#ede9fe' }}>
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-10 lg:px-12 relative z-10">
+          <h2 className="text-center text-[11px] font-body font-semibold uppercase tracking-[0.24em] mb-6 text-on-surface-variant">ĐƯỢC TIN DÙNG BỞI</h2>
+          <div className="flex flex-wrap justify-center items-center gap-4 lg:gap-6">
             {[
-              { src: '/logo-htp.jpg', alt: 'Saigon Hi-Tech Park' },
-              { src: '/logo-tand.jpg', alt: 'Tòa Án Nhân Dân' },
-              { src: '/logo-giadinh.jpg', alt: 'Gia Dinh University' },
-              { src: '/logo-hiu.jpg', alt: 'HIU' },
-              { src: '/logo-thethao.jpg', alt: 'Thể Thao & Văn Hóa' },
+              { src: '/logo-shtp.png', alt: 'Saigon Hi-Tech Park' },
+              { src: '/logo-tand.png', alt: 'Tòa Án Nhân Dân' },
+              { src: '/logo-ghu.png', alt: 'Gia Dinh University' },
+              { src: '/logo-hiu.png', alt: 'HIU' },
+              { src: '/logo-ttvh.png', alt: 'Thể Thao & Văn Hóa' },
             ].map((logo, i) => (
-              <img key={i} src={logo.src} alt={logo.alt} className="h-8" style={{ maxWidth: '140px', width: 'auto', objectFit: 'contain' }} />
+              <div
+                key={i}
+                className="h-20 w-[160px] lg:w-[180px] rounded-xl bg-white/55 border border-white/50 flex items-center justify-center px-4"
+              >
+                <img
+                  src={logo.src}
+                  alt={logo.alt}
+                  className="max-h-[4.5rem] w-auto object-contain"
+                />
+              </div>
             ))}
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-16 lg:py-32 bg-surface">
+      <section id="features" className="py-8 lg:py-16 bg-surface">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-10 lg:px-12">
           <div className="mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest text-white signature-gradient mb-6">
@@ -334,7 +343,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-16 lg:py-32 bg-surface-container-low" style={{ borderRadius: '3rem 3rem 0 0' }}>
+      <section id="pricing" className="py-8 lg:py-16 bg-surface-container-low" style={{ borderRadius: '3rem 3rem 0 0' }}>
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-10 lg:px-12">
           <div className="text-center mb-16 lg:mb-20">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest text-white signature-gradient mb-6">
@@ -346,29 +355,28 @@ export function HomePage({ onNavigate }: HomePageProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
 
             {/* Phóng viên */}
-            <div className="bg-surface-container-lowest p-10 rounded-xl flex flex-col hover:shadow-xl hover:border-primary/20 border border-transparent transition-all duration-200" style={{ boxShadow: '0 16px 48px rgba(31,47,84,0.06)' }}>
-              <div className="text-xs font-label font-bold text-outline uppercase tracking-widest mb-4">DÀNH CHO NHÀ BÁO</div>
-              <h3 className="text-2xl font-black mb-2">PHÓNG VIÊN</h3>
-              <div className="flex items-baseline gap-1 mb-8">
-                <div>
-                  <span className="text-xs text-on-surface-variant">Bắt đầu từ:</span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-extrabold text-primary">399.000đ</span>
-                    <span className="text-on-surface-variant">/tháng</span>
-                  </div>
+            <div className="bg-surface-container-lowest p-10 rounded-xl flex flex-col items-center text-center hover:shadow-xl hover:border-primary/20 border border-transparent transition-all duration-200" style={{ boxShadow: '0 16px 48px rgba(31,47,84,0.06)' }}>
+              <div className="text-xs font-body font-semibold text-outline uppercase tracking-widest mb-4">Dành cho nhà báo</div>
+              <h3 className="font-headline font-bold mb-2 text-on-surface" style={{ fontSize: 'clamp(1.25rem, 2.5vw, 1.5rem)' }}>PHÓNG VIÊN</h3>
+              <div className="mb-8">
+                <span className="text-xs text-on-surface-variant font-body">Bắt đầu từ:</span>
+                <div className="flex items-baseline gap-1 justify-center">
+                  <span className="text-4xl font-bold font-headline text-primary">399.000đ</span>
                 </div>
               </div>
-              <ul className="space-y-4 mb-10 flex-grow">
-                {['Ghi chép không giới hạn', 'Phỏng vấn & họp báo tự động', 'Nhận diện nhiều người nói', 'Xuất PDF, DOCX, TXT', '100+ ngôn ngữ'].map(item => (
-                  <li key={item} className="flex gap-3 text-sm">
-                    <span className="material-symbols-outlined text-primary" style={{ fontSize: '18px', fontVariationSettings: "'wght' 300" }}>done_all</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
+              <div className="mb-10 flex-grow w-full flex justify-center">
+                <ul className="space-y-4 inline-block text-left">
+                  {['Ghi chép không giới hạn', 'Phỏng vấn & họp báo tự động', 'Nhận diện nhiều người nói', 'Xuất PDF, DOCX, TXT', '100+ ngôn ngữ'].map(item => (
+                    <li key={item} className="flex items-start gap-3 text-sm font-body text-on-surface-variant">
+                      <span className="material-symbols-outlined text-primary shrink-0 mt-0.5" style={{ fontSize: '18px', fontVariationSettings: "'wght' 300" }}>done_all</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
               <button
                 onClick={() => handleNav('/register')}
-                className="w-full py-4 rounded-full font-bold text-white signature-gradient hover:opacity-90 active:scale-95 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                className="w-full py-4 rounded-full font-semibold font-body text-white signature-gradient hover:opacity-90 active:scale-95 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 style={{ border: 'none', cursor: 'pointer' }}
               >
                 ĐĂNG KÝ NGAY
@@ -376,28 +384,29 @@ export function HomePage({ onNavigate }: HomePageProps) {
             </div>
 
             {/* Chuyên viên — Featured */}
-            <div className="bg-white p-10 rounded-xl flex flex-col relative z-10 border-2 border-primary/10 hover:shadow-2xl transition-all duration-200 md:scale-105" style={{ boxShadow: '0 32px 80px rgba(52,36,205,0.12)' }}>
-              <div className="absolute signature-gradient text-white px-6 py-1 rounded-full text-xs font-bold uppercase tracking-tighter" style={{ top: '-16px', left: '50%', transform: 'translateX(-50%)' }}>PHỔ BIẾN NHẤT</div>
-              <div className="text-xs font-label font-bold text-primary uppercase tracking-widest mb-4">DÀNH CHO VĂN PHÒNG</div>
-              <h3 className="text-2xl font-black mb-2">CHUYÊN VIÊN</h3>
+            <div className="bg-white p-10 rounded-xl flex flex-col items-center text-center relative z-10 border-2 border-primary/10 hover:shadow-2xl transition-all duration-200 md:scale-105" style={{ boxShadow: '0 32px 80px rgba(52,36,205,0.12)' }}>
+              <div className="absolute signature-gradient text-white px-6 py-1 rounded-full text-xs font-semibold font-body uppercase tracking-wider" style={{ top: '-16px', left: '50%', transform: 'translateX(-50%)' }}>Phổ biến nhất</div>
+              <div className="text-xs font-body font-semibold text-primary uppercase tracking-widest mb-4">Dành cho văn phòng</div>
+              <h3 className="font-headline font-bold mb-2 text-on-surface" style={{ fontSize: 'clamp(1.25rem, 2.5vw, 1.5rem)' }}>CHUYÊN VIÊN</h3>
               <div className="mb-8">
-                <span className="text-xs text-on-surface-variant">Bắt đầu từ:</span>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold text-primary">299.000đ</span>
-                  <span className="text-on-surface-variant">/tháng</span>
+                <span className="text-xs text-on-surface-variant font-body">Bắt đầu từ:</span>
+                <div className="flex items-baseline gap-1 justify-center">
+                  <span className="text-4xl font-bold font-headline text-primary">299.000đ</span>
                 </div>
               </div>
-              <ul className="space-y-4 mb-10 flex-grow">
-                {['Không giới hạn giờ ghi âm', 'Tự động tạo biên bản họp', 'Tóm tắt AI nâng cao', 'Ưu tiên xử lý siêu tốc', 'Tích hợp lịch & email'].map(item => (
-                  <li key={item} className="flex gap-3 text-sm">
-                    <span className="material-symbols-outlined text-primary" style={{ fontSize: '18px', fontVariationSettings: "'wght' 300" }}>done_all</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
+              <div className="mb-10 flex-grow w-full flex justify-center">
+                <ul className="space-y-4 inline-block text-left">
+                  {['Không giới hạn giờ ghi âm', 'Tự động tạo biên bản họp', 'Tóm tắt AI nâng cao', 'Ưu tiên xử lý siêu tốc', 'Tích hợp lịch & email'].map(item => (
+                    <li key={item} className="flex items-start gap-3 text-sm font-body text-on-surface-variant">
+                      <span className="material-symbols-outlined text-primary shrink-0 mt-0.5" style={{ fontSize: '18px', fontVariationSettings: "'wght' 300" }}>done_all</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
               <button
                 onClick={() => handleNav('/register')}
-                className="w-full py-4 rounded-full signature-gradient text-white font-bold hover:opacity-90 transition-opacity duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                className="w-full py-4 rounded-full signature-gradient text-white font-semibold font-body hover:opacity-90 transition-opacity duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 style={{ border: 'none', cursor: 'pointer' }}
               >
                 ĐĂNG KÝ NGAY
@@ -405,27 +414,28 @@ export function HomePage({ onNavigate }: HomePageProps) {
             </div>
 
             {/* Cán bộ viên chức */}
-            <div className="bg-surface-container-lowest p-10 rounded-xl flex flex-col hover:shadow-xl hover:border-primary/20 border border-transparent transition-all duration-200" style={{ boxShadow: '0 16px 48px rgba(31,47,84,0.06)' }}>
-              <div className="text-xs font-label font-bold text-outline uppercase tracking-widest mb-4">DÀNH CHO NHÀ NƯỚC</div>
-              <h3 className="text-2xl font-black mb-2">CÁN BỘ VIÊN CHỨC</h3>
+            <div className="bg-surface-container-lowest p-10 rounded-xl flex flex-col items-center text-center hover:shadow-xl hover:border-primary/20 border border-transparent transition-all duration-200" style={{ boxShadow: '0 16px 48px rgba(31,47,84,0.06)' }}>
+              <div className="text-xs font-body font-semibold text-outline uppercase tracking-widest mb-4">Dành cho nhà nước</div>
+              <h3 className="font-headline font-bold mb-2 text-on-surface" style={{ fontSize: 'clamp(1.25rem, 2.5vw, 1.5rem)' }}>CÁN BỘ VIÊN CHỨC</h3>
               <div className="mb-8">
-                <span className="text-xs text-on-surface-variant">Bắt đầu từ:</span>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold text-primary">499.000đ</span>
-                  <span className="text-on-surface-variant">/tháng</span>
+                <span className="text-xs text-on-surface-variant font-body">Bắt đầu từ:</span>
+                <div className="flex items-baseline gap-1 justify-center">
+                  <span className="text-4xl font-bold font-headline text-primary">499.000đ</span>
                 </div>
               </div>
-              <ul className="space-y-4 mb-10 flex-grow">
-                {['Ghi chép độ chính xác cao nhất', 'Nhận diện thuật ngữ pháp lý', 'Đánh dấu thời gian từng câu', 'Mã hóa & bảo mật tối đa', 'Xuất định dạng tòa án'].map(item => (
-                  <li key={item} className="flex gap-3 text-sm">
-                    <span className="material-symbols-outlined text-primary" style={{ fontSize: '18px', fontVariationSettings: "'wght' 300" }}>done_all</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
+              <div className="mb-10 flex-grow w-full flex justify-center">
+                <ul className="space-y-4 inline-block text-left">
+                  {['Ghi chép độ chính xác cao nhất', 'Nhận diện thuật ngữ pháp lý', 'Đánh dấu thời gian từng câu', 'Mã hóa & bảo mật tối đa', 'Xuất định dạng tòa án'].map(item => (
+                    <li key={item} className="flex items-start gap-3 text-sm font-body text-on-surface-variant">
+                      <span className="material-symbols-outlined text-primary shrink-0 mt-0.5" style={{ fontSize: '18px', fontVariationSettings: "'wght' 300" }}>done_all</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
               <button
                 onClick={() => handleNav('/register')}
-                className="w-full py-4 rounded-full font-bold text-white signature-gradient hover:opacity-90 active:scale-95 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                className="w-full py-4 rounded-full font-semibold font-body text-white signature-gradient hover:opacity-90 active:scale-95 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 style={{ border: 'none', cursor: 'pointer' }}
               >
                 ĐĂNG KÝ NGAY
@@ -437,7 +447,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
       </section>
 
       {/* Business Solutions */}
-      <section className="py-16 lg:py-32 overflow-hidden">
+      <section className="py-8 lg:py-16 overflow-hidden">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-10 lg:px-12">
           <div className="bg-[#1f2f54] rounded-xl p-16 relative overflow-hidden">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 relative z-10">
@@ -471,18 +481,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   Liên hệ tư vấn
                 </button>
               </div>
-              <div className="hidden lg:grid grid-cols-2 gap-4 content-center">
-                {[
-                  { label: 'API Calls', value: '10M+' },
-                  { label: 'Uptime', value: '99.9%' },
-                  { label: 'Languages', value: '100+' },
-                  { label: 'Enterprises', value: '500+' },
-                ].map(({ label, value }) => (
-                  <div key={label} className="text-center p-8 rounded-2xl" style={{ background: 'rgba(255,255,255,0.05)' }}>
-                    <p className="font-headline font-black text-4xl text-white mb-2">{value}</p>
-                    <p className="text-sm" style={{ color: 'rgba(255,255,255,0.6)' }}>{label}</p>
-                  </div>
-                ))}
+              <div className="hidden lg:flex items-center justify-center">
+                <img src="/enterprise-illustration.png" alt="Giải pháp doanh nghiệp" className="max-h-[480px] w-auto object-contain rounded-2xl" style={{ filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.3))' }} />
               </div>
             </div>
             <div className="absolute rounded-full" style={{ top: '-96px', right: '-96px', width: '384px', height: '384px', background: '#3424cd', filter: 'blur(120px)', opacity: 0.2 }} />
@@ -491,9 +491,9 @@ export function HomePage({ onNavigate }: HomePageProps) {
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="py-16 lg:py-28 bg-white">
+      <section id="faq" className="py-8 lg:py-14 bg-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 md:px-8">
-          <h2 className="text-center font-headline font-bold text-on-background mb-10 lg:mb-14" style={{ fontSize: 'clamp(1.75rem, 4vw, 2.75rem)' }}>
+          <h2 className="text-center font-headline font-extrabold text-on-background mb-10 lg:mb-14" style={{ fontSize: 'clamp(2rem, 4vw, 3rem)' }}>
             Câu hỏi thường gặp
           </h2>
           <div className="space-y-4">
