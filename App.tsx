@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { TranscriptionStatus, FileMetadata, type TokenLoggingContext } from './types';
-import type { AudioLanguage } from './services/geminiService';
+import { transcribeBasic, transcribeDeep, summarizeTranscript, synthesizeTranscriptions, type DeepProgressCallback, type AudioLanguage } from './services/geminiService';
 import { getMe, logout as signOut, loadApiKeyFromAccount, saveApiKeyToAccount } from './lib/auth';
 import type { AuthUser } from './lib/auth';
 import { authFetch } from './lib/api';
 import { Spinner } from './components/Spinner';
 import { FileAudioIcon, RefreshIcon, AlertCircleIcon, DownloadIcon, CheckIcon, CopyIcon, MailIcon } from './components/Icons';
 import { FileText, Scissors, GitBranch, Zap, BarChart2, Users, Settings, User as UserIcon } from 'lucide-react';
+import { LoginPage } from './components/LoginPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import type { MeetingInfo } from './features/minutes/types';
 import { loadMeetingInfoDraft, clearMeetingInfoDraft } from './features/minutes/storage';
@@ -16,6 +17,7 @@ const MeetingInfoForm = lazy(() => import('./features/minutes/components/Meeting
 // useMindmapTree cần direct import vì được gọi trong App() root component
 // TODO: Tách App thành AppShell + MeetingApp để hook chỉ chạy khi route /meeting
 import { useMindmapTree } from './features/mindmap/hooks/useMindmapTree';
+import { downloadAsDocx, downloadAsPdf } from './lib/minutesDocxExport';
 import { QuotaBadge } from './features/pricing/QuotaBadge';
 import { QuotaUpgradeModal } from './features/pricing/QuotaUpgradeModal';
 
@@ -26,10 +28,10 @@ const TokenUsageAdminPage = lazy(() => import('./features/token-usage-admin/Toke
 const UserManagementPage = lazy(() => import('./features/user-management/UserManagementPage').then(m => ({ default: m.UserManagementPage })));
 const MindmapPage = lazy(() => import('./features/mindmap/MindmapPage').then(m => ({ default: m.MindmapPage })));
 const MindmapTreeCanvasLazy = lazy(() => import('./features/mindmap/components/MindmapTreeCanvas').then(m => ({ default: m.MindmapTreeCanvas })));
-const LoginPage = lazy(() => import('./components/LoginPage').then(m => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import('./components/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const PricingPage = lazy(() => import('./features/pricing/PricingPage').then(m => ({ default: m.PricingPage })));
 const HomePage = lazy(() => import('./components/HomePage').then(m => ({ default: m.HomePage })));
+const PaymentResultPage = lazy(() => import('./components/PaymentResultPage').then(m => ({ default: m.PaymentResultPage })));
 import { WorkflowGuard } from './features/workflows/WorkflowGuard';
 
 import { WORKFLOW_GROUPS } from './features/workflows/types';
@@ -38,22 +40,6 @@ const MeetingLandingPage = lazy(() => import('./components/MeetingLandingPage').
 const ReporterWorkflowPage = lazy(() => import('./features/workflows/reporter/ReporterWorkflowPage'));
 const SpecialistWorkflowPage = lazy(() => import('./features/workflows/specialist/SpecialistWorkflowPage'));
 const OfficerWorkflowPage = lazy(() => import('./features/workflows/officer/OfficerWorkflowPage'));
-
-let geminiServicePromise: Promise<typeof import('./services/geminiService')> | null = null;
-const loadGeminiService = () => {
-  if (!geminiServicePromise) {
-    geminiServicePromise = import('./services/geminiService');
-  }
-  return geminiServicePromise;
-};
-
-let minutesExportPromise: Promise<typeof import('./lib/minutesDocxExport')> | null = null;
-const loadMinutesExport = () => {
-  if (!minutesExportPromise) {
-    minutesExportPromise = import('./lib/minutesDocxExport');
-  }
-  return minutesExportPromise;
-};
 
 
 declare global {
@@ -396,7 +382,6 @@ function App() {
 
           let resultText: string;
           if (transcribeMode === 'deep') {
-            const { transcribeDeep } = await loadGeminiService();
             resultText = await transcribeDeep(
               file,
               (step, label) => {
@@ -409,7 +394,6 @@ function App() {
             );
             setDeepProgress(null);
           } else {
-            const { transcribeBasic } = await loadGeminiService();
             resultText = await transcribeBasic(
               file,
               audioLanguage,
@@ -524,7 +508,6 @@ function App() {
           actionType: 'other',
           metadata: { fileName: 'Synthesize Combined', mode: 'synthesize', fileCount: completedList.length },
         };
-        const { synthesizeTranscriptions } = await loadGeminiService();
         const synthesized = await synthesizeTranscriptions(
           completedList,
           synthLoggingContext,
@@ -559,7 +542,6 @@ function App() {
         actionType: 'minutes-generate',
         metadata: { fileName: fileMeta?.name || 'Combined', mode: 'summarize' },
       };
-      const { summarizeTranscript } = await loadGeminiService();
       const resultSummary = await summarizeTranscript(
         sourceText,
         customPrompt,
@@ -686,10 +668,7 @@ function App() {
 
   const handleExportPDF = () => {
     if (!summary) return;
-    void (async () => {
-      const { downloadAsPdf } = await loadMinutesExport();
-      downloadAsPdf(summary);
-    })();
+    downloadAsPdf(summary);
   };
 
   const handleExportDocx = async () => {
@@ -697,7 +676,6 @@ function App() {
     const filename = fileMeta?.name
       ? `bien-ban-${fileMeta.name.replace(/\.[^/.]+$/, '')}.docx`
       : `bien-ban-${new Date().toISOString().slice(0, 10)}.docx`;
-    const { downloadAsDocx } = await loadMinutesExport();
     await downloadAsDocx(summary, filename);
   };
 
@@ -840,30 +818,40 @@ function App() {
         </Suspense>
       );
     }
-    return (
-      <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><Spinner /></div>}>
-        <LoginPage onLoginSuccess={async () => {
-          // Sau khi dang nhap thanh cong, lay user info va cap nhat state
-          const loggedInUser = await getMe();
-          setUser(loggedInUser);
-          if (loggedInUser) {
-            navigate('/meeting');
-          } else {
-            navigate('/pricing');
-          }
-          if (loggedInUser) {
-            setIsAdmin(loggedInUser.role === 'admin');
-            const accountKey = await loadApiKeyFromAccount(loggedInUser.userId);
-            if (accountKey) {
-              setUserApiKey(accountKey);
-              localStorage.setItem('gemini_api_key', accountKey);
-              setHasApiKey(true);
-              setShowApiKeyInput(false);
-            }
-          }
-        }} />
-      </Suspense>
-    );
+    // Handle /payment/result even when user is not authenticated yet
+    // (VNPay/MoMo redirects back before app finishes auth loading)
+    if (route === '/payment/result') {
+      return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>}>
+          <PaymentResultPage
+            onTokenRefresh={(newUser) => {
+              setUser(newUser);
+            }}
+          />
+        </Suspense>
+      );
+    }
+
+    return <LoginPage onLoginSuccess={async () => {
+      // Sau khi dang nhap thanh cong, lay user info va cap nhat state
+      const loggedInUser = await getMe();
+      setUser(loggedInUser);
+      if (loggedInUser) {
+        navigate('/meeting');
+      } else {
+        navigate('/pricing');
+      }
+      if (loggedInUser) {
+        setIsAdmin(loggedInUser.role === 'admin');
+        const accountKey = await loadApiKeyFromAccount(loggedInUser.userId);
+        if (accountKey) {
+          setUserApiKey(accountKey);
+          localStorage.setItem('gemini_api_key', accountKey);
+          setHasApiKey(true);
+          setShowApiKeyInput(false);
+        }
+      }
+    }} />;
   }
 
   // Tính bước hiện tại cho step indicator
@@ -925,6 +913,18 @@ const isMindmapRoute = route === '/mindmap';
   }
 
 
+  if (route === '/payment/result') {
+    return (
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>}>
+        <PaymentResultPage
+          onTokenRefresh={(newUser) => {
+            setUser(newUser);
+          }}
+        />
+      </Suspense>
+    );
+  }
+
   if (route === '/profile' || route === '/settings') {
     const roleLabel = user?.role === 'admin' ? 'Admin' : 'Free';
     const planLabels = (user?.plans ?? []).map(p => WORKFLOW_GROUPS.find(wg => wg.key === p)?.label ?? p);
@@ -977,11 +977,9 @@ const isMindmapRoute = route === '/mindmap';
             onClick={() => { navigate('/meeting'); setMode('notes'); }}
             className="flex items-center gap-3 w-full text-left hover:opacity-90 transition-opacity"
           >
-            <img 
-              src="https://neuronsai.net/assets/NAI.png" 
-              alt="MOMAI Logo" 
-              className="w-10 h-10 object-contain rounded-xl"
-            />
+            <div className="w-10 h-10 rounded-xl nebula-gradient flex items-center justify-center text-white shadow-lg shadow-primary/20">
+              <FileAudioIcon className="w-5 h-5" />
+            </div>
             <div>
               <h1 className="text-xl font-bold text-on-surface font-headline">MOMAI</h1>
               <p className="text-[10px] tracking-widest uppercase text-on-surface-variant font-semibold">Meeting Minute</p>
@@ -1082,11 +1080,9 @@ const isMindmapRoute = route === '/mindmap';
             onClick={() => { navigate('/meeting'); setMode('notes'); }}
             className="md:hidden flex items-center gap-2 font-bold font-headline text-on-surface"
           >
-            <img 
-              src="https://neuronsai.net/assets/NAI.png" 
-              alt="MOMAI Logo" 
-              className="w-7 h-7 object-contain rounded-lg"
-            />
+            <div className="w-7 h-7 rounded-lg nebula-gradient flex items-center justify-center">
+              <FileAudioIcon className="w-4 h-4 text-white" />
+            </div>
             MOMAI
           </button>
 

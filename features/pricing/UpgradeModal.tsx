@@ -1,144 +1,128 @@
 import React, { useState } from 'react';
+import { getToken } from '../../lib/api';
 
 interface UpgradeModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type PaymentStep = 'form' | 'processing' | 'success';
-
 export const UpgradeModal: React.FC<UpgradeModalProps> = ({ isOpen, onClose }) => {
-  const [step, setStep] = useState<PaymentStep>('form');
-  const [cardNumber, setCardNumber] = useState('');
-  const [expiry, setExpiry] = useState('');
-  const [cvv, setCvv] = useState('');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStep('processing');
-    await new Promise<void>(resolve => setTimeout(resolve, 2000));
-    setStep('success');
-  };
-
-  const handleClose = () => {
-    setStep('form');
-    setCardNumber('');
-    setExpiry('');
-    setCvv('');
-    onClose();
-  };
-
-  const formatCardNumber = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 16);
-    return digits.replace(/(.{4})/g, '$1 ').trim();
-  };
-
-  const formatExpiry = (value: string) => {
-    const digits = value.replace(/\D/g, '').slice(0, 4);
-    if (digits.length >= 3) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-    return digits;
-  };
+  const [loading, setLoading] = useState<'vnpay' | 'momo' | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
+  const handlePay = async (gateway: 'vnpay' | 'momo') => {
+    setLoading(gateway);
+    setError(null);
+    const token = getToken(); // Read from localStorage key 'auth_token'
+    try {
+      const res = await fetch(`/api/payments/${gateway}/create`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? 'Không thể tạo liên kết thanh toán. Vui lòng thử lại.');
+        setLoading(null);
+        return;
+      }
+      // Full-page redirect to gateway — card data never touches our server
+      const url = data.paymentUrl ?? data.payUrl;
+      if (url) {
+        window.location.href = url;
+      } else {
+        setError('Liên kết thanh toán không hợp lệ.');
+        setLoading(null);
+      }
+    } catch (err) {
+      setError('Lỗi kết nối. Vui lòng thử lại.');
+      setLoading(null);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xl max-w-md w-full p-8">
-        {step === 'form' && (
-          <div className="space-y-6">
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-sans font-medium text-slate-800">Nâng cấp lên Pro</h2>
-              <p className="text-slate-500 text-sm">199.000 VND/tháng · Hủy bất cứ lúc nào</p>
-            </div>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-slate-800">Số thẻ</label>
-                <input
-                  type="text"
-                  name="cardNumber"
-                  value={cardNumber}
-                  onChange={e => setCardNumber(formatCardNumber(e.target.value))}
-                  placeholder="1234 5678 9012 3456"
-                  required
-                  className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none font-medium text-slate-800"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-slate-800">Ngày hết hạn</label>
-                  <input
-                    type="text"
-                    name="expiry"
-                    value={expiry}
-                    onChange={e => setExpiry(formatExpiry(e.target.value))}
-                    placeholder="MM/YY"
-                    required
-                    className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none font-medium text-slate-800"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-slate-800">CVV</label>
-                  <input
-                    type="text"
-                    name="cvv"
-                    value={cvv}
-                    onChange={e => setCvv(e.target.value.replace(/\D/g, '').slice(0, 3))}
-                    placeholder="CVV"
-                    maxLength={3}
-                    required
-                    className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none font-medium text-slate-800"
-                  />
-                </div>
-              </div>
-              <p className="text-xs text-slate-400 text-center">Demo · Không có giao dịch thực</p>
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="flex-1 py-3 border border-slate-200 text-slate-600 font-medium rounded-xl hover:bg-slate-100 transition-colors"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors"
-                >
-                  Thanh toán
-                </button>
-              </div>
-            </form>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold text-gray-900">Chọn phương thức thanh toán</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Đóng"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <p className="text-gray-500 text-sm mb-6">
+          Nâng cấp tài khoản — <span className="font-semibold text-gray-700">99.000 VND</span> / một lần
+        </p>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            {error}
           </div>
         )}
 
-        {step === 'processing' && (
-          <div className="text-center space-y-6 py-8">
-            <div className="inline-flex w-16 h-16 rounded-full border-4 border-indigo-200 border-t-indigo-600 animate-spin" />
-            <div>
-              <p className="text-xl font-sans font-medium text-slate-800">Đang xử lý...</p>
-              <p className="text-slate-500 text-sm mt-1">Vui lòng không đóng trang</p>
+        <div className="space-y-3">
+          {/* VNPay — covers Visa, Mastercard, domestic ATM, VNPay QR */}
+          <button
+            onClick={() => handlePay('vnpay')}
+            disabled={loading !== null}
+            className="w-full flex items-center justify-between px-5 py-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1">
+                <img src="/styles/VISA-logo.png" alt="Visa" className="h-5 object-contain" />
+                <img src="/styles/Mastercard-logo.svg" alt="Mastercard" className="h-6 object-contain" />
+                <img src="/styles/Icon-VNPAY-QR.webp" alt="VNPay QR" className="h-6 object-contain ml-1" />
+              </div>
+              <span className="text-sm font-medium text-gray-700">Visa / Mastercard / VNPay QR</span>
             </div>
-          </div>
-        )}
+            {loading === 'vnpay' ? (
+              <svg className="w-5 h-5 animate-spin text-blue-500" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            )}
+          </button>
 
-        {step === 'success' && (
-          <div className="text-center space-y-6 py-4">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-2xl text-3xl">
-              ✓
+          {/* MoMo e-wallet */}
+          <button
+            onClick={() => handlePay('momo')}
+            disabled={loading !== null}
+            className="w-full flex items-center justify-between px-5 py-4 border-2 border-gray-200 rounded-xl hover:border-pink-500 hover:bg-pink-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+          >
+            <div className="flex items-center gap-3">
+              <img src="/styles/Logo-MoMo.webp" alt="MoMo" className="h-8 object-contain" />
+              <span className="text-sm font-medium text-gray-700">Ví MoMo</span>
             </div>
-            <div className="space-y-2">
-              <h3 className="text-2xl font-sans font-medium text-slate-800">Thanh toán thành công!</h3>
-              <p className="text-slate-500 text-sm leading-relaxed">
-                Tính năng đang phát triển. Chúng tôi sẽ sớm kích hoạt tài khoản Pro của bạn.
-              </p>
-            </div>
-            <button
-              onClick={handleClose}
-              className="w-full py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors"
-            >
-              Đóng
-            </button>
-          </div>
-        )}
+            {loading === 'momo' ? (
+              <svg className="w-5 h-5 animate-spin text-pink-500" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5 text-gray-400 group-hover:text-pink-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            )}
+          </button>
+        </div>
+
+        <p className="mt-5 text-xs text-gray-400 text-center">
+          Bạn sẽ được chuyển đến trang thanh toán an toàn. Thông tin thẻ không lưu trên hệ thống.
+        </p>
       </div>
     </div>
   );
