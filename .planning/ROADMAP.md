@@ -15,7 +15,7 @@
 - [x] **Phase 7: Email Sending After Minutes** - Gửi email biên bản cuộc họp đến danh sách người nhận (completed 2026-03-19)
 - [ ] **Phase 8: Role-Based Workflows** - Chia luồng sản phẩm theo nhóm người dùng (Phóng viên/Chuyên viên/Cán bộ)
 - [ ] **Phase 9: UI Revamp** - Website và giao diện từng nhóm tính năng (5/8 plans complete)
-- [ ] **Phase 10: Payment Gateway Integration** - Tích hợp thanh toán Visa, Mastercard, MoMo, VNPay
+- [x] **Phase 10: Payment Gateway Integration** - Tích hợp thanh toán Visa, Mastercard, MoMo, VNPay (completed 2026-04-03)
 
 ## Phase Details
 
@@ -122,9 +122,9 @@ Plans:
   6. Webhook xử lý callback thanh toán từ các cổng
 **Plans**: 5 plans
 Plans:
-- [ ] 10-01-PLAN.md — DB migration (payment_orders, webhook_events tables) + invalidateProfileCache export + /api/payments/check-upgrade endpoint
-- [ ] 10-02-PLAN.md — VNPay integration: create URL, return redirect, IPN handler (covers Visa/Mastercard/domestic ATM/VNPay QR)
-- [ ] 10-03-PLAN.md — MoMo integration: create payment via REST API, IPN handler with HMAC-SHA256
+- [x] 10-01-PLAN.md — DB migration (payment_orders, webhook_events tables) + invalidateProfileCache export + /api/payments/check-upgrade endpoint
+- [x] 10-02-PLAN.md — VNPay integration: create URL, return redirect, IPN handler (covers Visa/Mastercard/domestic ATM/VNPay QR)
+- [x] 10-03-PLAN.md — MoMo integration: create payment via REST API, IPN handler with HMAC-SHA256
 - [ ] 10-04-PLAN.md — Frontend: replace UpgradeModal mock form with gateway buttons, PaymentResultPage, App.tsx route
 - [ ] 10-05-PLAN.md — Admin payment orders view + integration tests + human verification
 

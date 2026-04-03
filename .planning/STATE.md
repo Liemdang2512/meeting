@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 10-04-PLAN.md
-last_updated: "2026-04-03T03:32:26.931Z"
+stopped_at: "Completed 10-05 tasks 1-2, awaiting checkpoint:human-verify for full payment flow browser test"
+last_updated: "2026-04-03T03:39:35.052Z"
 progress:
-  total_phases: 10
-  completed_phases: 5
-  total_plans: 36
-  completed_plans: 31
+  total_phases: 11
+  completed_phases: 6
+  total_plans: 41
+  completed_plans: 36
 ---
 
 # Project State
@@ -17,11 +17,11 @@ progress:
 ## Current Position
 
 Phase: 09 (ui-revamp-website-va-giao-dien-tung-nhom-tinh-nang) — EXECUTING
-Plan: 6 of 8
+Plan: 7 of 8
 
 ## Last Session
 
-- **Stopped At:** Completed 10-04-PLAN.md
+- **Stopped At:** Completed 10-05 tasks 1-2, awaiting checkpoint:human-verify for full payment flow browser test
 - **Timestamp:** 2026-04-01T00:00:00Z
 
 ## Decisions
@@ -80,6 +80,8 @@ Plan: 6 of 8
 - [Phase 10-payment-gateway]: UpgradeModal reads token internally via getToken() — no token prop passed from parent
 - [Phase 10-payment-gateway]: PaymentResultPage handles both VNPay (?status=success) and MoMo (?resultCode=0) URL params
 - [Phase 10-payment-gateway]: /payment/result registered in both authenticated and unauthenticated routing blocks to handle gateway redirect race with auth loading
+- [Phase 10-payment-gateway]: Exclude *.integration.test.ts from unit runner, include in vitest.integration.config.ts — prevents DB-dependent tests from failing in unit test environment
+- [Phase 10-payment-gateway]: API_JWT_SECRET env added to vitest.integration.config.ts — server/auth.ts FATAL on missing env
 
 ## Performance Metrics
 
@@ -108,6 +110,7 @@ Plan: 6 of 8
 | 09-ui-revamp | 09-03 | 2min | 2 tasks | 3 files |
 | Phase 09-ui-revamp P09-04 | 5min | 1 tasks | 2 files |
 | Phase 10-payment-gateway P10-04 | 10min | 2 tasks | 3 files |
+| Phase 10-payment-gateway P10-05 | 5min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
