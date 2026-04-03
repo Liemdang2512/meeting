@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MoMai AI - Thư ký AI dành cho bạn</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "inverse-on-surface": "#959cb5",
+                        "on-secondary-container": "#6617d7",
+                        "on-tertiary-fixed-variant": "#003c87",
+                        "error-dim": "#770326",
+                        "on-primary-fixed": "#17008c",
+                        "on-error-container": "#68001f",
+                        "secondary-fixed": "#eaddff",
+                        "surface-variant": "#d9e2ff",
+                        "primary": "#4e45e4",
+                        "surface-container-high": "#e2e7ff",
+                        "secondary-container": "#eaddff",
+                        "on-secondary-fixed": "#5100b3",
+                        "tertiary-dim": "#004fad",
+                        "error-container": "#f76a80",
+                        "on-surface-variant": "#4f5e86",
+                        "surface-container-highest": "#d9e2ff",
+                        "outline-variant": "#a2b1dd",
+                        "on-secondary-fixed-variant": "#702ae1",
+                        "inverse-surface": "#060e20",
+                        "on-secondary": "#fdf7ff",
+                        "secondary-fixed-dim": "#deccff",
+                        "secondary": "#742fe5",
+                        "surface-tint": "#4e45e4",
+                        "tertiary-fixed": "#98b8ff",
+                        "surface-bright": "#faf8ff",
+                        "on-primary": "#fbf7ff",
+                        "surface": "#faf8ff",
+                        "on-tertiary": "#f9f8ff",
+                        "on-error": "#fff7f7",
+                        "primary-dim": "#4135d8",
+                        "outline": "#6a7aa3",
+                        "tertiary": "#005bc4",
+                        "inverse-primary": "#8582ff",
+                        "tertiary-container": "#98b8ff",
+                        "primary-fixed": "#bdbaff",
+                        "background": "#faf8ff",
+                        "surface-container": "#eaedff",
+                        "on-tertiary-fixed": "#001f4b",
+                        "on-surface": "#213156",
+                        "surface-container-low": "#f2f3ff",
+                        "secondary-dim": "#681ad9",
+                        "primary-container": "#bdbaff",
+                        "primary-fixed-dim": "#adabff",
+                        "on-tertiary-container": "#003476",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#3220cb",
+                        "error": "#ac3149",
+                        "on-background": "#213156",
+                        "tertiary-fixed-dim": "#81aaff",
+                        "surface-dim": "#cdd9ff",
+                        "on-primary-container": "#270ac3"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+        .signature-gradient {
+            background: linear-gradient(135deg, #4e45e4 0%, #742fe5 100%);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface selection:bg-primary/20">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#faf8ff]/70 backdrop-blur-xl shadow-sm">
+<div class="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
+<div class="text-2xl font-black bg-gradient-to-r from-[#4e45e4] to-[#742fe5] bg-clip-text text-transparent font-['Manrope'] tracking-tight">
+                MoMai AI
+            </div>
+<div class="hidden md:flex items-center space-x-8">
+<a class="text-[#4e45e4] border-b-2 border-[#4e45e4] font-['Manrope'] font-semibold tracking-tight" href="#">Tính năng</a>
+<a class="text-[#213156] opacity-80 hover:opacity-100 hover:text-[#4e45e4] transition-all font-['Manrope'] font-semibold tracking-tight" href="#">Bảng giá</a>
+<a class="text-[#213156] opacity-80 hover:opacity-100 hover:text-[#4e45e4] transition-all font-['Manrope'] font-semibold tracking-tight" href="#">Giải pháp</a>
+<a class="text-[#213156] opacity-80 hover:opacity-100 hover:text-[#4e45e4] transition-all font-['Manrope'] font-semibold tracking-tight" href="#">FAQ</a>
+</div>
+<div class="flex items-center space-x-4">
+<button class="px-5 py-2 text-[#4e45e4] font-semibold hover:opacity-80 transition-all scale-95 active:scale-90">Đăng nhập</button>
+<button class="px-6 py-2 signature-gradient text-white font-bold rounded-full shadow-lg shadow-primary/20 transition-all scale-95 active:scale-90">Đăng ký</button>
+</div>
+</div>
+</nav>
+<!-- Hero Section -->
+<header class="pt-32 pb-20 px-6 overflow-hidden">
+<div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
+<div class="w-full lg:w-1/2 space-y-8">
+<div class="inline-flex items-center px-4 py-2 bg-secondary-container text-on-secondary-container rounded-full text-sm font-semibold">
+<span class="material-symbols-outlined mr-2 text-sm">auto_awesome</span>
+                    Thư ký AI dành cho bạn
+                </div>
+<h1 class="text-5xl md:text-7xl font-extrabold leading-[1.1] text-on-surface tracking-tight">
+                    Biến mọi cuộc họp thành <span class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">tri thức</span> có cấu trúc.
+                </h1>
+<p class="text-xl text-on-surface-variant max-w-lg leading-relaxed">
+                    Tự động ghi âm, chuyển văn bản và tóm tắt cuộc họp với độ chính xác tuyệt đối. Tiết kiệm 80% thời gian soạn thảo biên bản.
+                </p>
+<div class="flex flex-col sm:flex-row gap-4 pt-4">
+<button class="px-8 py-4 signature-gradient text-white font-bold rounded-full text-lg shadow-xl shadow-primary/30 hover:scale-105 transition-transform active:scale-95">
+                        BẮT ĐẦU NGAY
+                    </button>
+<button class="px-8 py-4 bg-surface-container-high text-primary font-bold rounded-full text-lg hover:bg-surface-container-highest transition-colors active:scale-95">
+                        Tìm hiểu thêm
+                    </button>
+</div>
+<div class="flex items-center gap-4 pt-6">
+<div class="flex -space-x-3">
+<img alt="User 1" class="w-10 h-10 rounded-full border-2 border-surface" data-alt="professional portrait of a young woman with a confident expression in a bright modern office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7obZv46d4ksnzsnql2l5GWJGJ6Rcg3rtGISNgc7Ff4UeM4O3JjV2GkhwsGRr-6dA4C3Drh0LYHtw6ARxNSAQGC64fQLCNPSyRuO_gfr9HTVA_agrPB8D0PQ7OUX1M8R76DPkqAQogdOl18h4AecPyWYPK4TvaWSXQ22a2bBFQPPDG4k3gPuKFXVyunbkv-53agXHFrloetO044lMl_XWxRQPnb8TZDeUYmxZGq1otJbrPhBApi533iN6WmAl48fin_8TCghvxkTeH"/>
+<img alt="User 2" class="w-10 h-10 rounded-full border-2 border-surface" data-alt="close-up portrait of a smiling businessman with glasses against a clean neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDS683WORcGYsPj-7jtW3HA9KBxbYhuKYt1_jbA5c-PNYA42YI8iwjP17fXMBMezUlBzaOtardlpjFBIOD-hxRj7sHpCWLvgfn9J9WsbkxPGMATBr_Mw7UAD0Q9Q72giAIv19KwjsrFzl-Yza-dKBw-jZttehWP354Sl5suZrPgfnO2xVp_uUYrjp7mDAbm6iDmZVkv7P0kFz-DoQ5Nb5YDtwu2aX6KGgpkb0B_P4hj00i-GIUYm9W380MxlQ7xoGsu2PYlnQhHl395"/>
+<img alt="User 3" class="w-10 h-10 rounded-full border-2 border-surface" data-alt="portrait of a focused male professional in casual business attire with soft natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuANMT7gKZhoPpuoOi7nrrOjRV-pMRNqg1x6Mva_tdMChLdETSkSJCX_M446RmQ5PwFM2huwZVKYCdsS8k45HXhKkvHyKWcZFXVrZEftZ4Z14AW2B0hBcmpPS7j3zpVRbr5_fTiWmXpmip7j03Z5h8AS-zutU3UYBDMXmKUPz5r7LJ3Oc0F9szhnG4CAvCp5k1ZTFuPiZfECNACXbvk5yWi-efrQjKb8gpiUel6Vi6LwwnOKlkL86M1a8UxY1RrrImhzoljMLSa_gF-L"/>
+</div>
+<span class="text-on-surface-variant font-medium">Được tin dùng bởi <span class="text-on-surface font-bold">500+ chuyên viên</span></span>
+</div>
+</div>
+<div class="w-full lg:w-1/2 relative">
+<div class="relative z-10 glass-panel rounded-2xl p-4 shadow-2xl shadow-primary/10 border border-outline-variant/15">
+<img alt="MoMai Dashboard" class="rounded-xl w-full" data-alt="clean user interface dashboard showing voice transcription waves and structured text summary with purple accent colors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLMPh54DFNbt8v6B5vsTnCkLWxbyodGlPdbBdv3Uf2gWRbyPjvW0q2M0CNEMkgXteE2ZvyBzcGMb8zgszqroYOqhQnqHCVsjHo-xEDVbacMLzN0H9UhVxHpxsXB1i9nbUGXTcQw4caqIQ2BQeXEReOfK3RGHn9buzeVJ8Pjoq_iEWmLKH5NET4P4HYUmDFZ9VDFSBs8Ds_f1RKe2l-pwdeAD3zIfdX98YR4GBbuLEelktp-hj1ICzIUA23EJqmSh2egfYpErSnHMPW"/>
+<!-- The Minutes Pulse Overlay -->
+<div class="absolute -bottom-6 -left-6 bg-surface-container-lowest p-6 rounded-2xl shadow-xl flex items-center gap-4 border border-outline-variant/15">
+<div class="flex gap-1 items-end h-8">
+<div class="w-2 bg-primary rounded-full animate-pulse h-4"></div>
+<div class="w-2 bg-secondary rounded-full animate-pulse h-8 delay-75"></div>
+<div class="w-2 bg-primary rounded-full animate-pulse h-6 delay-150"></div>
+<div class="w-2 bg-secondary rounded-full animate-pulse h-5 delay-200"></div>
+</div>
+<div>
+<p class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Đang ghi âm</p>
+<p class="text-sm font-bold text-on-surface">Cuộc họp Chiến lược Q4</p>
+</div>
+</div>
+</div>
+<!-- Decorative Gradients -->
+<div class="absolute -top-20 -right-20 w-64 h-64 bg-primary/20 blur-[100px] rounded-full"></div>
+<div class="absolute -bottom-20 -left-20 w-64 h-64 bg-secondary/20 blur-[100px] rounded-full"></div>
+</div>
+</div>
+</header>
+<!-- Features Bento Grid -->
+<section class="py-24 bg-surface-container-low px-6">
+<div class="max-w-7xl mx-auto">
+<div class="text-center mb-16 space-y-4">
+<h2 class="text-4xl font-extrabold text-on-surface">Sức mạnh từ trí tuệ nhân tạo</h2>
+<p class="text-on-surface-variant max-w-2xl mx-auto text-lg">Hệ thống được thiết kế để tối ưu hóa mọi quy trình làm việc của bạn.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Feature 1 -->
+<div class="bg-surface-container-lowest p-8 rounded-2xl hover:translate-y-[-8px] transition-all duration-300 group">
+<div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-6 group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">auto_mode</span>
+</div>
+<h3 class="text-xl font-bold mb-3">Tự động hóa 100%</h3>
+<p class="text-on-surface-variant leading-relaxed">Loại bỏ hoàn toàn việc ghi chép thủ công. AI tự động phân tích và trích xuất thông tin quan trọng.</p>
+</div>
+<!-- Feature 2 -->
+<div class="bg-surface-container-lowest p-8 rounded-2xl hover:translate-y-[-8px] transition-all duration-300 group border-2 border-transparent hover:border-primary/20">
+<div class="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary mb-6 group-hover:bg-secondary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">verified_user</span>
+</div>
+<h3 class="text-xl font-bold mb-3">Độ chính xác 98%+</h3>
+<p class="text-on-surface-variant leading-relaxed">Thuật toán xử lý ngôn ngữ tự nhiên tiên tiến nhất đảm bảo từng câu chữ được ghi lại chính xác.</p>
+</div>
+<!-- Feature 3 -->
+<div class="bg-surface-container-lowest p-8 rounded-2xl hover:translate-y-[-8px] transition-all duration-300 group">
+<div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-6 group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">bolt</span>
+</div>
+<h3 class="text-xl font-bold mb-3">Xử lý siêu nhanh</h3>
+<p class="text-on-surface-variant leading-relaxed">Nhận kết quả tóm tắt và biên bản họp chỉ trong vài giây sau khi kết thúc ghi âm.</p>
+</div>
+<!-- Feature 4 -->
+<div class="bg-surface-container-lowest p-8 rounded-2xl hover:translate-y-[-8px] transition-all duration-300 group">
+<div class="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary mb-6 group-hover:bg-secondary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">translate</span>
+</div>
+<h3 class="text-xl font-bold mb-3">Đa dạng ngôn ngữ</h3>
+<p class="text-on-surface-variant leading-relaxed">Hỗ trợ tiếng Việt và hơn 50 ngôn ngữ khác với khả năng nhận diện ngữ cảnh vùng miền.</p>
+</div>
+<!-- Feature 5 -->
+<div class="bg-surface-container-lowest p-8 rounded-2xl hover:translate-y-[-8px] transition-all duration-300 group border-2 border-transparent hover:border-primary/20">
+<div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-6 group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">savings</span>
+</div>
+<h3 class="text-xl font-bold mb-3">Tiết kiệm chi phí</h3>
+<p class="text-on-surface-variant leading-relaxed">Giảm thiểu chi phí nhân sự và thời gian họp không cần thiết, tối ưu hóa ngân sách doanh nghiệp.</p>
+</div>
+<!-- Feature 6 -->
+<div class="bg-surface-container-lowest p-8 rounded-2xl hover:translate-y-[-8px] transition-all duration-300 group">
+<div class="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary mb-6 group-hover:bg-secondary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">all_inclusive</span>
+</div>
+<h3 class="text-xl font-bold mb-3">Không giới hạn</h3>
+<p class="text-on-surface-variant leading-relaxed">Lưu trữ không giới hạn các bản ghi âm và tài liệu họp trên nền tảng đám mây bảo mật.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Pricing Section -->
+<section class="py-24 px-6 relative">
+<div class="max-w-7xl mx-auto">
+<div class="text-center mb-16">
+<h2 class="text-4xl font-extrabold text-on-surface mb-4">Gói cước linh hoạt</h2>
+<p class="text-on-surface-variant">Lựa chọn gói dịch vụ phù hợp nhất với nhu cầu của bạn.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
+<!-- Plan 1 -->
+<div class="bg-surface-container-low p-8 rounded-2xl space-y-6 border border-outline-variant/10">
+<div>
+<h3 class="text-xl font-bold">Phóng viên</h3>
+<p class="text-4xl font-black mt-4 text-on-surface">399k<span class="text-lg font-normal text-on-surface-variant">/tháng</span></p>
+</div>
+<ul class="space-y-4">
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary text-sm">check_circle</span> 20 giờ ghi âm/tháng</li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary text-sm">check_circle</span> Tóm tắt AI cơ bản</li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary text-sm">check_circle</span> Xuất file PDF, Docx</li>
+</ul>
+<button class="w-full py-3 bg-surface-container-highest text-primary font-bold rounded-lg hover:bg-primary hover:text-white transition-all">Chọn gói này</button>
+</div>
+<!-- Plan 2 - Featured -->
+<div class="bg-inverse-surface p-10 rounded-2xl space-y-6 relative overflow-hidden scale-105 shadow-2xl">
+<div class="absolute top-4 right-4 bg-primary text-white px-3 py-1 rounded-full text-xs font-bold">Phổ biến nhất</div>
+<div>
+<h3 class="text-xl font-bold text-white">Chuyên viên</h3>
+<p class="text-5xl font-black mt-4 text-white">299k<span class="text-lg font-normal opacity-60">/tháng</span></p>
+<p class="text-xs text-primary mt-2 font-bold italic">* Ưu đãi giới hạn</p>
+</div>
+<ul class="space-y-4 text-white/80">
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary text-sm">check_circle</span> 50 giờ ghi âm/tháng</li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary text-sm">check_circle</span> AI chuyên sâu &amp; Mindmap</li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary text-sm">check_circle</span> Phân biệt 5 người nói</li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary text-sm">check_circle</span> Ưu tiên xử lý</li>
+</ul>
+<button class="w-full py-4 signature-gradient text-white font-bold rounded-lg shadow-lg hover:brightness-110 transition-all">BẮT ĐẦU NGAY</button>
+</div>
+<!-- Plan 3 -->
+<div class="bg-surface-container-low p-8 rounded-2xl space-y-6 border border-outline-variant/10">
+<div>
+<h3 class="text-xl font-bold">Cán bộ</h3>
+<p class="text-4xl font-black mt-4 text-on-surface">499k<span class="text-lg font-normal text-on-surface-variant">/tháng</span></p>
+</div>
+<ul class="space-y-4">
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary text-sm">check_circle</span> Không giới hạn ghi âm</li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary text-sm">check_circle</span> Tùy chỉnh mẫu biên bản</li>
+<li class="flex items-center gap-3"><span class="material-symbols-outlined text-primary text-sm">check_circle</span> Lưu trữ vĩnh viễn</li>
+</ul>
+<button class="w-full py-3 bg-surface-container-highest text-primary font-bold rounded-lg hover:bg-primary hover:text-white transition-all">Chọn gói này</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Enterprise Solution -->
+<section class="py-24 bg-primary px-6">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-12 text-on-primary">
+<div class="w-full md:w-1/2 space-y-8">
+<h2 class="text-4xl font-extrabold">Giải pháp Doanh nghiệp</h2>
+<p class="text-xl opacity-90 leading-relaxed">MoMai AI cung cấp hạ tầng chuyên dụng cho các tổ chức yêu cầu khả năng tùy biến cao và bảo mật nghiêm ngặt.</p>
+<div class="space-y-6">
+<div class="flex gap-4">
+<div class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined">api</span>
+</div>
+<div>
+<h4 class="text-lg font-bold">Tích hợp API</h4>
+<p class="opacity-80">Kết nối trực tiếp vào hệ thống hiện tại của doanh nghiệp như ERP, CRM.</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined">security</span>
+</div>
+<div>
+<h4 class="text-lg font-bold">Bảo mật đa tầng</h4>
+<p class="opacity-80">Mã hóa dữ liệu đầu cuối, triển khai On-premise theo yêu cầu.</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined">admin_panel_settings</span>
+</div>
+<div>
+<h4 class="text-lg font-bold">Quản lý tập trung</h4>
+<p class="opacity-80">Bảng điều khiển quản lý user, phân quyền và giám sát tài nguyên.</p>
+</div>
+</div>
+</div>
+<button class="px-8 py-4 bg-white text-primary font-bold rounded-full hover:bg-surface-container-high transition-colors">Liên hệ tư vấn</button>
+</div>
+<div class="w-full md:w-1/2">
+<div class="rounded-2xl overflow-hidden shadow-2xl border-8 border-white/10">
+<img alt="Enterprise Team" class="w-full" data-alt="team of professionals in a high-tech boardroom collaborating with a digital dashboard on a large wall screen" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkoAcKVGiijcSNA6hX2l4sTn7RQeUqWOrOHmebPEZ4ag7KlJPWaOL3f0fS40PpJRDUzwAAPo70x9bxSWpgatV0IDUcJx0gQkHr9SS18IY6ElQ5WSNz6wf5BlEpGAzDRoEUtWUxfycCbv1hM8BNibj5WUr3Zatp1YjzaqvrZ6LcTBXC86dG7JjiTkKJV1dmZi83cLYf_JF3D8MKF8xMEJAxcV-p07L52dQ_0QByUuOq2rfHz-hVKkk5XMA_0Hst8lwkw3iMxjdI3lOy"/>
+</div>
+</div>
+</div>
+</section>
+<!-- FAQ Section -->
+<section class="py-24 px-6 bg-surface-bright">
+<div class="max-w-3xl mx-auto">
+<div class="text-center mb-16">
+<h2 class="text-4xl font-extrabold text-on-surface">Câu hỏi thường gặp</h2>
+</div>
+<div class="space-y-4">
+<details class="group bg-surface-container-low rounded-2xl overflow-hidden transition-all duration-300">
+<summary class="flex justify-between items-center p-6 cursor-pointer list-none">
+<span class="text-lg font-bold">MoMai AI xử lý tiếng Việt có tốt không?</span>
+<span class="material-symbols-outlined transition-transform group-open:rotate-180">expand_more</span>
+</summary>
+<div class="px-6 pb-6 text-on-surface-variant">
+                        Chúng tôi tối ưu hóa mô hình ngôn ngữ riêng cho tiếng Việt, bao gồm cả các thuật ngữ chuyên ngành và ngữ điệu vùng miền, đạt độ chính xác trên 98%.
+                    </div>
+</details>
+<details class="group bg-surface-container-low rounded-2xl overflow-hidden transition-all duration-300">
+<summary class="flex justify-between items-center p-6 cursor-pointer list-none">
+<span class="text-lg font-bold">Dữ liệu của tôi có được bảo mật không?</span>
+<span class="material-symbols-outlined transition-transform group-open:rotate-180">expand_more</span>
+</summary>
+<div class="px-6 pb-6 text-on-surface-variant">
+                        Tất cả dữ liệu được mã hóa chuẩn AES-256. Chúng tôi cam kết không sử dụng dữ liệu của khách hàng để huấn luyện AI mà không có sự cho phép.
+                    </div>
+</details>
+<details class="group bg-surface-container-low rounded-2xl overflow-hidden transition-all duration-300">
+<summary class="flex justify-between items-center p-6 cursor-pointer list-none">
+<span class="text-lg font-bold">Tôi có thể hủy dịch vụ bất cứ lúc nào?</span>
+<span class="material-symbols-outlined transition-transform group-open:rotate-180">expand_more</span>
+</summary>
+<div class="px-6 pb-6 text-on-surface-variant">
+                        Hoàn toàn có thể. MoMai không yêu cầu cam kết dài hạn. Bạn có thể hủy gia hạn ngay trong phần cài đặt tài khoản.
+                    </div>
+</details>
+<details class="group bg-surface-container-low rounded-2xl overflow-hidden transition-all duration-300">
+<summary class="flex justify-between items-center p-6 cursor-pointer list-none">
+<span class="text-lg font-bold">Làm thế nào để AI phân biệt được những người đang nói?</span>
+<span class="material-symbols-outlined transition-transform group-open:rotate-180">expand_more</span>
+</summary>
+<div class="px-6 pb-6 text-on-surface-variant">
+                        Công nghệ Diarization của chúng tôi phân tích vân âm để tách biệt các giọng nói khác nhau, sau đó gán nhãn chính xác cho từng đoạn hội thoại.
+                    </div>
+</details>
+<details class="group bg-surface-container-low rounded-2xl overflow-hidden transition-all duration-300">
+<summary class="flex justify-between items-center p-6 cursor-pointer list-none">
+<span class="text-lg font-bold">MoMai hỗ trợ những định dạng file nào?</span>
+<span class="material-symbols-outlined transition-transform group-open:rotate-180">expand_more</span>
+</summary>
+<div class="px-6 pb-6 text-on-surface-variant">
+                        Chúng tôi hỗ trợ hầu hết các định dạng phổ biến: MP3, WAV, M4A cho âm thanh và MP4, MOV cho video.
+                    </div>
+</details>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="w-full rounded-t-[2rem] bg-[#f2f3ff] px-12 py-16">
+<div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
+<div class="space-y-6">
+<div class="text-lg font-bold text-[#213156]">MoMai AI</div>
+<p class="text-sm text-[#213156] opacity-70 leading-relaxed max-w-xs">
+                    Giải pháp ghi âm và tóm tắt cuộc họp thông minh hàng đầu Việt Nam, giúp bạn tập trung vào những gì quan trọng nhất.
+                </p>
+<div class="flex gap-4">
+<a class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary hover:scale-110 transition-transform" href="#"><span class="material-symbols-outlined">public</span></a>
+<a class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary hover:scale-110 transition-transform" href="#"><span class="material-symbols-outlined">mail</span></a>
+</div>
+</div>
+<div class="space-y-6">
+<h4 class="font-bold text-[#213156]">Khám phá</h4>
+<div class="flex flex-col gap-4 text-sm text-[#213156]">
+<a class="opacity-70 hover:opacity-100 hover:underline transition-opacity" href="#">Giới thiệu dự án</a>
+<a class="opacity-70 hover:opacity-100 hover:underline transition-opacity" href="#">Tính năng mới</a>
+<a class="opacity-70 hover:opacity-100 hover:underline transition-opacity" href="#">Blog tri thức</a>
+</div>
+</div>
+<div class="space-y-6">
+<h4 class="font-bold text-[#213156]">Pháp lý &amp; Hỗ trợ</h4>
+<div class="flex flex-col gap-4 text-sm text-[#213156]">
+<a class="opacity-70 hover:opacity-100 hover:underline transition-opacity" href="#">Liên hệ</a>
+<a class="opacity-70 hover:opacity-100 hover:underline transition-opacity" href="#">Hỗ trợ</a>
+<a class="opacity-70 hover:opacity-100 hover:underline transition-opacity" href="#">Chính sách bảo mật</a>
+</div>
+</div>
+</div>
+<div class="max-w-7xl mx-auto mt-16 pt-8 border-t border-[#213156]/10 flex flex-col md:flex-row justify-between items-center gap-4">
+<div class="text-sm text-[#213156] opacity-70">© 2024 MoMai AI. The Digital Curator.</div>
+<div class="flex gap-6 text-xs font-bold text-[#4e45e4]">
+<span>VIETNAM</span>
+<span>ENGLISH</span>
+</div>
+</div>
+</footer>
+</body></html>
