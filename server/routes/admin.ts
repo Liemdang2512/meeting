@@ -236,6 +236,52 @@ router.delete('/users/:id', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
+// GET /api/admin/payments
+// Returns paginated list of all payment orders with user email.
+// Query params: limit (default 50, max 200), offset (default 0), status (optional filter)
+router.get('/payments', requireAuth, requireAdmin, async (req, res) => {
+  const limit = Math.min(Number(req.query.limit ?? 50), 200);
+  const offset = Number(req.query.offset ?? 0);
+  const statusFilter = req.query.status as string | undefined;
+
+  try {
+    const orders = await sql`
+      SELECT
+        po.id,
+        po.gateway,
+        po.amount,
+        po.currency,
+        po.status,
+        po.plan_granted,
+        po.gateway_txn_id,
+        po.created_at,
+        po.updated_at,
+        u.email AS user_email
+      FROM public.payment_orders po
+      JOIN auth.users u ON u.id = po.user_id
+      ${statusFilter ? sql`WHERE po.status = ${statusFilter}` : sql``}
+      ORDER BY po.created_at DESC
+      LIMIT ${limit}
+      OFFSET ${offset}
+    `;
+
+    const [countResult] = await sql`
+      SELECT COUNT(*)::int AS total FROM public.payment_orders
+      ${statusFilter ? sql`WHERE status = ${statusFilter}` : sql``}
+    `;
+
+    return res.json({
+      orders,
+      total: countResult.total,
+      limit,
+      offset,
+    });
+  } catch (err: any) {
+    console.error('[admin/payments]', err);
+    return res.status(500).json({ error: 'Đã xảy ra lỗi. Vui lòng thử lại sau.' });
+  }
+});
+
 // GET /api/admin/settings — read app settings (mask API key)
 router.get('/settings', requireAuth, requireAdmin, async (req, res) => {
   try {
