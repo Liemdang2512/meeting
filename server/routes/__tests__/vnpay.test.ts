@@ -20,7 +20,7 @@ describe('VNPay IPN idempotency', () => {
   });
 
   it('returns false for pending order (should process)', () => {
-    const orderStatus = 'pending';
+    const orderStatus: string = 'pending';
     const isAlreadyProcessed = orderStatus === 'completed';
     expect(isAlreadyProcessed).toBe(false);
   });
