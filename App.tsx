@@ -31,6 +31,7 @@ const MindmapTreeCanvasLazy = lazy(() => import('./features/mindmap/components/M
 const RegisterPage = lazy(() => import('./components/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const PricingPage = lazy(() => import('./features/pricing/PricingPage').then(m => ({ default: m.PricingPage })));
 const HomePage = lazy(() => import('./components/HomePage').then(m => ({ default: m.HomePage })));
+const PaymentResultPage = lazy(() => import('./components/PaymentResultPage').then(m => ({ default: m.PaymentResultPage })));
 import { WorkflowGuard } from './features/workflows/WorkflowGuard';
 
 import { WORKFLOW_GROUPS } from './features/workflows/types';
@@ -817,6 +818,20 @@ function App() {
         </Suspense>
       );
     }
+    // Handle /payment/result even when user is not authenticated yet
+    // (VNPay/MoMo redirects back before app finishes auth loading)
+    if (route === '/payment/result') {
+      return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>}>
+          <PaymentResultPage
+            onTokenRefresh={(newUser) => {
+              setUser(newUser);
+            }}
+          />
+        </Suspense>
+      );
+    }
+
     return <LoginPage onLoginSuccess={async () => {
       // Sau khi dang nhap thanh cong, lay user info va cap nhat state
       const loggedInUser = await getMe();
@@ -897,6 +912,18 @@ const isMindmapRoute = route === '/mindmap';
     );
   }
 
+
+  if (route === '/payment/result') {
+    return (
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>}>
+        <PaymentResultPage
+          onTokenRefresh={(newUser) => {
+            setUser(newUser);
+          }}
+        />
+      </Suspense>
+    );
+  }
 
   if (route === '/profile' || route === '/settings') {
     const roleLabel = user?.role === 'admin' ? 'Admin' : 'Free';
