@@ -62,7 +62,8 @@ router.get('/users', requireAuth, requireAdmin, async (req, res) => {
     `;
     res.json({ users });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    console.error('[admin/list-users]', err);
+    res.status(500).json({ error: 'Lỗi hệ thống' });
   }
 });
 
@@ -102,7 +103,8 @@ router.post('/users', requireAuth, requireAdmin, async (req, res) => {
       user: { id: newUser.id, email: newUser.email, role, plans, created_at: newUser.created_at },
     });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    console.error('[admin/create-user]', err);
+    return res.status(500).json({ error: 'Lỗi hệ thống' });
   }
 });
 
@@ -130,8 +132,16 @@ router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
   if (features !== undefined && !Array.isArray(features)) {
     return res.status(400).json({ error: 'features phải là mảng' });
   }
-  if (password && password.length < 6) {
-    return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 6 ký tự' });
+  if (password) {
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 8 ký tự' });
+    }
+    if (!/[A-Z]/.test(password)) {
+      return res.status(400).json({ error: 'Mật khẩu cần ít nhất 1 chữ hoa' });
+    }
+    if (!/[0-9]/.test(password)) {
+      return res.status(400).json({ error: 'Mật khẩu cần ít nhất 1 chữ số' });
+    }
   }
 
   try {
@@ -188,7 +198,8 @@ router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
 
     return res.json({ ok: true });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    console.error('[admin/update-user]', err);
+    return res.status(500).json({ error: 'Lỗi hệ thống' });
   }
 });
 
@@ -206,14 +217,22 @@ router.delete('/users/:id', requireAuth, requireAdmin, async (req, res) => {
       return res.status(404).json({ error: 'User không tồn tại' });
     }
 
-    // Xóa các bảng liên quan trước
-    await sql`DELETE FROM public.profiles WHERE user_id = ${id}`;
-    await sql`DELETE FROM public.user_settings WHERE user_id = ${id}`;
-    await sql`DELETE FROM auth.users WHERE id = ${id}`;
+    await sql.begin(async (tx: any) => {
+      await tx`DELETE FROM public.summaries WHERE transcription_id IN (
+        SELECT id FROM public.transcriptions WHERE user_id = ${id}
+      )`;
+      await tx`DELETE FROM public.transcriptions WHERE user_id = ${id}`;
+      await tx`DELETE FROM public.token_usage_logs WHERE user_id = ${id}`;
+      await tx`DELETE FROM public.daily_conversion_usage WHERE user_id = ${id}`;
+      await tx`DELETE FROM public.user_settings WHERE user_id = ${id}`;
+      await tx`DELETE FROM public.profiles WHERE user_id = ${id}`;
+      await tx`DELETE FROM auth.users WHERE id = ${id}`;
+    });
 
     return res.json({ ok: true });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    console.error('[admin/delete-user]', err);
+    return res.status(500).json({ error: 'Lỗi hệ thống khi xóa user' });
   }
 });
 
@@ -228,7 +247,8 @@ router.get('/settings', requireAuth, requireAdmin, async (req, res) => {
     );
     res.json({ settings: masked });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    console.error('[admin/get-settings]', err);
+    res.status(500).json({ error: 'Lỗi hệ thống' });
   }
 });
 
@@ -250,7 +270,8 @@ router.put('/settings', requireAuth, requireAdmin, async (req, res) => {
     `;
     res.json({ ok: true });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    console.error('[admin/put-settings]', err);
+    res.status(500).json({ error: 'Lỗi hệ thống' });
   }
 });
 

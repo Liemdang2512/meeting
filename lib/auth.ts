@@ -38,10 +38,13 @@ export async function login(email: string, password: string): Promise<void> {
   setToken(data.token);
 }
 
-// Dang xuat: xoa token local, goi server (stateless, fire-and-forget)
+// Dang xuat: xoa token + sensitive data, goi server (stateless, fire-and-forget)
 export async function logout(): Promise<void> {
   clearToken();
-  authFetch('/auth/logout', { method: 'POST' }).catch(() => {}); // ignore errors
+  localStorage.removeItem('gemini_api_key');
+  localStorage.removeItem('meeting_draft');
+  localStorage.removeItem('checklist_data');
+  authFetch('/auth/logout', { method: 'POST' }).catch(() => {});
 }
 
 // Lay user hien tai tu JWT (verify phia server)

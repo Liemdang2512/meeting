@@ -25,7 +25,8 @@ router.post('/', async (req, res) => {
     `;
     return res.status(201).json({ ok: true });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    console.error('[token-logs/create]', err);
+    return res.status(500).json({ error: 'Lỗi hệ thống' });
   }
 });
 
@@ -64,7 +65,8 @@ router.get('/', async (req, res) => {
     const total = Number(rows[0]?.total_count ?? 0);
     return res.json({ rows, total, page: pageNum, pageSize: pageSizeNum });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    console.error('[token-logs/list]', err);
+    return res.status(500).json({ error: 'Lỗi hệ thống' });
   }
 });
 

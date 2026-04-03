@@ -13,7 +13,8 @@ router.get('/', async (req, res) => {
     `;
     res.json({ gemini_api_key: row?.gemini_api_key ?? null });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    console.error('[user-settings/get]', err);
+    res.status(500).json({ error: 'Lỗi hệ thống' });
   }
 });
 
@@ -21,6 +22,9 @@ router.get('/', async (req, res) => {
 // Body: { gemini_api_key: string }
 router.put('/', async (req, res) => {
   const { gemini_api_key } = req.body ?? {};
+  if (gemini_api_key !== undefined && gemini_api_key !== null && typeof gemini_api_key !== 'string') {
+    return res.status(400).json({ error: 'gemini_api_key phải là string' });
+  }
   try {
     await sql`
       INSERT INTO public.user_settings (user_id, gemini_api_key, updated_at)
@@ -29,7 +33,8 @@ router.put('/', async (req, res) => {
     `;
     res.json({ ok: true });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    console.error('[user-settings/put]', err);
+    res.status(500).json({ error: 'Lỗi hệ thống' });
   }
 });
 

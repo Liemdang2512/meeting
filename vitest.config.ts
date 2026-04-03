@@ -7,6 +7,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './vitest.setup.ts',
+    env: {
+      API_JWT_SECRET: 'test-secret-for-vitest-only-do-not-use-in-production',
+    },
     exclude: [
       '**/node_modules/**',
       '**/dist/**',

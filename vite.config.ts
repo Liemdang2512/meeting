@@ -77,9 +77,9 @@ export default defineConfig(({ mode }) => {
               if (id.includes('node_modules/docx')) {
                 return 'vendor-docx';
               }
-              // XLSX - chỉ dùng khi export Excel (đã dynamic import trong App.tsx)
-              if (id.includes('node_modules/xlsx')) {
-                return 'vendor-xlsx';
+              // PDF/Canvas export libs — chỉ tải khi user export
+              if (id.includes('node_modules/html2canvas') || id.includes('node_modules/jspdf')) {
+                return 'vendor-export';
               }
             },
           },

@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import {
   Document,
   Packer,
@@ -158,7 +159,10 @@ export function downloadAsPdf(markdown: string, onDone?: () => void): void {
   // Inject a hidden print-only container into the current page
   const container = document.createElement('div');
   container.id = '__pdf_print_root';
-  container.innerHTML = content;
+  container.innerHTML = DOMPurify.sanitize(content, {
+    ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'p', 'strong', 'em', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'br', 'hr', 'div', 'span'],
+    ALLOWED_ATTR: ['style', 'class'],
+  });
   document.body.appendChild(container);
 
   const style = document.createElement('style');

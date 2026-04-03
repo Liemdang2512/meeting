@@ -1,4 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import visaLogo from '../VISA-logo.png';
+import masterCardLogo from '../Mastercard-logo.svg';
+import momoLogo from '../Logo-MoMo.webp';
+import vnpayLogo from '../Icon-VNPAY-QR.webp';
+import viberLogo from '../3670130.png';
 
 interface HomePageProps {
   onNavigate?: (path: string) => void;
@@ -137,6 +142,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
             <img 
               src="https://neuronsai.net/assets/NAI.png" 
               alt="MOMAI Logo" 
+              fetchPriority="high"
+              decoding="async"
               className="w-10 h-10 object-contain"
             />
             <span className="text-sm font-semibold text-on-background tracking-[0.08em] whitespace-nowrap font-body">
@@ -281,7 +288,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
             </div>
           </div>
         </div>
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-10 lg:px-12 mt-6 lg:mt-6 pb-2 lg:pb-3">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 md:px-10 lg:px-12 mt-9 lg:mt-9 pb-2 lg:pb-3">
           <h2 className="text-center text-base lg:text-lg font-body font-bold uppercase tracking-[0.18em] text-on-surface">
             ĐƯỢC TIN DÙNG BỞI
           </h2>
@@ -297,6 +304,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 key={i}
                 src={logo.src}
                 alt={logo.alt}
+                loading="lazy"
+                decoding="async"
                 className="h-16 lg:h-18 w-auto object-contain"
               />
             ))}
@@ -496,6 +505,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 <img
                   src="/enterprise-illustration.png"
                   alt="Minh hoa he sinh thai doanh nghiep"
+                  loading="lazy"
+                  decoding="async"
                   className="max-h-[560px] w-auto object-contain"
                   style={{ filter: 'drop-shadow(0 30px 50px rgba(0,0,0,0.35))' }}
                 />
@@ -582,6 +593,8 @@ export function HomePage({ onNavigate }: HomePageProps) {
               <img 
                 src="https://neuronsai.net/assets/NAI.png" 
                 alt="MOMAI Logo" 
+                loading="lazy"
+                decoding="async"
                 className="w-10 h-10 object-contain"
               />
               <span className="text-base font-semibold tracking-[0.08em]" style={{ color: '#1f2f54' }}>MEETING MINUTES AI</span>
@@ -604,7 +617,7 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 { label: 'Facebook', src: '/logo-facebook.png' },
                 { label: 'Zalo', src: '/logo-zalo.png' },
                 { label: 'YouTube', src: '/logo-ytb.png' },
-                { label: 'Viber', src: '/logo-viber.png' },
+                { label: 'Viber', src: viberLogo },
               ].map(({ label, src }) => (
                 <button
                   key={label}
@@ -613,13 +626,35 @@ export function HomePage({ onNavigate }: HomePageProps) {
                   className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full"
                   style={{ width: '44px', height: '44px', borderRadius: '50%', border: 'none', background: 'transparent', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
                 >
-                  <img src={src} alt={label} style={{ width: '36px', height: '36px', objectFit: 'contain', borderRadius: '50%' }} />
+                  <img
+                    src={src}
+                    alt={label}
+                    loading="lazy"
+                    decoding="async"
+                    style={{ width: '36px', height: '36px', objectFit: 'contain', borderRadius: '50%' }}
+                  />
                 </button>
               ))}
             </div>
             <div className="flex flex-wrap gap-3 items-center pt-2">
-              {['Visa', 'Mastercard', 'MoMo', 'VNPay'].map(method => (
-                <span key={method} className="text-sm text-on-surface-variant px-3 py-1 rounded-full bg-surface-container">{method}</span>
+              {[
+                { name: 'Visa', src: visaLogo },
+                { name: 'Mastercard', src: masterCardLogo },
+                { name: 'MoMo', src: momoLogo },
+                { name: 'VNPay', src: vnpayLogo },
+              ].map((method) => (
+                <div
+                  key={method.name}
+                  className="h-8 px-3 rounded-full bg-surface-container flex items-center justify-center"
+                >
+                  <img
+                    src={method.src}
+                    alt={method.name}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-5 w-auto object-contain"
+                  />
+                </div>
               ))}
             </div>
           </div>
@@ -654,11 +689,11 @@ export function HomePage({ onNavigate }: HomePageProps) {
                 </li>
               ))}
             </ul>
-            <div className="pt-6">
-              <p className="text-xs text-on-surface-variant">© 2025 MoMai by NeuronsAI. All rights reserved.</p>
-            </div>
           </div>
 
+        </div>
+        <div className="pb-8 text-center">
+          <p className="text-xs text-on-surface-variant">© 2025 MoMai by NeuronsAI. All rights reserved.</p>
         </div>
       </footer>
 

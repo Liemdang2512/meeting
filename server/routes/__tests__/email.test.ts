@@ -5,9 +5,10 @@ vi.mock('../../db', () => ({
   default: vi.fn(),
 }));
 
-vi.mock('nodemailer', () => ({
-  default: {
-    createTransport: vi.fn(),
+const mockSendEmail = vi.fn();
+vi.mock('resend', () => ({
+  Resend: class {
+    emails = { send: mockSendEmail };
   },
 }));
 
@@ -23,7 +24,6 @@ vi.mock('../../lib/emailTemplate', () => ({
   buildEmailHtml: vi.fn(),
 }));
 
-import nodemailer from 'nodemailer';
 import sql from '../../db';
 import emailRouter from '../email';
 import adminRouter from '../admin';
@@ -32,7 +32,6 @@ import { markdownToHtml } from '../../../lib/markdownUtils';
 import { buildEmailHtml } from '../../lib/emailTemplate';
 
 const mockSql = vi.mocked(sql);
-const mockCreateTransport = vi.mocked(nodemailer.createTransport);
 const mockGenerateMinutesPdfBuffer = vi.mocked(generateMinutesPdfBuffer);
 const mockMarkdownToHtml = vi.mocked(markdownToHtml);
 const mockBuildEmailHtml = vi.mocked(buildEmailHtml);
@@ -109,13 +108,9 @@ describe('POST /api/email/send-minutes', () => {
     expect(res.body).toEqual({ error: 'Tieu de email la bat buoc' });
   });
 
-  it('returns 503 if SMTP env vars not configured', async () => {
-    const savedHost = process.env.SMTP_HOST;
-    const savedUser = process.env.SMTP_USER;
-    const savedPass = process.env.SMTP_PASSWORD;
-    delete process.env.SMTP_HOST;
-    delete process.env.SMTP_USER;
-    delete process.env.SMTP_PASSWORD;
+  it('returns 503 if RESEND_API_KEY not configured', async () => {
+    const saved = process.env.RESEND_API_KEY;
+    delete process.env.RESEND_API_KEY;
 
     const req = {
       user: createAdminUser(),
@@ -125,21 +120,16 @@ describe('POST /api/email/send-minutes', () => {
 
     await handler(req, res);
 
-    process.env.SMTP_HOST = savedHost;
-    process.env.SMTP_USER = savedUser;
-    process.env.SMTP_PASSWORD = savedPass;
+    process.env.RESEND_API_KEY = saved;
 
     expect(res.statusCode).toBe(503);
-    expect(res.body).toEqual({ error: 'Email chưa được cấu hình. Kiểm tra SMTP_HOST, SMTP_USER, SMTP_PASSWORD trong env.' });
+    expect(res.body).toEqual({ error: 'Email chưa được cấu hình. Kiểm tra RESEND_API_KEY trong env.' });
   });
 
-  it('calls nodemailer with correct payload including PDF attachment', async () => {
-    process.env.SMTP_HOST = 'smtp.example.com';
-    process.env.SMTP_USER = 'sender@gmail.com';
-    process.env.SMTP_PASSWORD = 'app-password';
+  it('calls Resend with correct payload including PDF attachment', async () => {
+    process.env.RESEND_API_KEY = 're_test_key';
 
-    const sendMail = vi.fn().mockResolvedValue({ messageId: 'msg-123' });
-    mockCreateTransport.mockReturnValue({ sendMail } as any);
+    mockSendEmail.mockResolvedValue({ data: { id: 'msg-123' }, error: null });
     mockGenerateMinutesPdfBuffer.mockResolvedValue(Buffer.from('pdf-buffer'));
     mockMarkdownToHtml.mockReturnValue('<p>minutes html</p>');
     mockBuildEmailHtml.mockReturnValue('<html>email</html>');
@@ -165,45 +155,24 @@ describe('POST /api/email/send-minutes', () => {
 
     await handler(req, res);
 
-    delete process.env.SMTP_HOST;
-    delete process.env.SMTP_USER;
-    delete process.env.SMTP_PASSWORD;
+    delete process.env.RESEND_API_KEY;
 
-    expect(mockCreateTransport).toHaveBeenCalledWith({
-      host: 'smtp.example.com',
-      port: 465,
-      secure: true,
-      auth: { user: 'sender@gmail.com', pass: 'app-password' },
-    });
-    expect(sendMail).toHaveBeenCalledTimes(1);
-    expect(sendMail).toHaveBeenCalledWith(
-      expect.objectContaining({
-        from: '"Meeting Scribe" <sender@gmail.com>',
-        to: 'a@example.com, b@example.com',
-        subject: 'Bien ban',
-        html: '<html>email</html>',
-      }),
-    );
-    const sentPayload = sendMail.mock.calls[0][0];
-    expect(sentPayload.attachments).toHaveLength(2);
-    expect(sentPayload.attachments[0].filename).toBe('bien-ban-cuoc-hop.pdf');
-    expect(sentPayload.attachments[1]).toEqual(
-      expect.objectContaining({
-        filename: 'so-do-tu-duy.pdf',
-        contentType: 'application/pdf',
-      }),
-    );
+    expect(mockSendEmail).toHaveBeenCalledTimes(1);
+    const callArg = mockSendEmail.mock.calls[0][0];
+    expect(callArg.to).toEqual(['a@example.com', 'b@example.com']);
+    expect(callArg.subject).toBe('Bien ban');
+    expect(callArg.html).toBe('<html>email</html>');
+    expect(callArg.attachments).toHaveLength(2);
+    expect(callArg.attachments[0].filename).toBe('bien-ban-cuoc-hop.pdf');
+    expect(callArg.attachments[1].filename).toBe('so-do-tu-duy.pdf');
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ ok: true, id: 'msg-123' });
   });
 
   it('returns success response with email ID', async () => {
-    process.env.SMTP_HOST = 'smtp.example.com';
-    process.env.SMTP_USER = 'sender@gmail.com';
-    process.env.SMTP_PASSWORD = 'app-password';
+    process.env.RESEND_API_KEY = 're_test_key';
 
-    const sendMail = vi.fn().mockResolvedValue({ messageId: 'email-id-001' });
-    mockCreateTransport.mockReturnValue({ sendMail } as any);
+    mockSendEmail.mockResolvedValue({ data: { id: 'email-id-001' }, error: null });
     mockGenerateMinutesPdfBuffer.mockResolvedValue(Buffer.from('pdf-buffer'));
     mockMarkdownToHtml.mockReturnValue('<p>minutes html</p>');
     mockBuildEmailHtml.mockReturnValue('<html>email</html>');
@@ -220,9 +189,7 @@ describe('POST /api/email/send-minutes', () => {
 
     await handler(req, res);
 
-    delete process.env.SMTP_HOST;
-    delete process.env.SMTP_USER;
-    delete process.env.SMTP_PASSWORD;
+    delete process.env.RESEND_API_KEY;
 
     expect(res.statusCode).toBe(200);
     expect(res.body).toEqual({ ok: true, id: 'email-id-001' });

@@ -1,7 +1,11 @@
 import postgres from 'postgres';
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const sql = process.env.DATABASE_URL
-  ? postgres(process.env.DATABASE_URL, { ssl: false })
+  ? postgres(process.env.DATABASE_URL, {
+      ssl: process.env.DB_SSL === 'false' ? false : isProduction ? { rejectUnauthorized: false } : false,
+    })
   : postgres({
       host: process.env.DB_HOST ?? 'localhost',
       port: Number(process.env.DB_PORT ?? 5433),

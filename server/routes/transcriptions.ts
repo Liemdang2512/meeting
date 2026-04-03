@@ -49,7 +49,8 @@ router.post('/', async (req, res) => {
         });
       }
     } catch (err: any) {
-      return res.status(500).json({ error: err.message });
+      console.error('[transcriptions/quota]', err);
+      return res.status(500).json({ error: 'Lỗi hệ thống' });
     }
   }
 
@@ -61,7 +62,8 @@ router.post('/', async (req, res) => {
     `;
     return res.status(201).json(row);
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    console.error('[transcriptions/create]', err);
+    return res.status(500).json({ error: 'Lỗi hệ thống' });
   }
 });
 

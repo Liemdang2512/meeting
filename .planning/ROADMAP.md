@@ -15,6 +15,7 @@
 - [x] **Phase 7: Email Sending After Minutes** - Gửi email biên bản cuộc họp đến danh sách người nhận (completed 2026-03-19)
 - [ ] **Phase 8: Role-Based Workflows** - Chia luồng sản phẩm theo nhóm người dùng (Phóng viên/Chuyên viên/Cán bộ)
 - [ ] **Phase 9: UI Revamp** - Website và giao diện từng nhóm tính năng (5/8 plans complete)
+- [ ] **Phase 10: Payment Gateway Integration** - Tích hợp thanh toán Visa, Mastercard, MoMo, VNPay
 
 ## Phase Details
 
@@ -106,6 +107,28 @@ Plans:
 - [x] 08-02-PLAN.md — Backend auth: register/login with workflowGroups + PATCH active-workflow-group endpoint
 - [x] 08-03-PLAN.md — Frontend: RegisterPage multi-select + WorkflowGuard + 3 workflow shells + App.tsx routing
 - [x] 08-04-PLAN.md — GroupSwitcher header + Settings WorkflowGroupsSection + tests + human verification
+
+### Phase 10: Payment Gateway Integration
+
+**Goal:** Tích hợp thanh toán cho các gói nâng cấp: hỗ trợ 4 cổng thanh toán Visa, Mastercard, MoMo, VNPay — cho phép user mua gói trả phí từ trong ứng dụng
+**Depends on**: Phase 9
+**Requirements**: TBD
+**Success Criteria**:
+  1. User có thể chọn gói và thanh toán bằng Visa/Mastercard (Stripe hoặc cổng quốc tế)
+  2. User có thể thanh toán bằng MoMo (MoMo Payment Gateway API)
+  3. User có thể thanh toán bằng VNPay (VNPay Gateway)
+  4. Sau thanh toán thành công, tài khoản được nâng cấp tự động
+  5. Lịch sử giao dịch và trạng thái subscription được lưu trong DB
+  6. Webhook xử lý callback thanh toán từ các cổng
+**Plans**: 5 plans
+Plans:
+- [ ] 10-01-PLAN.md — DB migration (payment_orders, webhook_events tables) + invalidateProfileCache export + /api/payments/check-upgrade endpoint
+- [ ] 10-02-PLAN.md — VNPay integration: create URL, return redirect, IPN handler (covers Visa/Mastercard/domestic ATM/VNPay QR)
+- [ ] 10-03-PLAN.md — MoMo integration: create payment via REST API, IPN handler with HMAC-SHA256
+- [ ] 10-04-PLAN.md — Frontend: replace UpgradeModal mock form with gateway buttons, PaymentResultPage, App.tsx route
+- [ ] 10-05-PLAN.md — Admin payment orders view + integration tests + human verification
+
+---
 
 ### Phase 9: UI Revamp - Website va giao dien tung nhom tinh nang
 

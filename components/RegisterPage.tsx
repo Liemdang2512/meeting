@@ -45,6 +45,11 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, o
     }
   };
 
+  const goToHome = () => {
+    window.history.pushState({}, '', '/');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
+
   return (
     <main className="min-h-screen flex flex-col md:flex-row overflow-hidden bg-surface font-body text-on-surface antialiased">
       {/* Left Side: Visual Illustration Column */}
@@ -91,9 +96,24 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, o
       <section className="flex-1 flex flex-col justify-center items-center px-6 py-12 md:px-24 bg-surface">
         <div className="w-full max-w-md">
           {/* Brand Anchor */}
-          <div className="mb-10 text-center md:text-left">
-            <h2 className="font-headline text-3xl font-extrabold text-on-surface tracking-tight mb-2">MOMAI</h2>
-            <h3 className="font-body text-xl font-semibold text-on-surface-variant">Tạo tài khoản mới</h3>
+          <div className="mb-10">
+            <div className="mb-6 flex justify-center md:justify-start">
+              <button
+                type="button"
+                onClick={goToHome}
+                className="flex items-center gap-3 rounded-lg transition-opacity hover:opacity-90"
+              >
+                <img
+                  src="/NAI.png"
+                  alt="MOMAI Logo"
+                  className="w-12 h-12 object-contain rounded-xl"
+                />
+                <div className="text-left">
+                  <p className="text-lg tracking-[0.18em] uppercase text-[#4f5e86] font-semibold">Meeting Minute</p>
+                </div>
+              </button>
+            </div>
+            <h3 className="font-body text-xl font-semibold text-on-surface-variant text-center md:text-left">Tạo tài khoản mới</h3>
           </div>
 
           {/* Social Registration */}
@@ -240,16 +260,12 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, o
                 Đăng nhập ngay
               </button>
             </p>
+            <p className="mt-3 text-xs text-on-surface-variant opacity-60">
+              © 2025 MoMai by NeuronsAI. All rights reserved.
+            </p>
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="md:fixed md:bottom-6 md:right-12 text-center md:text-right py-6 md:py-0 px-8">
-        <p className="text-[13px] font-medium text-on-surface-variant/40">
-          © 2026 MOMAI. The Intelligent Curator.
-        </p>
-      </footer>
     </main>
   );
 };

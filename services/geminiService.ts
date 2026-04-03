@@ -989,15 +989,12 @@ export const generateStructured = async <T>(
     try {
       parsed = JSON.parse(rawText);
     } catch (parseErr: any) {
-      // Log full raw response to aid diagnosis
-      console.error('[generateStructured] JSON parse failed.\nFull raw response:\n', rawText);
-      // Attempt to repair common LLM JSON issues (unquoted keys, etc.) and retry
+      console.error('[generateStructured] JSON parse failed. Response length:', rawText.length);
       const repaired = repairJson(rawText);
       try {
         parsed = JSON.parse(repaired);
-        console.warn('[generateStructured] Parsed after JSON repair.');
       } catch {
-        throw new Error(`Gemini trả về dữ liệu không hợp lệ. Raw: ${rawText}`);
+        throw new Error('Gemini trả về dữ liệu không hợp lệ. Vui lòng thử lại.');
       }
     }
 

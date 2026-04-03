@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import sql from '../db';
 import { requireAuth, signToken } from '../auth';
 
@@ -7,8 +7,15 @@ router.use(requireAuth);
 
 const VALID_PLANS = ['reporter', 'specialist', 'officer'] as const;
 
+function requireAdmin(req: Request, res: Response, next: () => void) {
+  if (req.user?.role !== 'admin') {
+    res.status(403).json({ error: 'Chỉ admin mới có quyền thay đổi gói' });
+    return;
+  }
+  next();
+}
+
 // GET /api/profiles/role
-// Returns the current user's role
 router.get('/role', async (req, res) => {
   try {
     const [row] = await sql`
@@ -16,20 +23,25 @@ router.get('/role', async (req, res) => {
     `;
     res.json({ role: row?.role ?? null });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    console.error('[profiles/role]', err);
+    res.status(500).json({ error: 'Lỗi hệ thống' });
   }
 });
 
-// PATCH /api/profiles/plans
-// Body: { add?: string[], remove?: string[] }
-// User tự quản lý các gói đăng ký
-// Returns: { token: string, plans: string[] }
-router.patch('/plans', async (req, res) => {
-  const { add, remove } = req.body ?? {};
+// PATCH /api/profiles/plans — Admin only
+// Body: { userId: string, add?: string[], remove?: string[] }
+router.patch('/plans', requireAdmin, async (req, res) => {
+  const { userId, add, remove } = req.body ?? {};
+  if (!userId || typeof userId !== 'string') {
+    return res.status(400).json({ error: 'userId là bắt buộc' });
+  }
   try {
     const [profile] = await sql`
-      SELECT workflow_groups, role FROM public.profiles WHERE user_id = ${req.user!.userId}
+      SELECT workflow_groups, role FROM public.profiles WHERE user_id = ${userId}
     `;
+    if (!profile) {
+      return res.status(404).json({ error: 'User không tồn tại' });
+    }
     let plans: string[] = profile?.workflow_groups ?? [];
 
     if (Array.isArray(add)) {
@@ -48,13 +60,13 @@ router.patch('/plans', async (req, res) => {
     await sql`
       UPDATE public.profiles
       SET workflow_groups = ${plansArray}, updated_at = NOW()
-      WHERE user_id = ${req.user!.userId}
+      WHERE user_id = ${userId}
     `;
 
-    const newToken = signToken({ ...req.user!, plans });
-    return res.json({ token: newToken, plans });
+    return res.json({ ok: true, plans });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    console.error('[profiles/plans]', err);
+    return res.status(500).json({ error: 'Lỗi hệ thống' });
   }
 });
 

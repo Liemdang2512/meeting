@@ -1,14 +1,13 @@
 import { Router } from 'express';
-import nodemailer from 'nodemailer';
-import { requireAuth } from '../auth';
-import sql from '../db';
+import { Resend } from 'resend';
+import { requireAuth, requireFeature } from '../auth';
 import { markdownToHtml } from '../../lib/markdownUtils';
 import { generateMinutesPdfBuffer } from '../lib/pdfGenerator';
 import { buildEmailHtml } from '../lib/emailTemplate';
 
 const router = Router();
 
-router.post('/send-minutes', requireAuth, async (req, res) => {
+router.post('/send-minutes', requireAuth, requireFeature('email'), async (req, res) => {
   if (req.user!.role !== 'admin') {
     return res.status(403).json({ error: 'Chi admin moi duoc gui email bien ban' });
   }
@@ -32,18 +31,18 @@ router.post('/send-minutes', requireAuth, async (req, res) => {
       return res.status(400).json({ error: `Tối đa ${maxRecipients} người nhận` });
     }
 
-    // Đọc SMTP config từ env vars
-    const smtpHost = process.env.SMTP_HOST;
-    const smtpUser = process.env.SMTP_USER;
-    const smtpPassword = process.env.SMTP_PASSWORD;
-    const smtpPort = parseInt(process.env.SMTP_PORT ?? '465', 10);
-    const smtpSecure = (process.env.SMTP_SECURE ?? 'true') === 'true';
-
-    if (!smtpHost || !smtpUser || !smtpPassword) {
-      return res.status(503).json({ error: 'Email chưa được cấu hình. Kiểm tra SMTP_HOST, SMTP_USER, SMTP_PASSWORD trong env.' });
+    // Resend API key (required)
+    const resendApiKey = process.env.RESEND_API_KEY;
+    if (!resendApiKey) {
+      return res.status(503).json({ error: 'Email chưa được cấu hình. Kiểm tra RESEND_API_KEY trong env.' });
     }
 
-    const fromEmail = smtpUser;
+    // From address — must be a verified domain in Resend dashboard
+    // Default: onboarding@resend.dev (works for testing, sending to owner only)
+    // Production: set RESEND_FROM env var to a verified address e.g. "Meeting Scribe <no-reply@yourdomain.com>"
+    const fromEmail = process.env.RESEND_FROM ?? 'Meeting Scribe <onboarding@resend.dev>';
+
+    const resend = new Resend(resendApiKey);
 
     // Generate PDF Buffer
     const pdfBuffer = await generateMinutesPdfBuffer({
@@ -68,19 +67,8 @@ router.post('/send-minutes', requireAuth, async (req, res) => {
       hasMindmap,
     });
 
-    // Send via cPanel SMTP
-    const transporter = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpSecure,
-      auth: {
-        user: smtpUser,
-        pass: smtpPassword,
-      },
-    });
-
-    const attachments: nodemailer.SendMailOptions['attachments'] = [
-      { filename: 'bien-ban-cuoc-hop.pdf', content: pdfBuffer },
+    const attachments: Array<{ filename: string; content: Buffer; contentType?: string }> = [
+      { filename: 'bien-ban-cuoc-hop.pdf', content: pdfBuffer, contentType: 'application/pdf' },
     ];
 
     if (hasMindmap) {
@@ -93,24 +81,27 @@ router.post('/send-minutes', requireAuth, async (req, res) => {
       });
     }
 
-    const info = await transporter.sendMail({
-      from: `"Meeting Scribe" <${fromEmail}>`,
-      to: recipients.join(', '),
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: recipients,
       subject,
       html: htmlBody,
-      attachments,
+      attachments: attachments.map(a => ({
+        filename: a.filename,
+        content: a.content,
+        content_type: a.contentType,
+      })),
     });
 
-    return res.json({ ok: true, id: info.messageId });
+    if (error) {
+      console.error('[email/send] Resend API error:', error);
+      return res.status(500).json({ error: 'Lỗi gửi email. Vui lòng thử lại sau.' });
+    }
+
+    return res.json({ ok: true, id: data?.id });
   } catch (err: any) {
-    console.error('Email send error:', err);
-    // AggregateError (e.g. postgres connection refused) has an empty .message —
-    // extract the first sub-error message so the response is diagnostic.
-    const message =
-      err.message ||
-      (err instanceof AggregateError && err.errors?.[0]?.message) ||
-      'Loi gui email';
-    return res.status(500).json({ error: message });
+    console.error('[email/send]', err);
+    return res.status(500).json({ error: 'Lỗi gửi email. Vui lòng thử lại sau.' });
   }
 });
 

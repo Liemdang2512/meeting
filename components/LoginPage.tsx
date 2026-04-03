@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { login } from '../lib/auth';
-import { Mail, Lock, Activity, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Activity, Eye, EyeOff } from 'lucide-react';
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
@@ -38,6 +38,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
+  const goToHome = () => {
+    window.history.pushState({}, '', '/');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
+
   return (
     <main className="min-h-screen flex flex-col md:flex-row bg-surface font-body text-on-surface antialiased">
       {/* Left Column: Nebula Gradient Illustration */}
@@ -49,8 +54,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         <div className="relative z-10 max-w-lg text-center md:text-left">
           {/* Badge */}
           <div className="mb-12 inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/10">
-            <Sparkles size={18} className="text-white" />
-            <span className="text-white text-sm font-medium tracking-wide">MOMAI</span>
+            <img src="/NAI.png" alt="MOMAI Logo" className="w-5 h-5 object-contain" />
+            <span className="text-white text-sm font-medium tracking-[0.16em] uppercase">Meeting Minute</span>
           </div>
 
           {/* Headline */}
@@ -93,9 +98,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       {/* Right Column: Login Form */}
       <section className="w-full md:w-1/2 flex items-center justify-center p-6 lg:p-20 bg-surface">
         <div className="w-full max-w-md">
-          {/* Mobile branding */}
-          <div className="md:hidden mb-12 flex justify-center">
-            <span className="text-3xl font-headline font-extrabold tracking-tight text-on-surface">MOMAI</span>
+          {/* Brand */}
+          <div className="mb-10 flex justify-center md:justify-start">
+            <button
+              type="button"
+              onClick={goToHome}
+              className="flex items-center gap-3 rounded-lg transition-opacity hover:opacity-90"
+            >
+              <img
+                src="/NAI.png"
+                alt="MOMAI Logo"
+                className="w-12 h-12 object-contain rounded-xl"
+              />
+              <div className="text-left">
+                <p className="text-lg tracking-[0.18em] uppercase text-[#4f5e86] font-semibold">Meeting Minute</p>
+              </div>
+            </button>
           </div>
 
           <div className="mb-10 text-center md:text-left">
@@ -231,15 +249,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           <p className="mt-3 text-center text-xs text-outline">
             Tài khoản admin: liên hệ quản trị viên
           </p>
+          <p className="mt-3 text-center text-xs text-on-surface-variant opacity-60">
+            © 2025 MoMai by NeuronsAI. All rights reserved.
+          </p>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="fixed bottom-0 w-full flex justify-end p-6 pointer-events-none md:justify-center">
-        <p className="text-[11px] font-medium tracking-widest text-on-surface-variant opacity-40 uppercase">
-          © 2026 MOMAI. Secure & Encrypted.
-        </p>
-      </footer>
     </main>
   );
 };

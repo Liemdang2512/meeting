@@ -24,5 +24,8 @@ dist-ssr
 *.sw?
 .vercel
 
-# Test environment secrets
+# Environment variables
+.env
+.env.*
+!.env.example
 .env.test

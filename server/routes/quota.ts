@@ -32,7 +32,8 @@ router.get('/', requireAuth, async (req, res) => {
       remaining: Math.max(0, dailyLimit - used),
     });
   } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+    console.error('[quota/get]', err);
+    return res.status(500).json({ error: 'Lỗi hệ thống' });
   }
 });
 
