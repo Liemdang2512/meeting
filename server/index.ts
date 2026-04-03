@@ -9,6 +9,8 @@ import tokenLogsRouter from './routes/tokenLogs';
 import adminRouter from './routes/admin';
 import quotaRouter from './routes/quota';
 import emailRouter from './routes/email';
+import { paymentsRouter } from './routes/payments/index';
+import { vnpayRouter } from './routes/payments/vnpay';
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -28,6 +30,8 @@ app.use('/api/token-logs', tokenLogsRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/quota', quotaRouter);
 app.use('/api/email', emailRouter);
+app.use('/api/payments', paymentsRouter);
+app.use('/api/payments/vnpay', vnpayRouter);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
