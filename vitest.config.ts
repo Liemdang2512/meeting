@@ -14,6 +14,7 @@ export default defineConfig({
       '**/node_modules/**',
       '**/dist/**',
       '**/.claude/worktrees/**',
+      '**/*.integration.test.ts',
     ],
   },
 });

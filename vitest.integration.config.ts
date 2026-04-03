@@ -4,7 +4,13 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    include: ['tests/integration/**/*.test.ts'],
+    env: {
+      API_JWT_SECRET: 'test-secret-for-vitest-integration-only-do-not-use-in-production',
+    },
+    include: [
+      'tests/integration/**/*.test.ts',
+      'server/routes/__tests__/*.integration.test.ts',
+    ],
     setupFiles: ['./tests/integration/helpers/setup.ts'],
     testTimeout: 30000,
     hookTimeout: 30000,
