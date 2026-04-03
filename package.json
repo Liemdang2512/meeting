@@ -45,6 +45,7 @@
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
     "resend": "^6.9.4",
+    "vnpay": "^2.4.4",
     "xlsx": "^0.18.5",
     "zod": "^4.3.6",
     "zod-to-json-schema": "^3.25.1"
