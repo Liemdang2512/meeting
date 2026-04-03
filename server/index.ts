@@ -11,6 +11,9 @@ import adminRouter from './routes/admin';
 import quotaRouter from './routes/quota';
 import emailRouter from './routes/email';
 import geminiRouter from './routes/gemini';
+import { paymentsRouter } from './routes/payments/index';
+import { vnpayRouter } from './routes/payments/vnpay';
+import { momoRouter } from './routes/payments/momo';
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -32,6 +35,9 @@ app.use('/api/admin', adminRouter);
 app.use('/api/quota', quotaRouter);
 app.use('/api/email', emailRouter);
 app.use('/api/gemini', geminiRouter);
+app.use('/api/payments', paymentsRouter);
+app.use('/api/payments/vnpay', vnpayRouter);
+app.use('/api/payments/momo', momoRouter);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
