@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: "Completed 10-05 tasks 1-2, awaiting checkpoint:human-verify for full payment flow browser test"
-last_updated: "2026-04-03T03:39:35.052Z"
+stopped_at: Phase 11 context gathered
+last_updated: "2026-04-07T05:12:45.542Z"
 progress:
-  total_phases: 11
-  completed_phases: 6
-  total_plans: 41
+  total_phases: 12
+  completed_phases: 5
+  total_plans: 42
   completed_plans: 36
 ---
 
@@ -21,7 +21,7 @@ Plan: 7 of 8
 
 ## Last Session
 
-- **Stopped At:** Completed 10-05 tasks 1-2, awaiting checkpoint:human-verify for full payment flow browser test
+- **Stopped At:** Phase 11 context gathered
 - **Timestamp:** 2026-04-01T00:00:00Z
 
 ## Decisions
@@ -117,6 +117,7 @@ Plan: 7 of 8
 ### Roadmap Evolution
 
 - Phase 9 added: UI Revamp - Website va giao dien tung nhom tinh nang
+- Phase 11 added: sửa giao thức tính tiền: sau đăng ký tài khoản có số dư cố định, sử dụng sẽ trừ trực tiếp vào số dư
 
 ## Progress
 
