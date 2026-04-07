@@ -7,12 +7,24 @@ import { Router } from 'express';
 import crypto from 'crypto';
 import sql from '../../db';
 import { requireAuth, invalidateProfileCache, ALL_FEATURES } from '../../auth';
+import { getPackPrice, getPackCredits } from '../../billing/rateCard';
+import { CREDIT_PACK_IDS, type CreditPackId } from '../../billing/types';
 
-const AMOUNT_VND = 99_000;
+type PlanId = CreditPackId;
 const MOMO_ENDPOINT =
   process.env.NODE_ENV === 'production'
     ? 'https://payment.momo.vn/v2/gateway/api/create'
     : 'https://test-payment.momo.vn/v2/gateway/api/create';
+
+function isPlanId(value: unknown): value is PlanId {
+  return typeof value === 'string' && CREDIT_PACK_IDS.includes(value as PlanId);
+}
+
+function pickGrantedPlan(order: { plan_granted?: unknown; metadata?: Record<string, unknown> }): PlanId | null {
+  if (isPlanId(order.plan_granted)) return order.plan_granted;
+  if (isPlanId(order.metadata?.plan)) return order.metadata.plan;
+  return null;
+}
 
 // HMAC-SHA256 helper
 function hmacSha256(data: string, key: string): string {
@@ -88,6 +100,91 @@ export function generateIpnSignature(params: {
 
 export const momoRouter = Router();
 
+export async function applyMomoPaymentSuccess(orderId: string, gatewayTxnId: string): Promise<{ processed: boolean }> {
+  let userId = '';
+  let alreadyProcessed = false;
+
+  await sql.begin(async (tx: any) => {
+    const [order] = await tx`
+      SELECT id, user_id, status, plan_granted, metadata
+      FROM public.payment_orders
+      WHERE id = ${orderId}
+      FOR UPDATE
+    `;
+
+    if (!order) {
+      throw new Error('ORDER_NOT_FOUND');
+    }
+
+    userId = order.user_id;
+
+    if (order.status === 'completed') {
+      alreadyProcessed = true;
+      return;
+    }
+
+    const grantedPlan = pickGrantedPlan(order);
+    if (!grantedPlan) {
+      throw new Error('INVALID_PLAN');
+    }
+
+    const topupCredits = getPackCredits(grantedPlan);
+
+    await tx`
+      UPDATE public.payment_orders
+      SET status = 'completed',
+          gateway_txn_id = ${gatewayTxnId},
+          updated_at = NOW()
+      WHERE id = ${orderId}
+    `;
+
+    const [balance] = await tx`
+      INSERT INTO public.wallet_balances (user_id, balance_credits, created_at, updated_at)
+      VALUES (${order.user_id}, ${topupCredits}, NOW(), NOW())
+      ON CONFLICT (user_id) DO UPDATE
+      SET balance_credits = public.wallet_balances.balance_credits + ${topupCredits},
+          updated_at = NOW()
+      RETURNING balance_credits
+    `;
+
+    await tx`
+      INSERT INTO public.wallet_ledger (
+        user_id,
+        event_type,
+        action_type,
+        amount_credits,
+        balance_after_credits,
+        correlation_id,
+        metadata
+      ) VALUES (
+        ${order.user_id},
+        'topup',
+        NULL,
+        ${topupCredits},
+        ${balance.balance_credits},
+        ${order.id},
+        ${JSON.stringify({ gateway: 'momo', planId: grantedPlan, gatewayTxnId })}::jsonb
+      )
+    `;
+
+    await tx`
+      UPDATE public.profiles
+      SET role = CASE WHEN role = 'admin' THEN role ELSE 'free' END,
+          workflow_groups = CASE
+            WHEN ${grantedPlan}::text = ANY(COALESCE(workflow_groups, '{}'::text[]))
+              THEN COALESCE(workflow_groups, '{}'::text[])
+            ELSE array_append(COALESCE(workflow_groups, '{}'::text[]), ${grantedPlan}::text)
+          END,
+          features = ${sql.array(ALL_FEATURES)},
+          updated_at = NOW()
+      WHERE user_id = ${order.user_id}
+    `;
+  });
+
+  if (userId) invalidateProfileCache(userId);
+  return { processed: !alreadyProcessed };
+}
+
 // POST /api/payments/momo/create
 // Requires auth. Creates pending order in DB then calls MoMo API to get payUrl.
 momoRouter.post('/create', requireAuth, async (req, res) => {
@@ -98,6 +195,9 @@ momoRouter.post('/create', requireAuth, async (req, res) => {
 
   const userId = req.user!.userId;
   const email = req.user!.email;
+  const requestedPlanId = req.body?.planId;
+  const planId: PlanId = isPlanId(requestedPlanId) ? requestedPlanId : 'specialist';
+  const amountVnd = getPackPrice(planId);
   const orderId = `MOMO_${Date.now()}_${userId.slice(0, 8)}`;
   const requestId = orderId;
   const orderInfo = `Nang cap tai khoan ${email}`;
@@ -110,7 +210,7 @@ momoRouter.post('/create', requireAuth, async (req, res) => {
   try {
     const signature = generateCreateSignature({
       accessKey: ACCESS_KEY,
-      amount: AMOUNT_VND,
+      amount: amountVnd,
       extraData,
       ipnUrl,
       orderId,
@@ -126,7 +226,7 @@ momoRouter.post('/create', requireAuth, async (req, res) => {
       partnerCode: PARTNER_CODE,
       accessKey: ACCESS_KEY,
       requestId,
-      amount: AMOUNT_VND,
+      amount: amountVnd,
       orderId,
       orderInfo,
       redirectUrl,
@@ -142,8 +242,8 @@ momoRouter.post('/create', requireAuth, async (req, res) => {
       INSERT INTO public.payment_orders
         (id, user_id, gateway, amount, currency, status, plan_granted, metadata)
       VALUES
-        (${orderId}, ${userId}, 'momo', ${AMOUNT_VND}, 'VND', 'pending', 'user',
-         ${JSON.stringify({ email, plan: 'user' })}::jsonb)
+        (${orderId}, ${userId}, 'momo', ${amountVnd}, 'VND', 'pending', ${planId},
+         ${JSON.stringify({ email, plan: planId })}::jsonb)
     `;
 
     // 30s timeout per MoMo docs
@@ -236,7 +336,6 @@ momoRouter.post('/ipn', async (req, res) => {
       return res.json({ message: 'Acknowledged' });
     }
 
-    // Idempotency check
     const [order] = await sql`
       SELECT id, user_id, amount, status
       FROM public.payment_orders
@@ -252,27 +351,7 @@ momoRouter.post('/ipn', async (req, res) => {
       return res.json({ message: 'OK' });
     }
 
-    // Atomic upgrade in single transaction
-    await sql.begin(async (tx: any) => {
-      await tx`
-        UPDATE public.payment_orders
-        SET status = 'completed',
-            gateway_txn_id = ${String(transId)},
-            updated_at = NOW()
-        WHERE id = ${orderId}
-      `;
-      // CRITICAL: Update BOTH role AND features — features drives feature access in requireAuth middleware
-      await tx`
-        UPDATE public.profiles
-        SET role = 'user',
-            features = ${sql.array(ALL_FEATURES)},
-            updated_at = NOW()
-        WHERE user_id = ${order.user_id}
-      `;
-    });
-
-    // Invalidate 30s profile cache so next request reads upgraded role
-    invalidateProfileCache(order.user_id);
+    await applyMomoPaymentSuccess(orderId, String(transId));
 
     return res.json({ message: 'OK' });
   } catch (err: any) {

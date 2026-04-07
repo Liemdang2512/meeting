@@ -1,0 +1,346 @@
+import { Router } from 'express';
+import sql from '../../db';
+import { requireAuth, invalidateProfileCache, ALL_FEATURES } from '../../auth';
+import { getPackCredits } from '../../billing/rateCard';
+
+const ORDER_EXPIRE_MINUTES = 15;
+type PlanId = 'reporter' | 'specialist' | 'officer';
+
+const PLAN_AMOUNT_VND: Record<PlanId, number> = {
+  reporter: 399_000,
+  specialist: 299_000,
+  officer: 499_000,
+};
+
+function isPlanId(value: unknown): value is PlanId {
+  return value === 'reporter' || value === 'specialist' || value === 'officer';
+}
+
+function pickGrantedPlan(order: { plan_granted?: unknown; metadata?: Record<string, unknown> }): PlanId | null {
+  if (isPlanId(order.plan_granted)) return order.plan_granted;
+  if (isPlanId(order.metadata?.plan)) return order.metadata.plan;
+  return null;
+}
+
+type WebhookPayload = Record<string, unknown> & {
+  status?: string;
+  resultCode?: number | string;
+  orderId?: string;
+  amount?: number | string;
+  transferAmount?: number | string;
+  description?: string;
+  content?: string;
+  transferContent?: string;
+  data?: Record<string, unknown>;
+};
+
+function toNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim()) {
+    const n = Number(value.replace(/[^\d.-]/g, ''));
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+function pickTransferContent(payload: WebhookPayload): string | null {
+  const nested = payload.data ?? {};
+  const content =
+    payload.transferContent ??
+    payload.content ??
+    payload.description ??
+    nested.transferContent ??
+    nested.content ??
+    nested.description;
+  return typeof content === 'string' && content.trim() ? content.trim() : null;
+}
+
+function pickOrderId(payload: WebhookPayload): string | null {
+  const nested = payload.data ?? {};
+  const orderId = payload.orderId ?? nested.orderId ?? nested.order_id;
+  return typeof orderId === 'string' && orderId.trim() ? orderId.trim() : null;
+}
+
+function isWebhookSuccess(payload: WebhookPayload): boolean {
+  const status = typeof payload.status === 'string' ? payload.status.toLowerCase() : '';
+  if (['success', 'completed', 'paid', 'ok'].includes(status)) return true;
+  const resultCode = toNumber(payload.resultCode);
+  return resultCode === 0;
+}
+
+export const vietqrRouter = Router();
+
+export async function applyVietqrPaymentSuccess(orderId: string, gatewayTxnId: string): Promise<{ processed: boolean }> {
+  let userId = '';
+  let alreadyProcessed = false;
+
+  await sql.begin(async (tx: any) => {
+    const [order] = await tx`
+      SELECT id, user_id, status, plan_granted, metadata
+      FROM public.payment_orders
+      WHERE id = ${orderId}
+        AND gateway = 'vietqr'
+      FOR UPDATE
+    `;
+
+    if (!order) {
+      throw new Error('ORDER_NOT_FOUND');
+    }
+
+    userId = order.user_id;
+
+    if (order.status === 'completed') {
+      alreadyProcessed = true;
+      return;
+    }
+
+    const grantedPlan = pickGrantedPlan(order);
+    if (!grantedPlan) {
+      throw new Error('INVALID_PLAN');
+    }
+
+    const topupCredits = getPackCredits(grantedPlan);
+
+    await tx`
+      UPDATE public.payment_orders
+      SET status = 'completed',
+          gateway_txn_id = ${gatewayTxnId},
+          updated_at = NOW()
+      WHERE id = ${order.id}
+    `;
+
+    const [balance] = await tx`
+      INSERT INTO public.wallet_balances (user_id, balance_credits, created_at, updated_at)
+      VALUES (${order.user_id}, ${topupCredits}, NOW(), NOW())
+      ON CONFLICT (user_id) DO UPDATE
+      SET balance_credits = public.wallet_balances.balance_credits + ${topupCredits},
+          updated_at = NOW()
+      RETURNING balance_credits
+    `;
+
+    await tx`
+      INSERT INTO public.wallet_ledger (
+        user_id,
+        event_type,
+        action_type,
+        amount_credits,
+        balance_after_credits,
+        correlation_id,
+        metadata
+      ) VALUES (
+        ${order.user_id},
+        'topup',
+        NULL,
+        ${topupCredits},
+        ${balance.balance_credits},
+        ${order.id},
+        ${JSON.stringify({ gateway: 'vietqr', planId: grantedPlan, gatewayTxnId })}::jsonb
+      )
+    `;
+
+    await tx`
+      UPDATE public.profiles
+      SET role = CASE WHEN role = 'admin' THEN role ELSE 'free' END,
+          workflow_groups = CASE
+            WHEN ${grantedPlan}::text IS NULL THEN COALESCE(workflow_groups, '{}'::text[])
+            WHEN ${grantedPlan}::text = ANY(COALESCE(workflow_groups, '{}'::text[]))
+              THEN COALESCE(workflow_groups, '{}'::text[])
+            ELSE array_append(COALESCE(workflow_groups, '{}'::text[]), ${grantedPlan}::text)
+          END,
+          features = ${sql.array(ALL_FEATURES)},
+          updated_at = NOW()
+      WHERE user_id = ${order.user_id}
+    `;
+  });
+
+  if (userId) invalidateProfileCache(userId);
+  return { processed: !alreadyProcessed };
+}
+
+// POST /api/payments/vietqr/create
+// Creates a pending transfer order and returns VietQR image URL + transfer content.
+vietqrRouter.post('/create', requireAuth, async (req, res) => {
+  const userId = req.user!.userId;
+  const email = req.user!.email;
+  const requestedPlanId = req.body?.planId;
+  const planId: PlanId = isPlanId(requestedPlanId) ? requestedPlanId : 'specialist';
+  const amountVnd = PLAN_AMOUNT_VND[planId];
+
+  const bankBin = process.env.VIETQR_BANK_BIN;
+  const accountNo = process.env.VIETQR_ACCOUNT_NO;
+  const accountName = process.env.VIETQR_ACCOUNT_NAME;
+
+  if (!bankBin || !accountNo || !accountName) {
+    return res.status(500).json({
+      error: 'Thiếu cấu hình VietQR. Vui lòng thiết lập VIETQR_BANK_BIN, VIETQR_ACCOUNT_NO, VIETQR_ACCOUNT_NAME.',
+    });
+  }
+
+  const orderId = `VQR_${Date.now()}_${userId.slice(0, 8)}`;
+  const transferContent = `MOMAI ${orderId}`;
+  const qrImageUrl = `https://img.vietqr.io/image/${bankBin}-${accountNo}-compact2.png?amount=${amountVnd}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(accountName)}`;
+
+  try {
+    await sql`
+      INSERT INTO public.payment_orders
+        (id, user_id, gateway, amount, currency, status, plan_granted, metadata)
+      VALUES
+        (${orderId}, ${userId}, 'vietqr', ${amountVnd}, 'VND', 'pending', ${planId},
+         ${JSON.stringify({
+           email,
+           plan: planId,
+           transfer_content: transferContent,
+           bank_bin: bankBin,
+           account_no: accountNo,
+           account_name: accountName,
+         })}::jsonb)
+    `;
+
+    return res.json({
+      orderId,
+      amount: amountVnd,
+      currency: 'VND',
+      bankBin,
+      accountNo,
+      accountName,
+      planId,
+      transferContent,
+      qrImageUrl,
+      expiresAt: new Date(Date.now() + ORDER_EXPIRE_MINUTES * 60_000).toISOString(),
+      status: 'pending',
+    });
+  } catch (err: any) {
+    console.error('[vietqr/create]', err);
+    return res.status(500).json({ error: 'Không thể tạo mã VietQR. Vui lòng thử lại.' });
+  }
+});
+
+// GET /api/payments/vietqr/:orderId/status
+// Polling endpoint for frontend to check whether transfer has been confirmed.
+vietqrRouter.get('/:orderId/status', requireAuth, async (req, res) => {
+  const userId = req.user!.userId;
+  const orderId = req.params.orderId;
+
+  try {
+    const [order] = await sql`
+      SELECT id, status, amount, currency, created_at,
+             metadata->>'transfer_content' AS transfer_content
+      FROM public.payment_orders
+      WHERE id = ${orderId}
+        AND user_id = ${userId}
+        AND gateway = 'vietqr'
+      LIMIT 1
+    `;
+
+    if (!order) {
+      return res.status(404).json({ error: 'Không tìm thấy đơn thanh toán.' });
+    }
+
+    return res.json({
+      orderId: order.id,
+      status: order.status,
+      amount: order.amount,
+      currency: order.currency,
+      transferContent: order.transfer_content,
+      createdAt: order.created_at,
+    });
+  } catch (err: any) {
+    console.error('[vietqr/status]', err);
+    return res.status(500).json({ error: 'Không thể kiểm tra trạng thái thanh toán.' });
+  }
+});
+
+// POST /api/payments/vietqr/webhook
+// Generic webhook endpoint for banking/bridge services to confirm incoming transfer.
+vietqrRouter.post('/webhook', async (req, res) => {
+  const payload = (req.body ?? {}) as WebhookPayload;
+  const providedSecret = req.headers['x-vietqr-secret'];
+  const expectedSecret = process.env.VIETQR_WEBHOOK_SECRET;
+
+  if (expectedSecret) {
+    const normalizedProvided = Array.isArray(providedSecret) ? providedSecret[0] : providedSecret;
+    if (!normalizedProvided || normalizedProvided !== expectedSecret) {
+      return res.status(401).json({ error: 'Unauthorized webhook.' });
+    }
+  }
+
+  const orderId = pickOrderId(payload);
+  const transferContent = pickTransferContent(payload);
+  const amount = toNumber(payload.transferAmount ?? payload.amount ?? payload.data?.amount);
+  const success = isWebhookSuccess(payload);
+
+  try {
+    await sql`
+      INSERT INTO public.payment_webhook_events (gateway, event_type, order_id, raw_payload)
+      VALUES ('vietqr', 'ipn', ${orderId ?? null}, ${JSON.stringify(payload)}::jsonb)
+    `;
+  } catch (logErr) {
+    console.error('[vietqr/webhook] log failed:', logErr);
+  }
+
+  if (!success) {
+    return res.json({ message: 'Ignored (not successful payment).' });
+  }
+
+  try {
+    let order: any | undefined;
+
+    if (orderId) {
+      [order] = await sql`
+        SELECT id, user_id, amount, status, plan_granted, metadata
+        FROM public.payment_orders
+        WHERE id = ${orderId}
+          AND gateway = 'vietqr'
+        LIMIT 1
+      `;
+    }
+
+    if (!order && transferContent) {
+      [order] = await sql`
+        SELECT id, user_id, amount, status, plan_granted, metadata
+        FROM public.payment_orders
+        WHERE gateway = 'vietqr'
+          AND status = 'pending'
+          AND metadata->>'transfer_content' = ${transferContent}
+        ORDER BY created_at DESC
+        LIMIT 1
+      `;
+    }
+
+    if (!order) {
+      return res.json({ message: 'Order not found.' });
+    }
+
+    const grantedPlan = pickGrantedPlan(order);
+
+    if (order.status === 'completed') {
+      // Allow re-sending webhook to backfill missing workflow_groups on old orders.
+      await sql`
+        UPDATE public.profiles
+        SET role = CASE WHEN role = 'admin' THEN role ELSE 'free' END,
+            workflow_groups = CASE
+              WHEN ${grantedPlan}::text IS NULL THEN COALESCE(workflow_groups, '{}'::text[])
+              WHEN ${grantedPlan}::text = ANY(COALESCE(workflow_groups, '{}'::text[]))
+                THEN COALESCE(workflow_groups, '{}'::text[])
+              ELSE array_append(COALESCE(workflow_groups, '{}'::text[]), ${grantedPlan}::text)
+            END,
+            features = ${sql.array(ALL_FEATURES)},
+            updated_at = NOW()
+        WHERE user_id = ${order.user_id}
+      `;
+      invalidateProfileCache(order.user_id);
+      return res.json({ message: 'Already processed.' });
+    }
+
+    if (amount !== null && amount !== Number(order.amount)) {
+      return res.status(400).json({ error: 'Invalid amount.' });
+    }
+
+    await applyVietqrPaymentSuccess(order.id, orderId ?? transferContent ?? order.id);
+
+    return res.json({ message: 'OK' });
+  } catch (err: any) {
+    console.error('[vietqr/webhook]', err);
+    return res.status(500).json({ error: 'Internal error.' });
+  }
+});

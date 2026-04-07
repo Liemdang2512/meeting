@@ -35,11 +35,6 @@ async function setupTestUser() {
 
 async function cleanupTestData() {
   if (!testUserId) return;
-  await sql`DELETE FROM public.wallet_ledger WHERE user_id = ${testUserId}`;
-  await sql`DELETE FROM public.wallet_balances WHERE user_id = ${testUserId}`;
-  await sql`DELETE FROM public.payment_orders WHERE user_id = ${testUserId}`;
-  await sql`DELETE FROM public.profiles WHERE user_id = ${testUserId}`;
-  await sql`DELETE FROM auth.users WHERE id = ${testUserId}`;
   invalidateProfileCache(testUserId);
 }
 
