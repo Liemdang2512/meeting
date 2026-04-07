@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 11-s-a-giao-th-c-t-nh-ti-n-sau-ng-k-t-i-kho-n-c-s-d-c-nh-s-d-ng-s-tr-tr-c-ti-p-v-o-s-d-01-PLAN.md
-last_updated: "2026-04-07T05:45:22.838Z"
+stopped_at: Completed 11-02-PLAN.md
+last_updated: "2026-04-07T05:51:27.403Z"
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 46
-  completed_plans: 37
+  completed_plans: 38
 ---
 
 # Project State
@@ -17,11 +17,11 @@ progress:
 ## Current Position
 
 Phase: 11 (s-a-giao-th-c-t-nh-ti-n-sau-ng-k-t-i-kho-n-c-s-d-c-nh-s-d-ng-s-tr-tr-c-ti-p-v-o-s-d) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 
 ## Last Session
 
-- **Stopped At:** Completed 11-s-a-giao-th-c-t-nh-ti-n-sau-ng-k-t-i-kho-n-c-s-d-c-nh-s-d-ng-s-tr-tr-c-ti-p-v-o-s-d-01-PLAN.md
+- **Stopped At:** Completed 11-02-PLAN.md
 - **Timestamp:** 2026-04-01T00:00:00Z
 
 ## Decisions
@@ -85,6 +85,9 @@ Plan: 2 of 4
 - [Phase 11-s-a-giao-th-c-t-nh-ti-n-sau-ng-k-t-i-kho-n-c-s-d-c-nh-s-d-ng-s-tr-tr-c-ti-p-v-o-s-d]: Pack IDs specialist/reporter/officer are locked to 299000/399000/499000 anchors.
 - [Phase 11-s-a-giao-th-c-t-nh-ti-n-sau-ng-k-t-i-kho-n-c-s-d-c-nh-s-d-ng-s-tr-tr-c-ti-p-v-o-s-d]: Billing rate-card starts with explicit minutes-generate debit cost before runtime deductions are wired.
 - [Phase 11-s-a-giao-th-c-t-nh-ti-n-sau-ng-k-t-i-kho-n-c-s-d-c-nh-s-d-ng-s-tr-tr-c-ti-p-v-o-s-d]: Wallet ledger is append-only and protected from UPDATE/DELETE to preserve auditability.
+- [Phase 11]: Legacy migration policy persists per-user sunset through legacy_migration_assignments linked to auditable batches.
+- [Phase 11]: Overdraft floor predicate is centralized in legacyAccessPolicy helper at -10000 credits.
+- [Phase 11]: Overdraft integration tests use unique user IDs to preserve append-only ledger constraints while validating concurrency behavior.
 
 ## Performance Metrics
 
@@ -115,6 +118,7 @@ Plan: 2 of 4
 | Phase 10-payment-gateway P10-04 | 10min | 2 tasks | 3 files |
 | Phase 10-payment-gateway P10-05 | 5min | 2 tasks | 4 files |
 | Phase 11-s-a-giao-th-c-t-nh-ti-n-sau-ng-k-t-i-kho-n-c-s-d-c-nh-s-d-ng-s-tr-tr-c-ti-p-v-o-s-d P01 | 5min | 2 tasks | 4 files |
+| Phase 11-s-a-giao-th-c-t-nh-ti-n-sau-ng-k-t-i-kho-n-c-s-d-c-nh-s-d-ng-s-tr-tr-c-ti-p-v-o-s-d P02 | 4min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
