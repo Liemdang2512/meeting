@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import sql from '../db';
 import { requireAuth } from '../auth';
+import { LEGACY_OVERDRAFT_FLOOR_CREDITS } from '../billing/legacyAccessPolicy';
 
 const router = Router();
 
@@ -9,10 +10,31 @@ const DEFAULT_FREE_DAILY_LIMIT = 1;
 // GET /api/quota — returns current user's conversion quota status
 router.get('/', requireAuth, async (req, res) => {
   const user = req.user!;
-  if (user.role !== 'free') {
-    return res.json({ role: user.role, unlimited: true });
-  }
   try {
+    if (user.role !== 'free') {
+      const [wallet] = await sql`
+        SELECT balance_credits
+        FROM public.wallet_balances
+        WHERE user_id = ${user.userId}
+        LIMIT 1
+      `;
+      const [legacyAssignment] = await sql`
+        SELECT legacy_access_until
+        FROM public.legacy_migration_assignments
+        WHERE user_id = ${user.userId}
+        ORDER BY assigned_at DESC
+        LIMIT 1
+      `;
+
+      return res.json({
+        role: user.role,
+        billingModel: 'wallet',
+        balance: Number(wallet?.balance_credits ?? 0),
+        overdraftLimit: LEGACY_OVERDRAFT_FLOOR_CREDITS,
+        legacyAccessUntil: legacyAssignment?.legacy_access_until ?? null,
+      });
+    }
+
     // 1 LEFT JOIN thay vì 2 queries riêng — giảm 1 DB roundtrip
     const [result] = await sql`
       SELECT
@@ -27,6 +49,7 @@ router.get('/', requireAuth, async (req, res) => {
     const used = result?.used ?? 0;
     return res.json({
       role: 'free',
+      billingModel: 'quota',
       used,
       limit: dailyLimit,
       remaining: Math.max(0, dailyLimit - used),

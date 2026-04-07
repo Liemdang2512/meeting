@@ -24,14 +24,14 @@ describe('QuotaBadge', () => {
     expect(container.firstChild).not.toBeNull();
   });
 
-  it('hiển thị "Unlimited" khi role !== "free" (unlimited: true)', async () => {
+  it('hiển thị badge ví credits khi role !== "free"', async () => {
     mockAuthFetch.mockResolvedValue({
       ok: true,
-      json: async () => ({ role: 'user', unlimited: true }),
+      json: async () => ({ role: 'user', billingModel: 'wallet', balance: 12000, overdraftLimit: -10000 }),
     } as Response);
     render(<QuotaBadge />);
     await waitFor(() => {
-      expect(screen.getByText('Unlimited')).toBeInTheDocument();
+      expect(screen.getByText('Ví: 12.000 credits')).toBeInTheDocument();
     });
   });
 
@@ -91,6 +91,19 @@ describe('QuotaBadge', () => {
     await waitFor(() => {
       expect(mockAuthFetch).toHaveBeenCalledTimes(2);
     });
+  });
+
+  it('card variant hiển thị trạng thái ví thay vì quota ngày cho paid user', async () => {
+    mockAuthFetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ role: 'user', billingModel: 'wallet', balance: 8000, overdraftLimit: -10000 }),
+    } as Response);
+    render(<QuotaBadge variant="card" />);
+    await waitFor(() => {
+      expect(screen.getByText('Số dư ví')).toBeInTheDocument();
+      expect(screen.getByText('8.000 credits')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Lượt hôm nay')).toBeNull();
   });
 });
 

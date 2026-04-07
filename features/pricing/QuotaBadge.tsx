@@ -3,10 +3,14 @@ import { authFetch } from '../../lib/api';
 
 interface QuotaData {
   role: string;
+  billingModel?: 'quota' | 'wallet';
   unlimited?: boolean;
   used?: number;
   limit?: number;
   remaining?: number;
+  balance?: number;
+  overdraftLimit?: number;
+  legacyAccessUntil?: string | null;
 }
 
 interface QuotaBadgeProps {
@@ -52,10 +56,11 @@ export const QuotaBadge: React.FC<QuotaBadgeProps> = ({ onQuotaExhausted, varian
       return <span className="px-3 py-1 w-20 h-6 bg-slate-100 rounded-full animate-pulse inline-block" />;
     }
     if (!quota || error) return null;
-    if (quota.unlimited) {
+    if (quota.billingModel === 'wallet' || quota.role !== 'free') {
+      const balance = Number(quota.balance ?? 0);
       return (
-        <span className="px-3 py-1 text-xs font-medium text-slate-500 bg-slate-100 rounded-full">
-          Unlimited
+        <span className="px-3 py-1 text-xs font-medium text-indigo-700 bg-indigo-50 rounded-full">
+          Ví: {balance.toLocaleString('vi-VN')} credits
         </span>
       );
     }
@@ -91,11 +96,25 @@ export const QuotaBadge: React.FC<QuotaBadgeProps> = ({ onQuotaExhausted, varian
 
   if (!quota) return null;
 
-  if (quota.unlimited) {
+  if (quota.billingModel === 'wallet' || quota.role !== 'free') {
+    const balance = Number(quota.balance ?? 0);
+    const overdraftLimit = Number(quota.overdraftLimit ?? -10000);
+    const isNegative = balance < 0;
     return (
-      <div className="w-full px-3 py-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-        <span className="font-medium text-emerald-700">Không giới hạn lượt</span>
+      <div className={`w-full px-3 py-2.5 rounded-xl border text-xs flex flex-col gap-1 ${
+        isNegative ? 'bg-amber-50 border-amber-200' : 'bg-emerald-50 border-emerald-200'
+      }`}>
+        <div className="flex items-center justify-between gap-2">
+          <span className={`font-semibold ${isNegative ? 'text-amber-700' : 'text-emerald-700'}`}>
+            Số dư ví
+          </span>
+          <span className={`font-bold ${isNegative ? 'text-amber-700' : 'text-emerald-800'}`}>
+            {balance.toLocaleString('vi-VN')} credits
+          </span>
+        </div>
+        <p className={`text-[10px] ${isNegative ? 'text-amber-700' : 'text-emerald-700/90'}`}>
+          Giới hạn âm: {overdraftLimit.toLocaleString('vi-VN')} credits
+        </p>
       </div>
     );
   }
