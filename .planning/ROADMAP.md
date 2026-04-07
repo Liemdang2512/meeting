@@ -129,6 +129,19 @@ Plans:
 - [ ] 10-05-PLAN.md — Admin payment orders view + integration tests + human verification
 - [ ] 10-06-PLAN.md — VNPay preselect payment channel from checkout tab to reduce extra click before entering card/OTP
 
+### Phase 11: sửa giao thức tính tiền: sau đăng ký tài khoản có số dư cố định, sử dụng sẽ trừ trực tiếp vào số dư
+
+**Goal:** Chuyển mô hình thanh toán sang số dư trả trước (`internal_credits`): user nạp credit theo các gói 299000/399000/499000, hệ thống trừ credit tại thời điểm bắt đầu tạo nội dung AI, tự động hoàn full nếu fail, hỗ trợ ngưỡng âm -10000 và migration policy theo batch cho user cũ
+**Requirements**: TBD
+**Depends on:** Phase 10
+**Plans:** 1/4 plans executed
+
+Plans:
+- [x] 11-01-PLAN.md — Wave 1 business contract: wallet ledger + rate-card schema and typed billing contracts (D-01, D-02, D-04)
+- [ ] 11-02-PLAN.md — Wave 1 business policy: migration batch sunset + overdraft floor tests/contracts (D-06, D-07, D-08, D-09)
+- [ ] 11-03-PLAN.md — Wave 2 technical: payment webhook top-up funding + workflow unlock + wallet refresh payload (D-03)
+- [ ] 11-04-PLAN.md — Wave 3 technical: charge-at-start runtime, auto-refund on failure, insufficient-balance UX and E2E verify (D-04, D-05, D-06, D-07)
+
 ---
 
 ### Phase 9: UI Revamp - Website va giao dien tung nhom tinh nang
