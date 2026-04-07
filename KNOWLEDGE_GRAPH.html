@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meeting Scribe AI Pro — Knowledge Graph</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Header */
+  header {
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  header h1 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #f0f6fc;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  header h1 span.badge {
+    font-size: 11px;
+    background: #1f6feb;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .header-desc {
+    font-size: 12px;
+    color: #8b949e;
+    flex: 1;
+  }
+  .search-box {
+    position: relative;
+  }
+  .search-box input {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    padding: 6px 12px 6px 32px;
+    border-radius: 6px;
+    font-size: 13px;
+    width: 200px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-box input:focus { border-color: #1f6feb; }
+  .search-box::before {
+    content: '⌕';
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #8b949e;
+    font-size: 14px;
+  }
+
+  /* Main layout */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Graph canvas */
+  #graph-container {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+  svg {
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+  }
+  svg:active { cursor: grabbing; }
+
+  /* Legend */
+  .legend {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    background: rgba(22, 27, 34, 0.95);
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    backdrop-filter: blur(8px);
+  }
+  .legend h3 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #8b949e;
+    margin-bottom: 8px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+  .legend-item:hover { background: #21262d; }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .legend-label { color: #c9d1d9; }
+
+  /* Node counter */
+  .graph-stats {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    font-size: 11px;
+    color: #8b949e;
+    background: rgba(22, 27, 34, 0.85);
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid #30363d;
+  }
+
+  /* Zoom controls */
+  .zoom-controls {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .zoom-btn {
+    background: #161b22;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+  .zoom-btn:hover { background: #21262d; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 340px;
+    background: #161b22;
+    border-left: 1px solid #30363d;
+    overflow-y: auto;
+    flex-shrink: 0;
+    transition: width 0.3s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar.collapsed { width: 0; overflow: hidden; }
+
+  .sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid #30363d;
+    position: sticky;
+    top: 0;
+    background: #161b22;
+    z-index: 1;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .sidebar-icon {
+    font-size: 28px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .sidebar-title-block { flex: 1; min-width: 0; }
+  .sidebar-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #f0f6fc;
+    margin-bottom: 4px;
+  }
+  .sidebar-category {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    display: inline-block;
+  }
+  .close-btn {
+    background: none;
+    border: none;
+    color: #8b949e;
+    font-size: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 2px;
+    border-radius: 4px;
+    transition: color 0.15s;
+  }
+  .close-btn:hover { color: #e6edf3; }
+
+  .sidebar-body { padding: 16px; flex: 1; }
+
+  .section {
+    margin-bottom: 20px;
+  }
+  .section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #8b949e;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #21262d;
+  }
+
+  .desc-text {
+    font-size: 13px;
+    color: #c9d1d9;
+    line-height: 1.6;
+  }
+
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .tag {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+  }
+  .tag-file { background: #1c2128; border: 1px solid #30363d; color: #79c0ff; }
+  .tag-db { background: #1c2128; border: 1px solid #f7931a33; color: #f7931a; }
+  .tag-api { background: #1c2128; border: 1px solid #3fb95033; color: #3fb950; }
+  .tag-dep { background: #1c2128; border: 1px solid #a371f733; color: #a371f7; }
+
+  .warning-box {
+    background: #2d1e1e;
+    border: 1px solid #f8514933;
+    border-left: 3px solid #f85149;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: #ffa198;
+    line-height: 1.5;
+  }
+  .warning-box::before { content: '⚠ '; font-size: 13px; }
+
+  .info-box {
+    background: #162032;
+    border: 1px solid #1f6feb33;
+    border-left: 3px solid #1f6feb;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: #79c0ff;
+    line-height: 1.5;
+  }
+  .info-box::before { content: 'ℹ '; font-size: 13px; }
+
+  .conn-list { list-style: none; }
+  .conn-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 0;
+    font-size: 12px;
+    color: #c9d1d9;
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 5px 6px;
+    transition: background 0.15s;
+  }
+  .conn-item:hover { background: #21262d; }
+  .conn-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .conn-arrow { color: #8b949e; font-size: 10px; }
+  .conn-label { color: #8b949e; font-size: 11px; margin-left: auto; }
+
+  /* Sidebar empty state */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #8b949e;
+    font-size: 13px;
+    gap: 12px;
+    padding: 32px;
+    text-align: center;
+  }
+  .empty-state .icon { font-size: 40px; }
+
+  /* SVG elements */
+  .link {
+    stroke-opacity: 0.5;
+    transition: stroke-opacity 0.2s;
+  }
+  .link:hover { stroke-opacity: 1; }
+  .link.highlighted { stroke-opacity: 1; }
+  .link.dimmed { stroke-opacity: 0.08; }
+
+  .node circle {
+    stroke-width: 2;
+    cursor: pointer;
+    transition: r 0.2s, stroke-width 0.2s;
+  }
+  .node circle:hover { stroke-width: 3; }
+  .node.selected circle { stroke-width: 3; }
+  .node.dimmed circle { opacity: 0.25; }
+  .node.dimmed text { opacity: 0.2; }
+
+  .node text {
+    pointer-events: none;
+    user-select: none;
+    font-size: 11px;
+    fill: #e6edf3;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  }
+  .node .icon-label {
+    font-size: 16px;
+    dominant-baseline: middle;
+    text-anchor: middle;
+  }
+  .node .text-label {
+    font-size: 11px;
+    font-weight: 500;
+    dominant-baseline: middle;
+    text-anchor: middle;
+    fill: #c9d1d9;
+  }
+
+  .edge-label {
+    font-size: 9px;
+    fill: #8b949e;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  /* Tooltip */
+  .tooltip {
+    position: absolute;
+    background: rgba(22, 27, 34, 0.98);
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: #c9d1d9;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    max-width: 220px;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+  }
+  .tooltip.visible { opacity: 1; }
+  .tooltip-title { font-weight: 600; color: #f0f6fc; margin-bottom: 4px; font-size: 13px; }
+  .tooltip-cat { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: #8b949e; margin-bottom: 6px; }
+  .tooltip-desc { line-height: 1.4; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>
+    🗺 Knowledge Graph
+    <span class="badge">Meeting Scribe AI Pro</span>
+  </h1>
+  <span class="header-desc">Bản đồ kiến trúc và phụ thuộc — Click node để xem chi tiết. Drag để di chuyển. Scroll để zoom.</span>
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Tìm node..." />
+  </div>
+</header>
+
+<div class="main">
+  <div id="graph-container">
+    <svg id="graph"></svg>
+    <div class="graph-stats" id="statsBar">14 nodes · 28 edges</div>
+    <div class="legend" id="legend">
+      <h3>Danh mục</h3>
+    </div>
+    <div class="zoom-controls">
+      <button class="zoom-btn" id="zoomIn" title="Zoom in">+</button>
+      <button class="zoom-btn" id="zoomFit" title="Fit screen">⊡</button>
+      <button class="zoom-btn" id="zoomOut" title="Zoom out">−</button>
+    </div>
+    <div class="tooltip" id="tooltip"></div>
+  </div>
+
+  <div class="sidebar" id="sidebar">
+    <div class="empty-state" id="emptyState">
+      <div class="icon">🗺</div>
+      <strong>Chọn một node</strong>
+      <span>Click vào node bất kỳ để xem thông tin chi tiết, files liên quan, DB tables, API endpoints và các cảnh báo quan trọng cho AI.</span>
+    </div>
+    <div id="sidebarContent" style="display:none; flex-direction:column; height:100%;">
+      <div class="sidebar-header" id="sidebarHeader"></div>
+      <div class="sidebar-body" id="sidebarBody"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const CATEGORIES = {
+  core:     { label: 'Core / Infra',      color: '#f85149', bg: '#2d1e1e' },
+  frontend: { label: 'Frontend Pages',    color: '#3fb950', bg: '#1a2d1e' },
+  backend:  { label: 'Backend Routes',    color: '#1f6feb', bg: '#162032' },
+  database: { label: 'Database',          color: '#f7931a', bg: '#2d1f10' },
+  external: { label: 'External Services', color: '#a371f7', bg: '#201a2d' },
+  infra:    { label: 'Local Tools',       color: '#e3b341', bg: '#2d2510' },
+};
+
+const nodes = [
+  {
+    id: 'auth',
+    label: 'Auth & JWT',
+    icon: '🔐',
+    category: 'core',
+    size: 34,
+    description: 'Xử lý toàn bộ authentication: login/logout, JWT access token (15 phút), refresh token (30 ngày via httpOnly cookie). Profile cache 30s để giảm DB query. Middleware requireAuth và requireFeature bảo vệ tất cả API routes.',
+    files: ['server/auth.ts', 'server/routes/auth.ts', 'src/lib/auth.ts', 'src/lib/api.ts'],
+    dbTables: ['auth.users', 'public.profiles'],
+    endpoints: ['POST /api/auth/login', 'POST /api/auth/refresh', 'DELETE /api/auth/logout', 'GET /api/auth/me'],
+    warnings: [
+      'profileCache TTL = 30s. Sau payment upgrade phải gọi invalidateProfileCache(userId) ngay lập tức nếu không role cũ sẽ còn hiệu lực 30s.',
+      'FREE_FEATURES = [transcription, summary] — chỉ 2 tính năng. ALL_FEATURES gồm cả mindmap, export_pdf, export_docx, email, diagram.',
+      'JWT payload chứa { userId, email, role, plans, features } — khi thay đổi features/role phải issue token mới.'
+    ],
+    info: ['Role: free | admin (không có role "user" riêng)', 'plans = workflow_groups từ DB profiles', 'requireFeature() middleware check req.user.features[]']
+  },
+  {
+    id: 'minutes',
+    label: 'Minutes / Transcription',
+    icon: '📝',
+    category: 'frontend',
+    size: 32,
+    description: 'Core feature: Upload audio/video → phiên âm (Gemini) → tạo biên bản họp. Hỗ trợ Basic (nhanh) và Deep (nhiều file, song song). Kết quả lưu vào DB và có thể export ra DOCX/PDF, gửi email.',
+    files: ['App.tsx (main logic)', 'features/minutes/prompt.ts', 'features/minutes/storage.ts', 'features/minutes/types.ts', 'features/minutes/components/MeetingInfoForm.tsx', 'server/routes/transcriptions.ts', 'server/routes/summaries.ts'],
+    dbTables: ['public.transcriptions', 'public.summaries', 'public.token_usage_logs'],
+    endpoints: ['POST /api/transcriptions', 'GET /api/transcriptions', 'POST /api/summaries', 'GET /api/summaries'],
+    warnings: [
+      'Deep transcription xử lý song song nhiều file — mỗi file tạo 1 entry token_usage_logs riêng. Tổng cost = sum của tất cả entries.',
+      'Quota check xảy ra TRƯỚC khi gọi Gemini. Nếu quota bị depleted giữa chừng (race condition), một số file có thể bị cancel.',
+      'export_pdf và export_docx là paid features (ALL_FEATURES) — check req.user.features trước khi cho phép download.'
+    ],
+    info: ['Basic: 1 file, nhanh', 'Deep: multi-file, song song, synthesize kết quả cuối', 'MeetingInfo (tiêu đề, người họp, ngày) ảnh hưởng prompt']
+  },
+  {
+    id: 'filesplit',
+    label: 'File Split',
+    icon: '✂️',
+    category: 'frontend',
+    size: 24,
+    description: 'Cắt file audio/video dài thành nhiều đoạn nhỏ để upload lên Gemini (giới hạn 20MB/file). Xử lý hoàn toàn local trên browser — KHÔNG gọi backend.',
+    files: ['features/file-split/FileSplitPage.tsx', 'features/file-split/hooks/useFileSplitter.ts', 'features/file-split/lib/ffmpegClient.ts', 'features/file-split/lib/webAudioSplitter.ts', 'features/file-split/utils/segmentCalculator.ts'],
+    dbTables: [],
+    endpoints: [],
+    warnings: [
+      'ffmpeg.wasm được lazy-load (nặng ~30MB) — chỉ tải khi user thực sự dùng. KHÔNG import ở root.',
+      'Fallback: nếu ffmpeg.wasm thất bại, dùng WebAudio API (chất lượng thấp hơn, chỉ hỗ trợ audio).'
+    ],
+    info: ['Hoàn toàn client-side — không cần auth', 'Constants: features/file-split/constants.ts (segment size limits)']
+  },
+  {
+    id: 'mindmap',
+    label: 'Mindmap',
+    icon: '🧠',
+    category: 'frontend',
+    size: 26,
+    description: 'Tạo mindmap, checklist và diagram từ nội dung biên bản. Sử dụng Gemini để generate structured JSON, sau đó render bằng custom canvas component.',
+    files: ['features/mindmap/MindmapPage.tsx', 'features/mindmap/hooks/useMindmapTree.ts', 'features/mindmap/hooks/useChecklistFromText.ts', 'features/mindmap/hooks/useDiagramFromText.ts', 'features/mindmap/lib/mindmapSchema.ts', 'features/mindmap/components/MindmapTreeCanvas.tsx', 'features/mindmap/components/DiagramCanvas.tsx'],
+    dbTables: ['public.token_usage_logs'],
+    endpoints: ['POST /api/gemini (proxy)'],
+    warnings: [
+      'Feature gated: "mindmap" và "diagram" chỉ có trong ALL_FEATURES (paid). Free user không access được.',
+      'useMindmapTree được import TRỰC TIẾP (không lazy) tại App.tsx root vì cần state sẵn sàng ngay.'
+    ],
+    info: ['mindmapSchema.ts định nghĩa cấu trúc JSON Gemini phải trả về', 'ChecklistStorage dùng localStorage']
+  },
+  {
+    id: 'workflows',
+    label: 'Workflows',
+    icon: '🔄',
+    category: 'frontend',
+    size: 28,
+    description: '3 loại workflow chuyên biệt: Reporter (phóng viên), Specialist (chuyên gia kỹ thuật), Officer (cán bộ hành chính). Mỗi workflow có prompt riêng, form riêng. WorkflowGuard kiểm tra user có trong workflow_groups không.',
+    files: ['features/workflows/WorkflowGuard.tsx', 'features/workflows/types.ts', 'features/workflows/GroupSwitcher.tsx', 'features/workflows/shared/SharedMeetingWorkflow.tsx', 'features/workflows/shared/fileStore.ts', 'features/workflows/reporter/ReporterWorkflowPage.tsx', 'features/workflows/specialist/SpecialistWorkflowPage.tsx', 'features/workflows/officer/OfficerWorkflowPage.tsx'],
+    dbTables: ['public.token_usage_logs', 'public.daily_conversion_usage'],
+    endpoints: ['GET /api/quota', 'POST /api/transcriptions'],
+    warnings: [
+      'WorkflowGuard dùng req.user.plans (= workflow_groups từ JWT) để guard. Nếu admin thêm user vào group, phải issue JWT mới.',
+      'Mỗi workflow dùng prompt template riêng — thay đổi prompt.ts của 1 workflow KHÔNG ảnh hưởng workflow khác.',
+      'SharedMeetingWorkflow.tsx là code dùng chung — thay đổi ở đây ảnh hưởng cả 3 workflows.'
+    ],
+    info: ['WORKFLOW_GROUPS constant trong types.ts', 'fileStore.ts dùng sessionStorage để persist file giữa các step']
+  },
+  {
+    id: 'pricing',
+    label: 'Pricing & Quota',
+    icon: '💰',
+    category: 'frontend',
+    size: 26,
+    description: 'Quản lý gói dùng thử và hiển thị trạng thái quota. QuotaBadge hiển thị còn bao nhiêu lượt/ngày. QuotaUpgradeModal nhắc upgrade khi hết quota. Free user: 1 conversion/ngày.',
+    files: ['features/pricing/PricingPage.tsx', 'features/pricing/QuotaBadge.tsx', 'features/pricing/QuotaUpgradeModal.tsx', 'features/pricing/UpgradeModal.tsx', 'server/routes/quota.ts'],
+    dbTables: ['public.profiles (daily_limit)', 'public.daily_conversion_usage'],
+    endpoints: ['GET /api/quota'],
+    warnings: [
+      'daily_limit được lưu trong profiles, DEFAULT_FREE_DAILY_LIMIT = 1 (hardcode trong quota.ts). Muốn thay default phải sửa server.',
+      'Admin và paid users → unlimited (không query daily_conversion_usage). Free users mới check quota.',
+      'Quota reset theo CURRENT_DATE (midnight UTC theo giờ DB server — Railway).'
+    ],
+    info: ['daily_conversion_usage.count tăng sau mỗi transcription thành công', 'QuotaBadge polling không realtime — refetch khi navigation']
+  },
+  {
+    id: 'payments',
+    label: 'Payments',
+    icon: '💳',
+    category: 'backend',
+    size: 28,
+    description: 'Tích hợp VNPay và MoMo. Sau payment thành công, frontend gọi check-upgrade để invalidate profileCache và issue JWT mới với role đã upgrade. IPN callbacks từ VNPay/MoMo gọi trực tiếp vào backend.',
+    files: ['server/routes/payments/index.ts', 'server/routes/payments/vnpay.ts', 'server/routes/payments/momo.ts', 'src/components/PaymentResultPage.tsx'],
+    dbTables: ['public.profiles (role, features, workflow_groups)'],
+    endpoints: ['POST /api/payments/check-upgrade', 'POST /api/payments/vnpay/ipn', 'POST /api/payments/momo/ipn', 'GET /api/payments/vnpay/return'],
+    warnings: [
+      'IPN từ VNPay/MoMo là unsigned requests từ payment gateway — phải verify checksum/signature trước khi update DB.',
+      'check-upgrade cần JWT hợp lệ (requireAuth) — frontend phải gọi với token hiện tại trong header.',
+      'Race condition: IPN có thể đến TRƯỚC user redirect về PaymentResultPage. DB đã update nhưng JWT vẫn stale.'
+    ],
+    info: ['momo.ts và vnpay.ts được register RIÊNG trong server/index.ts (không qua paymentsRouter)', 'check-upgrade invalidates profileCache → next request sẽ query DB fresh']
+  },
+  {
+    id: 'usermgmt',
+    label: 'User Management',
+    icon: '👥',
+    category: 'frontend',
+    size: 24,
+    description: 'Admin-only: tạo user mới, đặt role, gán workflow_groups, quản lý features. Invite-only system — user không tự đăng ký được.',
+    files: ['features/user-management/UserManagementPage.tsx', 'server/routes/users.ts', 'server/routes/admin.ts', 'server/routes/profiles.ts'],
+    dbTables: ['auth.users', 'public.profiles'],
+    endpoints: ['GET /api/admin/users', 'POST /api/admin/users', 'PATCH /api/admin/users/:id', 'DELETE /api/admin/users/:id', 'GET /api/profiles/:id', 'PATCH /api/profiles/:id'],
+    warnings: [
+      'Chỉ admin (role=admin trong JWT) mới truy cập được. Thêm middleware check role trước mọi route.',
+      'Sau khi admin đổi role/features của user, user đó phải logout rồi login lại để JWT được refresh.',
+      'DELETE user xóa cả auth.users và profiles (CASCADE). Token cũ của user đó vẫn valid cho đến khi expire.'
+    ],
+    info: ['Không có self-registration — admin tạo user qua UI', 'workflow_groups là mảng string, ví dụ: ["reporter", "specialist"]']
+  },
+  {
+    id: 'tokenusage',
+    label: 'Token Usage',
+    icon: '📊',
+    category: 'frontend',
+    size: 24,
+    description: 'Theo dõi chi phí Gemini API. Admin xem tất cả users. User thường chỉ xem của mình. Log được tạo tự động sau mỗi Gemini call thành công.',
+    files: ['features/token-usage-admin/TokenUsageAdminPage.tsx', 'features/token-usage-admin/components/TokenUsageTable.tsx', 'features/token-usage-admin/components/TokenUsageOverview.tsx', 'features/token-usage-user/MyTokenUsagePage.tsx', 'server/routes/tokenLogs.ts', 'server/routes/admin.ts'],
+    dbTables: ['public.token_usage_logs'],
+    endpoints: ['GET /api/token-logs', 'GET /api/admin/token-logs', 'GET /api/admin/payments'],
+    warnings: [
+      'token_usage_logs KHÔNG bao giờ bị xóa tự động — cần manual purge hoặc archive job nếu data lớn.',
+      'Cost calculation: input_tokens * price_in + output_tokens * price_out. Price theo model Gemini sử dụng.'
+    ],
+    info: ['feature: transcription, summary, mindmap, diagram, email', 'Admin page có filter theo user/feature/date']
+  },
+  {
+    id: 'email',
+    label: 'Email Service',
+    icon: '📧',
+    category: 'backend',
+    size: 22,
+    description: 'Gửi biên bản họp qua email với nội dung HTML đẹp và attachment PDF. Feature-gated: chỉ paid users (ALL_FEATURES) mới gửi được.',
+    files: ['server/routes/email.ts', 'server/lib/emailTemplate.ts', 'server/lib/pdfGenerator.ts'],
+    dbTables: ['public.token_usage_logs (log nếu dùng AI format)'],
+    endpoints: ['POST /api/email/send'],
+    warnings: [
+      'Feature: "email" — FREE_FEATURES KHÔNG có. Phải check requireFeature("email") trước khi cho gửi.',
+      'pdfGenerator dùng puppeteer hoặc thư viện khác — có thể nặng, nên chạy async và timeout phù hợp.'
+    ],
+    info: ['EmailRecipientsInput.tsx ở features/minutes/components/ quản lý danh sách email']
+  },
+  {
+    id: 'settings',
+    label: 'Settings',
+    icon: '⚙️',
+    category: 'frontend',
+    size: 22,
+    description: 'User cài đặt Gemini API key của riêng mình để không dùng key của server. Cũng có WorkflowGroupsSection cho admin gán workflow.',
+    files: ['features/settings/WorkflowGroupsSection.tsx', 'server/routes/users.ts (user-settings)'],
+    dbTables: ['public.user_settings'],
+    endpoints: ['GET /api/user-settings', 'PUT /api/user-settings'],
+    warnings: [
+      'API key được lưu plaintext trong DB — cần encrypt nếu compliance là vấn đề.',
+      'Nếu user có API key riêng, Gemini service dùng key đó THAY VÌ VITE_GEMINI_API_KEY env. Ưu tiên: user key > env key.'
+    ],
+    info: ['loadApiKeyFromAccount() và saveApiKeyToAccount() trong src/lib/auth.ts']
+  },
+  {
+    id: 'gemini',
+    label: 'Gemini AI',
+    icon: '🤖',
+    category: 'external',
+    size: 30,
+    description: 'Google Gemini API — engine AI cho toàn bộ app. Dùng @google/genai SDK. Xử lý: phiên âm (transcribeBasic/Deep), tóm tắt (summarizeTranscript), mindmap, diagram, workflow prompts.',
+    files: ['src/services/geminiService.ts', 'server/routes/gemini.ts'],
+    dbTables: ['public.token_usage_logs (auto-log sau mỗi call)'],
+    endpoints: ['POST /api/gemini (server proxy cho một số calls)'],
+    warnings: [
+      'API key: user key ưu tiên hơn env VITE_GEMINI_API_KEY. Nếu không có key nào → lỗi.',
+      'Gemini có rate limits. Deep transcription nhiều file song song có thể hit rate limit.',
+      'Response format thay đổi theo model — khi upgrade model version phải test lại tất cả prompts.'
+    ],
+    info: ['Model: gemini-1.5-pro hoặc flash tùy tính năng', 'Token logging: input_tokens + output_tokens từ response.usageMetadata']
+  },
+  {
+    id: 'database',
+    label: 'Database (PostgreSQL)',
+    icon: '🗄️',
+    category: 'database',
+    size: 30,
+    description: 'PostgreSQL 16. Production: Railway. Local: Docker port 5433. Hai schema: auth (users) và public (tất cả còn lại). Dùng thư viện postgres (không phải pg hay Prisma).',
+    files: ['server/db.ts', 'tests/integration/schema.test.ts', 'tests/integration/helpers/db.ts'],
+    dbTables: ['auth.users', 'public.profiles', 'public.transcriptions', 'public.summaries', 'public.user_settings', 'public.token_usage_logs', 'public.daily_conversion_usage'],
+    endpoints: [],
+    warnings: [
+      'Schema chia 2: auth.* (authentication) và public.* (app data). JOIN cần qualify đúng schema.',
+      'profiles.features là ARRAY của Feature enum — khi thêm feature mới phải migration ALTER TYPE.',
+      'daily_conversion_usage reset theo ngày — không có job tự xóa records cũ, cần purge thủ công.'
+    ],
+    info: ['Connection: DATABASE_URL env hoặc individual DB_HOST/PORT/NAME/USER/PASS', 'SSL: auto-enable ở production (Railway), disable ở local']
+  },
+  {
+    id: 'vnpay',
+    label: 'VNPay',
+    icon: '🏦',
+    category: 'external',
+    size: 20,
+    description: 'Payment gateway VNPay. IPN callback và return URL xử lý kết quả thanh toán.',
+    files: ['server/routes/payments/vnpay.ts'],
+    dbTables: ['public.profiles (update role sau payment)'],
+    endpoints: ['POST /api/payments/vnpay/ipn', 'GET /api/payments/vnpay/return'],
+    warnings: [
+      'PHẢI verify VNPay HMAC checksum trước khi xử lý IPN — không verify = security vulnerability.',
+      'IPN có thể retry nhiều lần — implement idempotency để tránh double-upgrade.'
+    ],
+    info: ['Sandbox: vnpay sandbox URL trong env', 'vnp_ResponseCode = "00" → success']
+  },
+  {
+    id: 'momo',
+    label: 'MoMo',
+    icon: '📱',
+    category: 'external',
+    size: 20,
+    description: 'Payment gateway MoMo. IPN callback xử lý kết quả thanh toán.',
+    files: ['server/routes/payments/momo.ts'],
+    dbTables: ['public.profiles (update role sau payment)'],
+    endpoints: ['POST /api/payments/momo/ipn'],
+    warnings: [
+      'PHẢI verify MoMo signature trước khi xử lý IPN.',
+      'resultCode = 0 → success. Các code khác là lỗi khác nhau.'
+    ],
+    info: ['momo.ts được register tại /api/payments/momo trong server/index.ts']
+  },
+];
+
+const edges = [
+  // Auth → Features
+  { source: 'auth', target: 'minutes',    label: 'requireAuth',       type: 'auth' },
+  { source: 'auth', target: 'workflows',  label: 'WorkflowGuard',     type: 'auth' },
+  { source: 'auth', target: 'mindmap',    label: 'requireFeature',    type: 'auth' },
+  { source: 'auth', target: 'email',      label: 'requireFeature',    type: 'auth' },
+  { source: 'auth', target: 'usermgmt',   label: 'role=admin',        type: 'auth' },
+  { source: 'auth', target: 'tokenusage', label: 'requireAuth',       type: 'auth' },
+  { source: 'auth', target: 'settings',   label: 'requireAuth',       type: 'auth' },
+  { source: 'auth', target: 'pricing',    label: 'role → quota',      type: 'auth' },
+
+  // Core flows
+  { source: 'minutes',   target: 'gemini',    label: 'transcribe/summarize', type: 'data' },
+  { source: 'minutes',   target: 'tokenusage',label: 'log tokens',           type: 'data' },
+  { source: 'minutes',   target: 'email',     label: 'gửi biên bản',         type: 'data' },
+  { source: 'minutes',   target: 'mindmap',   label: 'text → mindmap',       type: 'data' },
+  { source: 'minutes',   target: 'pricing',   label: 'check quota',          type: 'data' },
+  { source: 'minutes',   target: 'database',  label: 'lưu transcript/summary',type: 'data' },
+
+  { source: 'workflows', target: 'gemini',    label: 'structured prompts',   type: 'data' },
+  { source: 'workflows', target: 'pricing',   label: 'check quota',          type: 'data' },
+  { source: 'workflows', target: 'tokenusage',label: 'log tokens',           type: 'data' },
+
+  { source: 'mindmap',   target: 'gemini',    label: 'generate structure',   type: 'data' },
+  { source: 'mindmap',   target: 'tokenusage',label: 'log tokens',           type: 'data' },
+
+  // Payment flow
+  { source: 'pricing',   target: 'payments',  label: 'upgrade CTA',          type: 'payment' },
+  { source: 'payments',  target: 'auth',      label: 'invalidate cache + JWT',type: 'payment' },
+  { source: 'payments',  target: 'vnpay',     label: 'IPN/return',           type: 'payment' },
+  { source: 'payments',  target: 'momo',      label: 'IPN',                  type: 'payment' },
+  { source: 'payments',  target: 'database',  label: 'update role',          type: 'payment' },
+
+  // DB access
+  { source: 'auth',      target: 'database',  label: 'users + profiles',     type: 'db' },
+  { source: 'pricing',   target: 'database',  label: 'daily_conversion_usage',type: 'db' },
+  { source: 'tokenusage',target: 'database',  label: 'token_usage_logs',     type: 'db' },
+  { source: 'usermgmt',  target: 'database',  label: 'CRUD users/profiles',  type: 'db' },
+  { source: 'settings',  target: 'database',  label: 'user_settings',        type: 'db' },
+  { source: 'settings',  target: 'gemini',    label: 'API key',              type: 'data' },
+];
+
+// ============================================================
+// D3 GRAPH
+// ============================================================
+const width = () => document.getElementById('graph-container').clientWidth;
+const height = () => document.getElementById('graph-container').clientHeight;
+
+const svg = d3.select('#graph');
+const g = svg.append('g').attr('class', 'graph-group');
+
+// Defs: arrowhead markers per edge type
+const defs = svg.append('defs');
+const edgeColors = { auth: '#f85149', data: '#3fb950', payment: '#f7931a', db: '#a371f7' };
+Object.entries(edgeColors).forEach(([type, color]) => {
+  defs.append('marker')
+    .attr('id', `arrow-${type}`)
+    .attr('viewBox', '0 -5 10 10')
+    .attr('refX', 22)
+    .attr('refY', 0)
+    .attr('markerWidth', 6)
+    .attr('markerHeight', 6)
+    .attr('orient', 'auto')
+    .append('path')
+    .attr('d', 'M0,-5L10,0L0,5')
+    .attr('fill', color)
+    .attr('opacity', 0.7);
+});
+
+// Build force simulation
+const simulation = d3.forceSimulation(nodes)
+  .force('link', d3.forceLink(edges).id(d => d.id).distance(d => {
+    // Longer distance for less important edges
+    if (d.type === 'auth') return 160;
+    if (d.type === 'db') return 140;
+    return 120;
+  }).strength(0.4))
+  .force('charge', d3.forceManyBody().strength(-600))
+  .force('center', d3.forceCenter(0, 0))
+  .force('collision', d3.forceCollide().radius(d => d.size + 20));
+
+// Zoom
+const zoom = d3.zoom()
+  .scaleExtent([0.2, 3])
+  .on('zoom', (event) => {
+    g.attr('transform', event.transform);
+  });
+svg.call(zoom);
+
+// Links layer
+const linkGroup = g.append('g').attr('class', 'links');
+const link = linkGroup.selectAll('line')
+  .data(edges)
+  .enter().append('line')
+  .attr('class', 'link')
+  .attr('stroke', d => edgeColors[d.type] || '#555')
+  .attr('stroke-width', 1.5)
+  .attr('marker-end', d => `url(#arrow-${d.type})`);
+
+// Edge labels
+const edgeLabelGroup = g.append('g').attr('class', 'edge-labels');
+const edgeLabel = edgeLabelGroup.selectAll('text')
+  .data(edges)
+  .enter().append('text')
+  .attr('class', 'edge-label')
+  .text(d => d.label);
+
+// Nodes layer
+const nodeGroup = g.append('g').attr('class', 'nodes');
+const node = nodeGroup.selectAll('.node')
+  .data(nodes)
+  .enter().append('g')
+  .attr('class', 'node')
+  .attr('data-id', d => d.id)
+  .call(d3.drag()
+    .on('start', dragstarted)
+    .on('drag', dragged)
+    .on('end', dragended));
+
+// Node circles
+node.append('circle')
+  .attr('r', d => d.size)
+  .attr('fill', d => {
+    const cat = CATEGORIES[d.category];
+    return cat ? cat.bg : '#161b22';
+  })
+  .attr('stroke', d => {
+    const cat = CATEGORIES[d.category];
+    return cat ? cat.color : '#555';
+  });
+
+// Node icon
+node.append('text')
+  .attr('class', 'icon-label')
+  .attr('y', -6)
+  .text(d => d.icon);
+
+// Node label
+node.append('text')
+  .attr('class', 'text-label')
+  .attr('y', d => d.size + 14)
+  .text(d => d.label);
+
+// Interactions
+const tooltip = document.getElementById('tooltip');
+let selectedNodeId = null;
+
+node.on('mouseover', function(event, d) {
+  tooltip.innerHTML = `
+    <div class="tooltip-title">${d.icon} ${d.label}</div>
+    <div class="tooltip-cat">${CATEGORIES[d.category]?.label || d.category}</div>
+    <div class="tooltip-desc">${d.description.substring(0, 100)}...</div>
+  `;
+  tooltip.classList.add('visible');
+  moveTip(event);
+})
+.on('mousemove', moveTip)
+.on('mouseout', () => tooltip.classList.remove('visible'))
+.on('click', function(event, d) {
+  event.stopPropagation();
+  selectNode(d.id);
+});
+
+function moveTip(event) {
+  const container = document.getElementById('graph-container').getBoundingClientRect();
+  const x = event.clientX - container.left + 12;
+  const y = event.clientY - container.top - 10;
+  tooltip.style.left = Math.min(x, container.width - 230) + 'px';
+  tooltip.style.top = y + 'px';
+}
+
+svg.on('click', () => {
+  selectNode(null);
+});
+
+// Simulation tick
+simulation.on('tick', () => {
+  link
+    .attr('x1', d => d.source.x)
+    .attr('y1', d => d.source.y)
+    .attr('x2', d => d.target.x)
+    .attr('y2', d => d.target.y);
+
+  edgeLabel
+    .attr('x', d => (d.source.x + d.target.x) / 2)
+    .attr('y', d => (d.source.y + d.target.y) / 2 - 4);
+
+  node.attr('transform', d => `translate(${d.x},${d.y})`);
+});
+
+function dragstarted(event, d) {
+  if (!event.active) simulation.alphaTarget(0.3).restart();
+  d.fx = d.x; d.fy = d.y;
+}
+function dragged(event, d) { d.fx = event.x; d.fy = event.y; }
+function dragended(event, d) {
+  if (!event.active) simulation.alphaTarget(0);
+  d.fx = null; d.fy = null;
+}
+
+// ============================================================
+// SELECT NODE
+// ============================================================
+function selectNode(nodeId) {
+  selectedNodeId = nodeId;
+
+  if (!nodeId) {
+    // Deselect
+    node.classed('selected', false).classed('dimmed', false);
+    link.classed('highlighted', false).classed('dimmed', false);
+    edgeLabel.style('opacity', 0.6);
+    showEmptyState();
+    return;
+  }
+
+  const connectedNodeIds = new Set([nodeId]);
+  edges.forEach(e => {
+    const sid = typeof e.source === 'object' ? e.source.id : e.source;
+    const tid = typeof e.target === 'object' ? e.target.id : e.target;
+    if (sid === nodeId || tid === nodeId) {
+      connectedNodeIds.add(sid);
+      connectedNodeIds.add(tid);
+    }
+  });
+
+  node.classed('selected', d => d.id === nodeId)
+      .classed('dimmed', d => !connectedNodeIds.has(d.id));
+
+  link.classed('highlighted', d => {
+    const sid = typeof d.source === 'object' ? d.source.id : d.source;
+    const tid = typeof d.target === 'object' ? d.target.id : d.target;
+    return sid === nodeId || tid === nodeId;
+  }).classed('dimmed', d => {
+    const sid = typeof d.source === 'object' ? d.source.id : d.source;
+    const tid = typeof d.target === 'object' ? d.target.id : d.target;
+    return sid !== nodeId && tid !== nodeId;
+  });
+
+  edgeLabel.style('opacity', d => {
+    const sid = typeof d.source === 'object' ? d.source.id : d.source;
+    const tid = typeof d.target === 'object' ? d.target.id : d.target;
+    return (sid === nodeId || tid === nodeId) ? 1 : 0.1;
+  });
+
+  const nodeData = nodes.find(n => n.id === nodeId);
+  showSidebar(nodeData);
+}
+
+function showEmptyState() {
+  document.getElementById('emptyState').style.display = 'flex';
+  document.getElementById('sidebarContent').style.display = 'none';
+}
+
+function showSidebar(d) {
+  document.getElementById('emptyState').style.display = 'none';
+  const content = document.getElementById('sidebarContent');
+  content.style.display = 'flex';
+
+  const cat = CATEGORIES[d.category];
+  const catColor = cat ? cat.color : '#555';
+
+  // Header
+  document.getElementById('sidebarHeader').innerHTML = `
+    <div class="sidebar-icon">${d.icon}</div>
+    <div class="sidebar-title-block">
+      <div class="sidebar-title">${d.label}</div>
+      <span class="sidebar-category" style="background:${cat?.bg || '#21262d'}; color:${catColor}; border: 1px solid ${catColor}33;">
+        ${cat?.label || d.category}
+      </span>
+    </div>
+    <button class="close-btn" onclick="selectNode(null)">✕</button>
+  `;
+
+  // Body
+  let html = '';
+
+  // Description
+  html += `<div class="section">
+    <div class="section-title">Mô tả</div>
+    <p class="desc-text">${d.description}</p>
+  </div>`;
+
+  // Warnings
+  if (d.warnings && d.warnings.length > 0) {
+    html += `<div class="section"><div class="section-title">⚠ Cảnh báo cho AI</div>`;
+    d.warnings.forEach(w => { html += `<div class="warning-box">${w}</div>`; });
+    html += `</div>`;
+  }
+
+  // Info
+  if (d.info && d.info.length > 0) {
+    html += `<div class="section"><div class="section-title">ℹ Ghi chú</div>`;
+    d.info.forEach(i => { html += `<div class="info-box">${i}</div>`; });
+    html += `</div>`;
+  }
+
+  // Files
+  if (d.files && d.files.length > 0) {
+    html += `<div class="section"><div class="section-title">📁 Files</div><div class="tag-list">`;
+    d.files.forEach(f => { html += `<span class="tag tag-file">${f}</span>`; });
+    html += `</div></div>`;
+  }
+
+  // DB Tables
+  if (d.dbTables && d.dbTables.length > 0) {
+    html += `<div class="section"><div class="section-title">🗄 DB Tables</div><div class="tag-list">`;
+    d.dbTables.forEach(t => { html += `<span class="tag tag-db">${t}</span>`; });
+    html += `</div></div>`;
+  }
+
+  // Endpoints
+  if (d.endpoints && d.endpoints.length > 0) {
+    html += `<div class="section"><div class="section-title">🔌 API Endpoints</div><div class="tag-list">`;
+    d.endpoints.forEach(e => { html += `<span class="tag tag-api">${e}</span>`; });
+    html += `</div></div>`;
+  }
+
+  // Connections
+  const outgoing = edges.filter(e => {
+    const sid = typeof e.source === 'object' ? e.source.id : e.source;
+    return sid === d.id;
+  });
+  const incoming = edges.filter(e => {
+    const tid = typeof e.target === 'object' ? e.target.id : e.target;
+    return tid === d.id;
+  });
+
+  if (outgoing.length > 0 || incoming.length > 0) {
+    html += `<div class="section"><div class="section-title">🔗 Kết nối</div><ul class="conn-list">`;
+
+    if (outgoing.length > 0) {
+      outgoing.forEach(e => {
+        const tid = typeof e.target === 'object' ? e.target.id : e.target;
+        const tNode = nodes.find(n => n.id === tid);
+        if (!tNode) return;
+        const tCat = CATEGORIES[tNode.category];
+        html += `<li class="conn-item" onclick="selectNode('${tid}')">
+          <div class="conn-dot" style="background:${tCat?.color || '#555'}"></div>
+          <span>${tNode.icon} ${tNode.label}</span>
+          <span class="conn-arrow">→</span>
+          <span class="conn-label">${e.label}</span>
+        </li>`;
+      });
+    }
+
+    if (incoming.length > 0) {
+      incoming.forEach(e => {
+        const sid = typeof e.source === 'object' ? e.source.id : e.source;
+        const sNode = nodes.find(n => n.id === sid);
+        if (!sNode) return;
+        const sCat = CATEGORIES[sNode.category];
+        html += `<li class="conn-item" onclick="selectNode('${sid}')">
+          <div class="conn-dot" style="background:${sCat?.color || '#555'}"></div>
+          <span>${sNode.icon} ${sNode.label}</span>
+          <span class="conn-arrow">←</span>
+          <span class="conn-label">${e.label}</span>
+        </li>`;
+      });
+    }
+
+    html += `</ul></div>`;
+  }
+
+  document.getElementById('sidebarBody').innerHTML = html;
+}
+
+// ============================================================
+// LEGEND
+// ============================================================
+const legend = document.getElementById('legend');
+Object.entries(CATEGORIES).forEach(([key, cat]) => {
+  const item = document.createElement('div');
+  item.className = 'legend-item';
+  item.innerHTML = `<div class="legend-dot" style="background:${cat.color}"></div><span class="legend-label">${cat.label}</span>`;
+  item.addEventListener('click', () => filterByCategory(key));
+  legend.appendChild(item);
+});
+
+// Edge legend
+const edgeLegendDiv = document.createElement('div');
+edgeLegendDiv.style.marginTop = '10px';
+edgeLegendDiv.innerHTML = `<div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#8b949e;margin-bottom:6px;">Loại kết nối</div>`;
+const edgeTypes = [
+  { type: 'auth', label: 'Auth/Guard' },
+  { type: 'data', label: 'Data Flow' },
+  { type: 'payment', label: 'Payment' },
+  { type: 'db', label: 'Database' },
+];
+edgeTypes.forEach(({ type, label }) => {
+  const item = document.createElement('div');
+  item.className = 'legend-item';
+  item.innerHTML = `<div style="width:20px;height:2px;background:${edgeColors[type]};border-radius:1px;flex-shrink:0"></div><span class="legend-label">${label}</span>`;
+  edgeLegendDiv.appendChild(item);
+});
+legend.appendChild(edgeLegendDiv);
+
+// ============================================================
+// SEARCH
+// ============================================================
+document.getElementById('searchInput').addEventListener('input', function() {
+  const q = this.value.toLowerCase().trim();
+  if (!q) {
+    node.classed('dimmed', false);
+    link.classed('dimmed', false);
+    return;
+  }
+  const matched = new Set(
+    nodes.filter(n =>
+      n.label.toLowerCase().includes(q) ||
+      n.description.toLowerCase().includes(q) ||
+      (n.files || []).some(f => f.toLowerCase().includes(q)) ||
+      (n.dbTables || []).some(t => t.toLowerCase().includes(q)) ||
+      (n.endpoints || []).some(e => e.toLowerCase().includes(q))
+    ).map(n => n.id)
+  );
+  node.classed('dimmed', d => !matched.has(d.id));
+  link.classed('dimmed', d => {
+    const sid = typeof d.source === 'object' ? d.source.id : d.source;
+    const tid = typeof d.target === 'object' ? d.target.id : d.target;
+    return !matched.has(sid) && !matched.has(tid);
+  });
+});
+
+// ============================================================
+// FILTER BY CATEGORY
+// ============================================================
+let activeFilter = null;
+function filterByCategory(cat) {
+  if (activeFilter === cat) {
+    activeFilter = null;
+    node.classed('dimmed', false);
+    link.classed('dimmed', false);
+    return;
+  }
+  activeFilter = cat;
+  const ids = new Set(nodes.filter(n => n.category === cat).map(n => n.id));
+  node.classed('dimmed', d => !ids.has(d.id));
+  link.classed('dimmed', d => {
+    const sid = typeof d.source === 'object' ? d.source.id : d.source;
+    const tid = typeof d.target === 'object' ? d.target.id : d.target;
+    return !ids.has(sid) && !ids.has(tid);
+  });
+}
+
+// ============================================================
+// ZOOM CONTROLS
+// ============================================================
+document.getElementById('zoomIn').addEventListener('click', () => {
+  svg.transition().duration(300).call(zoom.scaleBy, 1.4);
+});
+document.getElementById('zoomOut').addEventListener('click', () => {
+  svg.transition().duration(300).call(zoom.scaleBy, 0.7);
+});
+document.getElementById('zoomFit').addEventListener('click', fitGraph);
+
+function fitGraph() {
+  const svgEl = document.getElementById('graph');
+  const w = svgEl.clientWidth;
+  const h = svgEl.clientHeight;
+
+  // Get bounding box of all nodes
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  nodes.forEach(n => {
+    minX = Math.min(minX, n.x - n.size);
+    maxX = Math.max(maxX, n.x + n.size);
+    minY = Math.min(minY, n.y - n.size);
+    maxY = Math.max(maxY, n.y + n.size);
+  });
+
+  const padX = 80, padY = 60;
+  const scaleX = (w - padX * 2) / (maxX - minX);
+  const scaleY = (h - padY * 2) / (maxY - minY);
+  const scale = Math.min(scaleX, scaleY, 1.2);
+  const tx = (w - scale * (minX + maxX)) / 2;
+  const ty = (h - scale * (minY + maxY)) / 2;
+
+  svg.transition().duration(600)
+    .call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+}
+
+// Initial fit after simulation settles
+simulation.on('end', () => {
+  setTimeout(fitGraph, 100);
+});
+
+// Stats
+document.getElementById('statsBar').textContent = `${nodes.length} nodes · ${edges.length} edges`;
+
+// Initial center
+svg.call(zoom.transform, d3.zoomIdentity.translate(width() / 2, height() / 2).scale(0.7));
+</script>
+</body>
+</html>

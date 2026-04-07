@@ -120,13 +120,14 @@ Plans:
   4. Sau thanh toán thành công, tài khoản được nâng cấp tự động
   5. Lịch sử giao dịch và trạng thái subscription được lưu trong DB
   6. Webhook xử lý callback thanh toán từ các cổng
-**Plans**: 5 plans
+**Plans**: 6 plans
 Plans:
 - [x] 10-01-PLAN.md — DB migration (payment_orders, webhook_events tables) + invalidateProfileCache export + /api/payments/check-upgrade endpoint
 - [x] 10-02-PLAN.md — VNPay integration: create URL, return redirect, IPN handler (covers Visa/Mastercard/domestic ATM/VNPay QR)
 - [x] 10-03-PLAN.md — MoMo integration: create payment via REST API, IPN handler with HMAC-SHA256
 - [ ] 10-04-PLAN.md — Frontend: replace UpgradeModal mock form with gateway buttons, PaymentResultPage, App.tsx route
 - [ ] 10-05-PLAN.md — Admin payment orders view + integration tests + human verification
+- [ ] 10-06-PLAN.md — VNPay preselect payment channel from checkout tab to reduce extra click before entering card/OTP
 
 ---
 
