@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 11-02-PLAN.md
-last_updated: "2026-04-07T05:51:27.403Z"
+stopped_at: Completed 11-03-PLAN.md
+last_updated: "2026-04-07T05:59:09.203Z"
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 46
-  completed_plans: 38
+  completed_plans: 39
 ---
 
 # Project State
@@ -17,11 +17,11 @@ progress:
 ## Current Position
 
 Phase: 11 (s-a-giao-th-c-t-nh-ti-n-sau-ng-k-t-i-kho-n-c-s-d-c-nh-s-d-ng-s-tr-tr-c-ti-p-v-o-s-d) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 
 ## Last Session
 
-- **Stopped At:** Completed 11-02-PLAN.md
+- **Stopped At:** Completed 11-03-PLAN.md
 - **Timestamp:** 2026-04-01T00:00:00Z
 
 ## Decisions
@@ -88,6 +88,9 @@ Plan: 3 of 4
 - [Phase 11]: Legacy migration policy persists per-user sunset through legacy_migration_assignments linked to auditable batches.
 - [Phase 11]: Overdraft floor predicate is centralized in legacyAccessPolicy helper at -10000 credits.
 - [Phase 11]: Overdraft integration tests use unique user IDs to preserve append-only ledger constraints while validating concurrency behavior.
+- [Phase 11]: Webhook success handlers now fund wallet and unlock workflow groups in one SQL transaction.
+- [Phase 11]: VNPay and MoMo create endpoints persist planId + pack price so webhook funding maps deterministically to D-02 packs.
+- [Phase 11]: check-upgrade now returns additive wallet fields (balance/overdraftLimit/legacyAccessUntil) while preserving token+user contract.
 
 ## Performance Metrics
 
@@ -119,6 +122,7 @@ Plan: 3 of 4
 | Phase 10-payment-gateway P10-05 | 5min | 2 tasks | 4 files |
 | Phase 11-s-a-giao-th-c-t-nh-ti-n-sau-ng-k-t-i-kho-n-c-s-d-c-nh-s-d-ng-s-tr-tr-c-ti-p-v-o-s-d P01 | 5min | 2 tasks | 4 files |
 | Phase 11-s-a-giao-th-c-t-nh-ti-n-sau-ng-k-t-i-kho-n-c-s-d-c-nh-s-d-ng-s-tr-tr-c-ti-p-v-o-s-d P02 | 4min | 2 tasks | 4 files |
+| Phase 11-s-a-giao-th-c-t-nh-ti-n-sau-ng-k-t-i-kho-n-c-s-d-c-nh-s-d-ng-s-tr-tr-c-ti-p-v-o-s-d P03 | 6min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
