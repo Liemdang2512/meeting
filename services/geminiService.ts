@@ -3,6 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
 import { logTokenUsage } from "./tokenUsageService";
 import type { TokenLoggingContext } from "../types";
+import { authFetch } from "../lib/api";
 
 // Helper function to get API key from localStorage or env
 const getApiKey = (): string => {
@@ -24,6 +25,13 @@ const getApiKey = (): string => {
 // Singleton AI instance — reuse across calls to avoid re-init overhead (~20-30ms/call)
 let _aiInstance: GoogleGenAI | null = null;
 let _aiInstanceKey: string = '';
+let _lastSummaryBillingCorrelationId: string | null = null;
+
+export function consumeLastSummaryBillingCorrelationId(): string | null {
+  const id = _lastSummaryBillingCorrelationId;
+  _lastSummaryBillingCorrelationId = null;
+  return id;
+}
 
 function getAiInstance(): GoogleGenAI {
   const apiKey = getApiKey();
@@ -871,30 +879,68 @@ export const summarizeTranscript = async (
   loggingContext?: TokenLoggingContext,
   userId?: string | null,
 ): Promise<string> => {
-  // Always create a new instance to use the most up-to-date API key
-  const apiKey = getApiKey();
-  const ai = new GoogleGenAI({ apiKey });
+  const fullPrompt = `Dưới đây là văn bản ghi chép cuộc họp:\n\n${transcript}\n\n--- Yêu cầu: ---\n${customPrompt}`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `Dưới đây là văn bản ghi chép cuộc họp:\n\n${transcript}\n\n--- Yêu cầu: ---\n${customPrompt}`,
-      config: {
-        temperature: 0.3,
-      }
-    });
+    let text = '';
+    let usage:
+      | {
+          promptTokenCount?: number;
+          candidatesTokenCount?: number;
+          totalTokenCount?: number;
+        }
+      | undefined;
 
-    if (!response.text) {
-      throw new Error("Không thể tạo biên bản từ văn bản này.");
+    if (userId) {
+      const response = await authFetch('/gemini/generate', {
+        method: 'POST',
+        body: JSON.stringify({
+          prompt: fullPrompt,
+          model: 'gemini-2.0-flash',
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        if (response.status === 402 && data?.upgradeRequired) {
+          const insufficientError: any = new Error(data?.message ?? 'Số dư không đủ để tạo biên bản.');
+          insufficientError.upgradeRequired = true;
+          insufficientError.statusCode = 402;
+          insufficientError.billing = data;
+          throw insufficientError;
+        }
+        throw new Error(data?.error ?? 'Lỗi khi tạo biên bản.');
+      }
+
+      text = String(data?.text ?? '');
+      usage = data?.usage
+        ? {
+            promptTokenCount: data.usage.inputTokens,
+            candidatesTokenCount: data.usage.outputTokens,
+            totalTokenCount: data.usage.totalTokens,
+          }
+        : undefined;
+      _lastSummaryBillingCorrelationId = data?.billing?.correlationId ?? null;
+    } else {
+      // Always create a new instance to use the most up-to-date API key
+      const apiKey = getApiKey();
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: fullPrompt,
+        config: {
+          temperature: 0.3,
+        },
+      });
+
+      text = response.text ?? '';
+      usage = (response as any).usageMetadata;
+      _lastSummaryBillingCorrelationId = null;
     }
 
-    const usage = (response as any).usageMetadata as
-      | {
-        promptTokenCount?: number;
-        candidatesTokenCount?: number;
-        totalTokenCount?: number;
-      }
-      | undefined;
+    if (!text) {
+      throw new Error("Không thể tạo biên bản từ văn bản này.");
+    }
 
     if (userId && loggingContext) {
       void logTokenUsage({
@@ -913,8 +959,9 @@ export const summarizeTranscript = async (
       });
     }
 
-    return response.text;
+    return text;
   } catch (error: any) {
+    if (error?.upgradeRequired) throw error;
     if (error.message?.includes("Requested entity was not found")) throw new Error("API_KEY_EXPIRED");
     throw new Error(error.message || "Lỗi khi tạo biên bản.");
   }

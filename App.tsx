@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { TranscriptionStatus, FileMetadata, type TokenLoggingContext } from './types';
-import { transcribeBasic, transcribeDeep, summarizeTranscript, synthesizeTranscriptions, type DeepProgressCallback, type AudioLanguage } from './services/geminiService';
+import {
+  transcribeBasic,
+  transcribeDeep,
+  summarizeTranscript,
+  synthesizeTranscriptions,
+  consumeLastSummaryBillingCorrelationId,
+  type DeepProgressCallback,
+  type AudioLanguage,
+} from './services/geminiService';
 import { getMe, logout as signOut, loadApiKeyFromAccount, saveApiKeyToAccount } from './lib/auth';
 import type { AuthUser } from './lib/auth';
 import { authFetch } from './lib/api';
@@ -555,16 +563,24 @@ function App() {
       // Save summary to backend if we have a transcription ID
       if (transcriptionId) {
         try {
+          const billingCorrelationId = consumeLastSummaryBillingCorrelationId();
           const res = await authFetch('/summaries', {
             method: 'POST',
             body: JSON.stringify({
               transcription_id: transcriptionId,
               summary_text: resultSummary,
               prompt_used: customPrompt,
+              billing_correlation_id: billingCorrelationId,
             }),
           });
           if (!res.ok) {
-            console.error('Error saving summary:', await res.text());
+            const saveError = await res.json().catch(() => ({}));
+            if (res.status === 402 && saveError?.upgradeRequired) {
+              setErrorMsg('Số dư hiện tại không đủ để lưu kết quả. Vui lòng nạp thêm và thử lại.');
+              navigate('/pricing');
+              return;
+            }
+            console.error('Error saving summary:', saveError);
           }
         } catch (dbError) {
           console.error('Database error:', dbError);
@@ -573,6 +589,12 @@ function App() {
 
       setStatus(TranscriptionStatus.COMPLETED);
     } catch (err: any) {
+      if (err?.upgradeRequired) {
+        setErrorMsg('Số dư hiện tại không đủ để tạo biên bản. Vui lòng nạp thêm để tiếp tục.');
+        navigate('/pricing');
+        setStatus(TranscriptionStatus.COMPLETED);
+        return;
+      }
       setErrorMsg(err.message || "Có lỗi xảy ra khi tạo biên bản.");
       setStatus(TranscriptionStatus.COMPLETED); // Return to completed transcription state even if summary fails
     }
@@ -926,7 +948,7 @@ const isMindmapRoute = route === '/mindmap';
   }
 
   if (route === '/profile' || route === '/settings') {
-    const roleLabel = user?.role === 'admin' ? 'Admin' : 'Free';
+    const roleLabel = user?.role === 'admin' ? 'Admin' : ((user?.plans?.length ?? 0) > 0 ? 'Paid' : 'Free');
     const planLabels = (user?.plans ?? []).map(p => WORKFLOW_GROUPS.find(wg => wg.key === p)?.label ?? p);
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-start p-8">
@@ -1129,7 +1151,14 @@ const isMindmapRoute = route === '/mindmap';
             <MindmapPage user={user} navigate={navigate} />
           )}
           {isPricingRoute && (
-            <PricingPage currentUserRole={user?.role} userPlans={user?.plans} />
+            <PricingPage
+              currentUserRole={user?.role}
+              userPlans={user?.plans}
+              onPaymentSuccess={async () => {
+                const refreshedUser = await getMe();
+                setUser(refreshedUser);
+              }}
+            />
           )}
           {isReporterRoute && user && (
             <WorkflowGuard group="reporter" user={user} navigate={navigate}>

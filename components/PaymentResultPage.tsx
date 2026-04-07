@@ -6,6 +6,7 @@ interface PaymentResultPageProps {
 }
 
 export function PaymentResultPage({ onTokenRefresh }: PaymentResultPageProps) {
+  const isPopupFlow = Boolean(window.opener && window.opener !== window);
   const token = getToken(); // Read from localStorage 'auth_token' key
   const params = new URLSearchParams(window.location.search);
   // VNPay return URL sets ?status=success|failed
@@ -24,6 +25,7 @@ export function PaymentResultPage({ onTokenRefresh }: PaymentResultPageProps) {
   }
 
   const [upgradeState, setUpgradeState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [wallet, setWallet] = useState<{ balance: number; overdraftLimit: number } | null>(null);
 
   useEffect(() => {
     if (!isSuccess || !token) return;
@@ -42,6 +44,10 @@ export function PaymentResultPage({ onTokenRefresh }: PaymentResultPageProps) {
           setToken(data.token); // Uses localStorage key 'auth_token' — do NOT use localStorage.setItem('token')
         }
         onTokenRefresh(data.user);
+        setWallet({
+          balance: Number(data?.wallet?.balance ?? data?.balance ?? 0),
+          overdraftLimit: Number(data?.wallet?.overdraftLimit ?? data?.overdraftLimit ?? -10000),
+        });
         setUpgradeState('done');
       })
       .catch((err) => {
@@ -53,11 +59,27 @@ export function PaymentResultPage({ onTokenRefresh }: PaymentResultPageProps) {
   // Auto-redirect to home after 5 seconds on success
   useEffect(() => {
     if (upgradeState !== 'done') return;
+    if (isPopupFlow) return;
     const t = setTimeout(() => {
       window.location.href = '/';
     }, 5000);
     return () => clearTimeout(t);
-  }, [upgradeState]);
+  }, [isPopupFlow, upgradeState]);
+
+  useEffect(() => {
+    if (!isPopupFlow) return;
+
+    if (!isSuccess) {
+      window.opener?.postMessage({ type: 'PAYMENT_RESULT', status: 'failed' }, window.location.origin);
+      setTimeout(() => window.close(), 300);
+      return;
+    }
+
+    if (upgradeState === 'done') {
+      window.opener?.postMessage({ type: 'PAYMENT_RESULT', status: 'success' }, window.location.origin);
+      setTimeout(() => window.close(), 300);
+    }
+  }, [isPopupFlow, isSuccess, upgradeState]);
 
   if (isSuccess) {
     return (
@@ -84,6 +106,15 @@ export function PaymentResultPage({ onTokenRefresh }: PaymentResultPageProps) {
               ? 'Tài khoản của bạn đã được nâng cấp. Tự động chuyển hướng sau 5 giây...'
               : 'Đang kích hoạt tài khoản...'}
           </p>
+          {wallet && (
+            <div className="mb-6 text-left bg-green-50 border border-green-200 rounded-xl p-3">
+              <p className="text-sm font-semibold text-green-800">Số dư ví hiện tại</p>
+              <p className="text-green-700 font-bold">{wallet.balance.toLocaleString('vi-VN')} credits</p>
+              <p className="text-xs text-green-700/80">
+                Giới hạn âm: {wallet.overdraftLimit.toLocaleString('vi-VN')} credits
+              </p>
+            </div>
+          )}
           {upgradeState === 'error' && (
             <p className="text-amber-600 text-sm mb-4">
               Thanh toán thành công nhưng chưa cập nhật được tài khoản. Vui lòng đăng xuất và đăng nhập lại.

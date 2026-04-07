@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import { GoogleGenAI } from '@google/genai';
-import sql from '../db';
 import { requireAuth, requireFeature } from '../auth';
+import {
+  authorizeAndCharge,
+  BillingInsufficientBalanceError,
+  refundCharge,
+} from '../billing/billingService';
 
 const router = Router();
 router.use(requireAuth);
@@ -31,7 +35,23 @@ router.post('/generate', requireFeature('transcription'), async (req, res) => {
     return res.status(400).json({ error: 'Chưa cấu hình API key. Vui lòng thêm Gemini API key trong cài đặt.' });
   }
 
+  let billingCharge:
+    | {
+        charged: boolean;
+        correlationId: string;
+      }
+    | undefined;
+
   try {
+    billingCharge = await authorizeAndCharge({
+      userId: req.user!.userId,
+      actionType: 'minutes-generate',
+      metadata: {
+        route: '/api/gemini/generate',
+        model,
+      },
+    });
+
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model,
@@ -47,13 +67,39 @@ router.post('/generate', requireFeature('transcription'), async (req, res) => {
 
     return res.json({
       text,
-      usage: usage ? {
-        inputTokens: usage.promptTokenCount ?? 0,
-        outputTokens: usage.candidatesTokenCount ?? 0,
-        totalTokens: usage.totalTokenCount ?? 0,
-      } : null,
+      usage: usage
+        ? {
+            inputTokens: usage.promptTokenCount ?? 0,
+            outputTokens: usage.candidatesTokenCount ?? 0,
+            totalTokens: usage.totalTokenCount ?? 0,
+          }
+        : null,
+      billing: {
+        charged: billingCharge.charged,
+        correlationId: billingCharge.correlationId,
+      },
     });
   } catch (err: any) {
+    if (err instanceof BillingInsufficientBalanceError) {
+      return res.status(err.statusCode).json(err.payload);
+    }
+
+    if (billingCharge?.charged) {
+      try {
+        await refundCharge({
+          userId: req.user!.userId,
+          actionType: 'minutes-generate',
+          correlationId: billingCharge.correlationId,
+          metadata: {
+            reason: 'gemini-generate-failure',
+            originalError: err?.message ?? 'unknown',
+          },
+        });
+      } catch (refundErr) {
+        console.error('[gemini/generate] refund failed', refundErr);
+      }
+    }
+
     console.error('[gemini/generate]', err);
     if (err.status === 429) {
       return res.status(429).json({ error: 'API rate limit exceeded. Vui lòng thử lại sau.' });
