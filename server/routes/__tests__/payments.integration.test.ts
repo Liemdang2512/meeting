@@ -6,6 +6,7 @@ import { getPackCredits, getPackPrice } from '../../billing/rateCard';
 import { applyVnpayPaymentSuccess } from '../payments/vnpay';
 import { applyMomoPaymentSuccess } from '../payments/momo';
 import { applyVietqrPaymentSuccess } from '../payments/vietqr';
+import { buildCheckUpgradePayload } from '../payments/index';
 
 type Gateway = 'vnpay' | 'momo' | 'vietqr';
 type PlanId = 'specialist' | 'reporter' | 'officer';
@@ -129,5 +130,37 @@ describe('Payment webhook integration — credit funding + workflow unlock', () 
     expect(await getTopupLedgerCount(orderId)).toBe(1);
     expect(await getBalanceCredits()).toBe(getPackCredits('officer'));
     expect(await getWorkflowGroups()).toContain('officer');
+  });
+
+  it('check-upgrade payload includes wallet fields after successful payment', async () => {
+    const orderId = `TEST_VNPAY_REFRESH_${Date.now()}`;
+    const expectedLegacyUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await insertPendingOrder(orderId, 'vnpay', 'specialist');
+    await sql`
+      INSERT INTO public.legacy_migration_batches (code, description, created_by)
+      VALUES ('TEST_BATCH_11_03', 'integration batch', 'test-suite')
+      ON CONFLICT (code) DO NOTHING
+    `;
+    await sql`
+      INSERT INTO public.legacy_migration_assignments (
+        user_id,
+        batch_code,
+        legacy_access_until,
+        assigned_by
+      ) VALUES (
+        ${testUserId},
+        'TEST_BATCH_11_03',
+        ${expectedLegacyUntil.toISOString()},
+        'test-suite'
+      )
+    `;
+
+    await applyVnpayPaymentSuccess(orderId, 'VNPAY_TXN_REFRESH');
+
+    const payload = await buildCheckUpgradePayload(testUserId, `payments-${testUserId}@example.com`);
+    expect(payload.balance).toBe(getPackCredits('specialist'));
+    expect(payload.overdraftLimit).toBe(-10000);
+    expect(payload.legacyAccessUntil).toBeTruthy();
+    expect(payload.user.plans).toContain('specialist');
   });
 });
