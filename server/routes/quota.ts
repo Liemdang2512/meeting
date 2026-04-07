@@ -19,29 +19,68 @@ export function buildWalletQuotaPayload(input: {
   };
 }
 
+export function isSchemaFallbackError(err: unknown): boolean {
+  const code = (err as { code?: string } | null)?.code;
+  return code === '42P01' || code === '42703';
+}
+
+export async function loadWalletSnapshot(
+  loaders: {
+    loadWallet: () => Promise<{ balance_credits?: number | null } | null | undefined>;
+    loadLegacyAssignment: () => Promise<{ legacy_access_until?: Date | string | null } | null | undefined>;
+  },
+): Promise<{ balanceCredits: number; legacyAccessUntil: Date | string | null }> {
+  let balanceCredits = 0;
+  let legacyAccessUntil: Date | string | null = null;
+
+  try {
+    const wallet = await loaders.loadWallet();
+    balanceCredits = Number(wallet?.balance_credits ?? 0);
+  } catch (err) {
+    if (!isSchemaFallbackError(err)) throw err;
+  }
+
+  try {
+    const legacyAssignment = await loaders.loadLegacyAssignment();
+    legacyAccessUntil = legacyAssignment?.legacy_access_until ?? null;
+  } catch (err) {
+    if (!isSchemaFallbackError(err)) throw err;
+  }
+
+  return { balanceCredits, legacyAccessUntil };
+}
+
 // GET /api/quota — returns current user's conversion quota status
 router.get('/', requireAuth, async (req, res) => {
   const user = req.user!;
   try {
-    const [wallet] = await sql`
-      SELECT balance_credits
-      FROM public.wallet_balances
-      WHERE user_id = ${user.userId}
-      LIMIT 1
-    `;
-    const [legacyAssignment] = await sql`
-      SELECT legacy_access_until
-      FROM public.legacy_migration_assignments
-      WHERE user_id = ${user.userId}
-      ORDER BY assigned_at DESC
-      LIMIT 1
-    `;
+    const { balanceCredits, legacyAccessUntil } = await loadWalletSnapshot({
+      loadWallet: async () => {
+        const [wallet] = await sql`
+          SELECT balance_credits
+          FROM public.wallet_balances
+          WHERE user_id = ${user.userId}
+          LIMIT 1
+        `;
+        return wallet;
+      },
+      loadLegacyAssignment: async () => {
+        const [legacyAssignment] = await sql`
+          SELECT legacy_access_until
+          FROM public.legacy_migration_assignments
+          WHERE user_id = ${user.userId}
+          ORDER BY assigned_at DESC
+          LIMIT 1
+        `;
+        return legacyAssignment;
+      },
+    });
 
     return res.json(
       buildWalletQuotaPayload({
         role: user.role,
-        balanceCredits: wallet?.balance_credits,
-        legacyAccessUntil: legacyAssignment?.legacy_access_until ?? null,
+        balanceCredits,
+        legacyAccessUntil,
       }),
     );
   } catch (err: any) {
