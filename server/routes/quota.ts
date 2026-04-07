@@ -7,11 +7,16 @@ const router = Router();
 
 const DEFAULT_FREE_DAILY_LIMIT = 1;
 
+export function isWalletBillingUser(user: { role?: string; plans?: string[] }): boolean {
+  if (user.role !== 'free') return true;
+  return Array.isArray(user.plans) && user.plans.length > 0;
+}
+
 // GET /api/quota — returns current user's conversion quota status
 router.get('/', requireAuth, async (req, res) => {
   const user = req.user!;
   try {
-    if (user.role !== 'free') {
+    if (isWalletBillingUser(user)) {
       const [wallet] = await sql`
         SELECT balance_credits
         FROM public.wallet_balances
