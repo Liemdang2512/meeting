@@ -12,8 +12,9 @@ import quotaRouter from './routes/quota';
 import emailRouter from './routes/email';
 import geminiRouter from './routes/gemini';
 import { paymentsRouter } from './routes/payments/index';
-import { vnpayRouter } from './routes/payments/vnpay';
-import { momoRouter } from './routes/payments/momo';
+// import { vnpayRouter } from './routes/payments/vnpay';
+// import { momoRouter } from './routes/payments/momo';
+import { vietqrRouter } from './routes/payments/vietqr';
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -36,9 +37,12 @@ app.use('/api/quota', quotaRouter);
 app.use('/api/email', emailRouter);
 app.use('/api/gemini', geminiRouter);
 app.use('/api/payments', paymentsRouter);
-app.use('/api/payments/vnpay', vnpayRouter);
-app.use('/api/payments/momo', momoRouter);
+// app.use('/api/payments/vnpay', vnpayRouter);
+// app.use('/api/payments/momo', momoRouter);
+app.use('/api/payments/vietqr', vietqrRouter);
 
+// Keep root path healthy for platform health checks that probe "/".
+app.get('/', (_req, res) => res.status(200).send('ok'));
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
 app.listen(PORT, () => {
