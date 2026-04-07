@@ -37,9 +37,13 @@ async function getBalance(userId: string): Promise<number> {
 
 async function getLedgerEntries(userId: string, correlationId: string) {
   return sql`
-    SELECT event_type, action_type, amount_credits, balance_after_credits
+    SELECT event_type, action_type, amount_credits, balance_after_credits, metadata
     FROM public.wallet_ledger
-    WHERE user_id = ${userId} AND correlation_id = ${correlationId}
+    WHERE user_id = ${userId}
+      AND (
+        correlation_id = ${correlationId}
+        OR correlation_id LIKE ${`${correlationId}:%`}
+      )
     ORDER BY created_at ASC, id ASC
   `;
 }
@@ -127,5 +131,6 @@ describe('Billing runtime integration (D-04/D-05/D-07)', () => {
     expect(ledger).toHaveLength(2);
     expect(ledger[0]).toMatchObject({ event_type: 'debit', amount_credits: -10_000 });
     expect(ledger[1]).toMatchObject({ event_type: 'refund', amount_credits: 10_000 });
+    expect(String(ledger[1].metadata)).toContain(correlationId);
   });
 });
