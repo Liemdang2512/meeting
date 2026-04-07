@@ -12,54 +12,8 @@ import {
   COOKIE_OPTIONS,
   type Feature,
 } from '../../auth';
-import { LEGACY_OVERDRAFT_FLOOR_CREDITS } from '../../billing/legacyAccessPolicy';
 
 export const paymentsRouter = Router();
-
-export async function buildCheckUpgradePayload(userId: string, email: string) {
-  const [profile] = await sql`
-    SELECT role, workflow_groups, features
-    FROM public.profiles
-    WHERE user_id = ${userId}
-  `;
-
-  if (!profile) {
-    throw new Error('PROFILE_NOT_FOUND');
-  }
-
-  const role = profile.role ?? 'free';
-  const plans: string[] = profile.workflow_groups ?? [];
-  const features: Feature[] = profile.features?.length ? profile.features : FREE_FEATURES;
-  const [wallet] = await sql`
-    SELECT balance_credits
-    FROM public.wallet_balances
-    WHERE user_id = ${userId}
-    LIMIT 1
-  `;
-  const [legacyAssignment] = await sql`
-    SELECT legacy_access_until
-    FROM public.legacy_migration_assignments
-    WHERE user_id = ${userId}
-    ORDER BY assigned_at DESC
-    LIMIT 1
-  `;
-  const balance = Number(wallet?.balance_credits ?? 0);
-  const overdraftLimit = LEGACY_OVERDRAFT_FLOOR_CREDITS;
-  const legacyAccessUntil = legacyAssignment?.legacy_access_until ?? null;
-  const user = { userId, email, role, plans, features };
-
-  return {
-    user,
-    balance,
-    overdraftLimit,
-    legacyAccessUntil,
-    wallet: {
-      balance,
-      overdraftLimit,
-      legacyAccessUntil,
-    },
-  };
-}
 
 // POST /api/payments/check-upgrade
 // Called by frontend PaymentResultPage after a successful payment redirect.
@@ -72,28 +26,27 @@ paymentsRouter.post('/check-upgrade', requireAuth, async (req, res) => {
     // 1. Clear stale cache so DB is queried fresh
     invalidateProfileCache(userId);
 
-    let payload;
-    try {
-      payload = await buildCheckUpgradePayload(userId, req.user!.email);
-    } catch (buildErr: any) {
-      if (buildErr?.message === 'PROFILE_NOT_FOUND') {
-        return res.status(404).json({ error: 'Profile not found' });
-      }
-      throw buildErr;
-    }
+    // 2. Fetch current role from DB
+    const [profile] = await sql`
+      SELECT role, workflow_groups, features
+      FROM public.profiles
+      WHERE user_id = ${userId}
+    `;
 
-    if (!payload?.user) {
+    if (!profile) {
       return res.status(404).json({ error: 'Profile not found' });
     }
 
+    const role = profile.role ?? 'free';
+    const plans: string[] = profile.workflow_groups ?? [];
+    const features: Feature[] = profile.features?.length ? profile.features : FREE_FEATURES;
+
     // 3. Issue fresh token with DB-accurate role
-    const token = signToken(payload.user);
+    const freshUser = { userId, email: req.user!.email, role, plans, features };
+    const token = signToken(freshUser);
     res.cookie('session', token, { ...COOKIE_OPTIONS, maxAge: 60 * 60 * 1000 });
 
-    return res.json({
-      token,
-      ...payload,
-    });
+    return res.json({ token, user: freshUser });
   } catch (err: any) {
     console.error('[payments/check-upgrade]', err);
     return res.status(500).json({ error: 'Da xay ra loi. Vui long thu lai sau.' });
