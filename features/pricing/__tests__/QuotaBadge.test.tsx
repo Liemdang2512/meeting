@@ -24,10 +24,10 @@ describe('QuotaBadge', () => {
     expect(container.firstChild).not.toBeNull();
   });
 
-  it('hiển thị badge ví credits khi role !== "free"', async () => {
+  it('hiển thị badge ví credits cho payload wallet', async () => {
     mockAuthFetch.mockResolvedValue({
       ok: true,
-      json: async () => ({ role: 'user', billingModel: 'wallet', balance: 12000, overdraftLimit: -10000 }),
+      json: async () => ({ role: 'free', billingModel: 'wallet', balance: 12000, overdraftLimit: -10000 }),
     } as Response);
     render(<QuotaBadge />);
     await waitFor(() => {
@@ -35,52 +35,38 @@ describe('QuotaBadge', () => {
     });
   });
 
-  it('hiển thị "Hôm nay: 0/1 lượt" khi used=0, limit=1 (màu xanh)', async () => {
+  it('pill variant đổi màu amber khi số dư âm', async () => {
     mockAuthFetch.mockResolvedValue({
       ok: true,
-      json: async () => ({ role: 'free', used: 0, limit: 1, remaining: 1 }),
+      json: async () => ({ role: 'free', billingModel: 'wallet', balance: -500, overdraftLimit: -10000 }),
     } as Response);
     render(<QuotaBadge />);
     await waitFor(() => {
-      expect(screen.getByText('Hôm nay: 0/1 lượt')).toBeInTheDocument();
+      expect(screen.getByText('Ví: -500 credits')).toBeInTheDocument();
     });
-    const badge = screen.getByText('Hôm nay: 0/1 lượt');
-    expect(badge.className).toContain('emerald');
-  });
-
-  it('hiển thị "Hôm nay: 1/1 lượt" khi used=1, limit=1 (màu amber)', async () => {
-    mockAuthFetch.mockResolvedValue({
-      ok: true,
-      json: async () => ({ role: 'free', used: 1, limit: 1, remaining: 0 }),
-    } as Response);
-    render(<QuotaBadge onQuotaExhausted={() => {}} />);
-    await waitFor(() => {
-      expect(screen.getByText('Hôm nay: 1/1 lượt')).toBeInTheDocument();
-    });
-    const badge = screen.getByText('Hôm nay: 1/1 lượt');
+    const badge = screen.getByText('Ví: -500 credits');
     expect(badge.className).toContain('amber');
   });
 
-  it('gọi onQuotaExhausted khi remaining === 0', async () => {
+  it('không gọi onQuotaExhausted cho payload wallet-only phase 11', async () => {
     mockAuthFetch.mockResolvedValue({
       ok: true,
-      json: async () => ({ role: 'free', used: 1, limit: 1, remaining: 0 }),
+      json: async () => ({ role: 'free', billingModel: 'wallet', balance: 0, overdraftLimit: -10000 }),
     } as Response);
     const onExhausted = vi.fn();
     render(<QuotaBadge onQuotaExhausted={onExhausted} />);
-    await waitFor(() => {
-      expect(onExhausted).toHaveBeenCalledTimes(1);
-    });
+    await waitFor(() => expect(screen.getByText('Ví: 0 credits')).toBeInTheDocument());
+    expect(onExhausted).not.toHaveBeenCalled();
   });
 
   it('re-fetch quota khi nhận được sự kiện "quota-updated" trên window', async () => {
     mockAuthFetch.mockResolvedValue({
       ok: true,
-      json: async () => ({ role: 'free', used: 0, limit: 1, remaining: 1 }),
+      json: async () => ({ role: 'free', billingModel: 'wallet', balance: 0, overdraftLimit: -10000 }),
     } as Response);
     render(<QuotaBadge />);
     await waitFor(() => {
-      expect(screen.getByText('Hôm nay: 0/1 lượt')).toBeInTheDocument();
+      expect(screen.getByText('Ví: 0 credits')).toBeInTheDocument();
     });
     expect(mockAuthFetch).toHaveBeenCalledTimes(1);
 
@@ -103,7 +89,9 @@ describe('QuotaBadge', () => {
       expect(screen.getByText('Số dư ví')).toBeInTheDocument();
       expect(screen.getByText('8.000 credits')).toBeInTheDocument();
     });
+    expect(screen.getByText('Giới hạn âm: -10.000 credits')).toBeInTheDocument();
     expect(screen.queryByText('Lượt hôm nay')).toBeNull();
+    expect(screen.queryByText(/Hôm nay:/)).toBeNull();
   });
 });
 
