@@ -208,14 +208,16 @@ vietqrRouter.post('/create', requireAuth, async (req, res) => {
   }
 
   const orderId = `VQR_${Date.now()}_${userId.slice(0, 8)}`;
-  const transferContent = generatePaymentCode(); // e.g. DH4X8K2P — matched by bridge's DH prefix template
+  const paymentCode = generatePaymentCode(); // e.g. DH1234567 — matched by SePay's code extraction
+  // VietinBank requires "SEVQR" prefix in transfer content for SePay to receive notifications
+  const transferContent = `SEVQR ${paymentCode}`;
   const qrImageUrl = `https://img.vietqr.io/image/${bankBin}-${accountNo}-compact2.png?amount=${amountVnd}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(accountName)}`;
 
   try {
     const metadata = {
       email,
       plan: planId,
-      transfer_content: transferContent,
+      transfer_content: paymentCode, // DH code thuần để match với SePay's extracted code field
       bank_bin: bankBin,
       account_no: accountNo,
       account_name: accountName,
