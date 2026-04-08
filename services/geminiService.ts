@@ -641,16 +641,6 @@ const runAudioAgent = async (
           : null),
       metadata: loggingContext.metadata,
     });
-    // Charge theo output tokens thực tế
-    void authFetch('/wallet/charge', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        outputTokens: usage?.candidatesTokenCount ?? null,
-        outputText: response.text,
-        actionType: loggingContext.actionType ?? 'transcription',
-      }),
-    }).catch(() => { /* fire-and-forget, không block UX */ });
   }
 
   return response.text;
@@ -714,6 +704,8 @@ export const transcribeBasic = async (
     return await runAudioAgent(file, fullPrompt, loggingContext, userId);
   } catch (error: any) {
     if (error.message?.includes("Requested entity was not found")) throw new Error("API_KEY_EXPIRED");
+    // Preserve INSUFFICIENT_BALANCE so callers can detect credit errors
+    if (error.code === 'INSUFFICIENT_BALANCE') throw error;
     throw new Error(error.message || "Lỗi xử lý âm thanh.");
   }
 };
@@ -975,22 +967,8 @@ export const summarizeTranscript = async (
       throw new Error("Không thể tạo biên bản từ văn bản này.");
     }
 
-    if (userId && loggingContext) {
-      void logTokenUsage({
-        userId,
-        feature: loggingContext.feature,
-        actionType: loggingContext.actionType,
-        model: 'gemini-3-flash-preview',
-        inputTokens: usage?.promptTokenCount ?? null,
-        outputTokens: usage?.candidatesTokenCount ?? null,
-        totalTokens:
-          usage?.totalTokenCount ??
-          (typeof usage?.promptTokenCount === 'number' && typeof usage?.candidatesTokenCount === 'number'
-            ? usage.promptTokenCount + usage.candidatesTokenCount
-            : null),
-        metadata: loggingContext.metadata,
-      });
-    }
+    // Khi userId có mặt, server /api/gemini/generate đã charge + log rồi.
+    // KHÔNG gọi logTokenUsage để tránh double-charge qua /api/token-logs.
 
     return text;
   } catch (error: any) {

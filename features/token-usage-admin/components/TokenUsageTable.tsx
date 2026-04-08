@@ -8,6 +8,7 @@ interface TokenUsageTableProps {
   error: string | null;
   page: number;
   pageSize: number;
+  total: number;
   onPageChange: (page: number) => void;
 }
 
@@ -17,6 +18,7 @@ export const TokenUsageTable: React.FC<TokenUsageTableProps> = ({
   error,
   page,
   pageSize,
+  total,
   onPageChange,
 }) => {
   const handlePrev = () => {
@@ -24,83 +26,107 @@ export const TokenUsageTable: React.FC<TokenUsageTableProps> = ({
   };
 
   const handleNext = () => {
-    if (logs.length === pageSize) {
+    if (page * pageSize < total) {
       onPageChange(page + 1);
     }
   };
 
+  const totalPages = Math.max(1, Math.ceil((total || 0) / pageSize));
+  const canPrev = page > 1;
+  const canNext = page < totalPages;
+
   return (
-    <div className="bg-white border-slate-200 shadow-sm rounded-xl border">
-      <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-        <p className="text-lg font-medium font-sans text-slate-800">Chi tiết sử dụng token</p>
-        <div className="flex items-center gap-3 text-sm font-medium text-slate-500">
-          <span>Trang {page}</span>
-          <span className="text-slate-300">•</span>
-          <span>{logs.length} dòng</span>
+    <div className="bg-surface-container-lowest rounded-2xl shadow-xl shadow-on-surface/5 overflow-hidden border border-outline-variant/5">
+      <div className="px-6 py-5 border-b border-outline-variant/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <p className="font-headline font-bold text-lg text-on-surface">Nhật ký chi tiết</p>
+          <p className="text-xs text-on-surface-variant mt-0.5">
+            Từng lần gọi mô hình — có thể xuất CSV để phân tích thêm.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 text-xs font-bold text-on-surface-variant whitespace-nowrap">
+          <span className="px-3 py-1.5 rounded-full bg-surface-container-low border border-outline-variant/15">
+            Trang {page} / {totalPages}
+          </span>
+          <span className="hidden sm:inline text-outline-variant">|</span>
+          <span>
+            {logs.length} dòng · tổng {total.toLocaleString('vi-VN')}
+          </span>
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm whitespace-nowrap">
-          <thead className="bg-indigo-900 text-white border-b border-slate-200">
-            <tr>
-              <th className="px-4 py-3 text-left font-medium">Thời gian</th>
-              <th className="px-4 py-3 text-left font-medium">Email</th>
-              <th className="px-4 py-3 text-left font-medium">Mã user</th>
-              <th className="px-4 py-3 text-left font-medium">Tính năng</th>
-              <th className="px-4 py-3 text-left font-medium">Hành động</th>
-              <th className="px-4 py-3 text-left font-medium hidden sm:table-cell">Model</th>
-              <th className="px-4 py-3 text-right font-medium">Đầu vào</th>
-              <th className="px-4 py-3 text-right font-medium">Đầu ra</th>
-              <th className="px-4 py-3 text-right font-medium">Tổng</th>
-              <th className="px-4 py-3 text-left font-medium hidden md:table-cell">Dữ liệu kèm theo</th>
+        <table className="w-full text-left border-collapse min-w-[880px]">
+          <thead>
+            <tr className="bg-surface-container-low/80">
+              <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest">Thời gian</th>
+              <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest">Email</th>
+              <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest">Mã user</th>
+              <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest">Tính năng</th>
+              <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest">Hành động</th>
+              <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest hidden sm:table-cell">Model</th>
+              <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest text-right">Vào</th>
+              <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest text-right">Ra</th>
+              <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest text-right">Tổng</th>
+              <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest hidden md:table-cell">Metadata</th>
             </tr>
           </thead>
-          <tbody className="divide-y-2 divide-slate-100">
+          <tbody className="divide-y divide-outline-variant/10">
             {isLoading && (
               <tr>
-                <td colSpan={10} className="px-4 py-8 text-center text-slate-500 font-medium">
-                  Đang tải dữ liệu...
+                <td colSpan={10} className="px-6 py-14 text-center">
+                  <div className="inline-flex flex-col items-center gap-3 text-on-surface-variant font-medium text-sm">
+                    <div className="w-7 h-7 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    Đang tải nhật ký…
+                  </div>
                 </td>
               </tr>
             )}
             {!isLoading && error && (
               <tr>
-                <td colSpan={10} className="px-4 py-8 text-center text-red-600 font-medium">
+                <td colSpan={10} className="px-6 py-14 text-center text-error font-medium text-sm">
                   {error}
                 </td>
               </tr>
             )}
             {!isLoading && !error && logs.length === 0 && (
               <tr>
-                <td colSpan={10} className="px-4 py-8 text-center text-slate-500 font-medium">
-                  Chưa có log nào trong khoảng thời gian này.
+                <td colSpan={10} className="px-6 py-14 text-center text-on-surface-variant font-medium text-sm">
+                  Không có bản ghi nào khớp bộ lọc.
                 </td>
               </tr>
             )}
             {!isLoading &&
               !error &&
               logs.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-4 py-3 text-slate-800 font-medium font-mono text-xs">
+                <tr key={log.id} className="hover:bg-surface-container-low/40 transition-colors group">
+                  <td className="px-6 py-4 text-on-surface font-mono text-xs whitespace-nowrap">
                     {new Date(log.createdAt).toLocaleString('vi-VN')}
                   </td>
-                  <td className="px-4 py-3 text-slate-800 font-medium max-w-[200px] truncate">
+                  <td className="px-6 py-4 text-sm font-bold text-on-surface max-w-[200px] truncate">
                     {log.userEmail ?? '—'}
                   </td>
-                  <td className="px-4 py-3 text-slate-800 font-medium max-w-[160px] truncate">{log.userId}</td>
-                  <td className="px-4 py-3 text-slate-600 font-medium text-xs">{getFeatureLabel(log.feature)}</td>
-                  <td className="px-4 py-3 text-slate-600 font-medium text-xs">{getActionLabel(log.actionType)}</td>
-                  <td className="px-4 py-3 text-slate-500 font-mono text-xs hidden sm:table-cell max-w-[120px] truncate">{log.model}</td>
-                  <td className="px-4 py-3 text-right text-slate-800 font-mono text-xs">
+                  <td className="px-6 py-4 text-on-surface-variant font-mono text-[11px] max-w-[160px] truncate">
+                    {log.userId}
+                  </td>
+                  <td className="px-6 py-4 text-xs font-medium text-on-surface-variant">
+                    {getFeatureLabel(log.feature)}
+                  </td>
+                  <td className="px-6 py-4 text-xs font-medium text-on-surface-variant">
+                    {getActionLabel(log.actionType)}
+                  </td>
+                  <td className="px-6 py-4 text-on-surface-variant font-mono text-[11px] hidden sm:table-cell max-w-[120px] truncate">
+                    {log.model}
+                  </td>
+                  <td className="px-6 py-4 text-right font-mono text-xs text-on-surface tabular-nums">
                     {log.inputTokens !== null ? log.inputTokens.toLocaleString('vi-VN') : '—'}
                   </td>
-                  <td className="px-4 py-3 text-right text-slate-800 font-mono text-xs">
+                  <td className="px-6 py-4 text-right font-mono text-xs text-on-surface tabular-nums">
                     {log.outputTokens !== null ? log.outputTokens.toLocaleString('vi-VN') : '—'}
                   </td>
-                  <td className="px-4 py-3 text-right font-medium text-slate-800 text-base">
+                  <td className="px-6 py-4 text-right font-display font-bold text-sm text-primary tabular-nums group-hover:text-secondary transition-colors">
                     {log.totalTokens !== null ? log.totalTokens.toLocaleString('vi-VN') : '—'}
                   </td>
-                  <td className="px-4 py-3 text-slate-400 font-mono text-xs max-w-[220px] truncate hidden md:table-cell">
+                  <td className="px-6 py-4 text-on-surface-variant/80 font-mono text-[11px] max-w-[220px] truncate hidden md:table-cell">
                     {log.metadata ? JSON.stringify(log.metadata) : '—'}
                   </td>
                 </tr>
@@ -108,25 +134,24 @@ export const TokenUsageTable: React.FC<TokenUsageTableProps> = ({
           </tbody>
         </table>
       </div>
-      <div className="p-4 border-t border-slate-200 flex items-center justify-between bg-slate-50">
+      <div className="px-6 py-4 border-t border-outline-variant/10 flex items-center justify-between bg-surface-container-low/50">
         <button
           type="button"
           onClick={handlePrev}
-          disabled={page <= 1}
-          className="px-4 py-2 font-medium text-sm bg-white border-slate-200 text-slate-800 shadow-sm rounded-xl hover:bg-slate-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed border"
+          disabled={!canPrev}
+          className="px-5 py-2.5 font-bold text-sm rounded-full bg-surface-container-lowest border border-outline-variant/15 text-on-surface hover:bg-surface-container-high transition-all disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Trang trước
+          ← Trước
         </button>
         <button
           type="button"
           onClick={handleNext}
-          disabled={logs.length < pageSize}
-          className="px-4 py-2 font-medium text-sm bg-white border-slate-200 text-slate-800 shadow-sm rounded-xl hover:bg-slate-100 transition-all disabled:opacity-50 disabled:cursor-not-allowed border"
+          disabled={!canNext}
+          className="px-5 py-2.5 font-bold text-sm rounded-full bg-surface-container-lowest border border-outline-variant/15 text-on-surface hover:bg-surface-container-high transition-all disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Trang sau
+          Sau →
         </button>
       </div>
     </div>
   );
 };
-

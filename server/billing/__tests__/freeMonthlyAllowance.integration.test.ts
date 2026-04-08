@@ -34,6 +34,24 @@ async function createFreeUser(opts: { plans?: string[] } = {}) {
   return userId;
 }
 
+async function seedWallet(userId: string, balanceCredits: number) {
+  await sql`
+    INSERT INTO public.wallet_balances (user_id, balance_credits, created_at, updated_at)
+    VALUES (${userId}, ${balanceCredits}, NOW(), NOW())
+    ON CONFLICT (user_id) DO UPDATE
+    SET balance_credits = ${balanceCredits}, updated_at = NOW()
+  `;
+}
+
+async function getAllowancePeriod(userId: string): Promise<string | null> {
+  const [row] = await sql`
+    SELECT free_allowance_period_utc
+    FROM public.profiles
+    WHERE user_id = ${userId}
+  `;
+  return (row?.free_allowance_period_utc as string | null | undefined) ?? null;
+}
+
 async function getBalance(userId: string): Promise<number> {
   const [row] = await sql`
     SELECT balance_credits
@@ -61,6 +79,46 @@ describe('freeMonthlyAllowance (integration)', () => {
       WHERE correlation_id = ${cid}
     `;
     expect(row?.c).toBe(1);
+    expect(await getAllowancePeriod(userId)).toBe(ym);
+  });
+
+  it('tops up only to the floor when balance is below 1000', async () => {
+    const userId = await createFreeUser();
+    await seedWallet(userId, 400);
+    const ym = currentUtcYearMonth();
+    const cid = freeAllowanceCorrelationId(userId, ym);
+
+    await ensureFreeMonthlyAllowance(userId);
+    expect(await getBalance(userId)).toBe(FREE_TIER_MONTHLY_CREDITS);
+
+    const [ledger] = await sql`
+      SELECT amount_credits
+      FROM public.wallet_ledger
+      WHERE correlation_id = ${cid}
+      LIMIT 1
+    `;
+    expect(Number(ledger?.amount_credits)).toBe(600);
+
+    await ensureFreeMonthlyAllowance(userId);
+    expect(await getBalance(userId)).toBe(FREE_TIER_MONTHLY_CREDITS);
+  });
+
+  it('does not top up when balance is already at or above 1000 but marks the month', async () => {
+    const userId = await createFreeUser();
+    await seedWallet(userId, 1500);
+    const ym = currentUtcYearMonth();
+    const cid = freeAllowanceCorrelationId(userId, ym);
+
+    await ensureFreeMonthlyAllowance(userId);
+    expect(await getBalance(userId)).toBe(1500);
+
+    const [cnt] = await sql`
+      SELECT COUNT(*)::int AS c
+      FROM public.wallet_ledger
+      WHERE correlation_id = ${cid}
+    `;
+    expect(cnt?.c).toBe(0);
+    expect(await getAllowancePeriod(userId)).toBe(ym);
   });
 
   it('does not grant when user has a paid workflow plan', async () => {

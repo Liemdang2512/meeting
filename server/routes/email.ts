@@ -4,6 +4,7 @@ import { requireAuth, requireFeature } from '../auth';
 import { markdownToHtml } from '../../lib/markdownUtils';
 import { generateMinutesPdfBuffer } from '../lib/pdfGenerator';
 import { buildEmailHtml } from '../lib/emailTemplate';
+import { getMaxEmailRecipients, getResendConfig } from '../lib/getResendConfig';
 
 const router = Router();
 
@@ -25,22 +26,18 @@ router.post('/send-minutes', requireAuth, requireFeature('email'), async (req, r
       return res.status(400).json({ error: 'Noi dung bien ban la bat buoc' });
     }
 
-    // Check max recipients (env var hoặc default 20)
-    const maxRecipients = parseInt(process.env.SMTP_MAX_RECIPIENTS ?? '20', 10);
+    const maxRecipients = await getMaxEmailRecipients();
     if (recipients.length > maxRecipients) {
       return res.status(400).json({ error: `Tối đa ${maxRecipients} người nhận` });
     }
 
-    // Resend API key (required)
-    const resendApiKey = process.env.RESEND_API_KEY;
+    const { apiKey: resendApiKey, from: fromEmail } = await getResendConfig();
     if (!resendApiKey) {
-      return res.status(503).json({ error: 'Email chưa được cấu hình. Kiểm tra RESEND_API_KEY trong env.' });
+      return res.status(503).json({
+        error:
+          'Email chưa được cấu hình. Đặt RESEND_API_KEY trong env hoặc lưu API key Resend trong Admin → Cài đặt email (resend_api_key).',
+      });
     }
-
-    // From address — must be a verified domain in Resend dashboard
-    // Default: onboarding@resend.dev (works for testing, sending to owner only)
-    // Production: set RESEND_FROM env var to a verified address e.g. "Meeting Scribe <no-reply@yourdomain.com>"
-    const fromEmail = process.env.RESEND_FROM ?? 'Meeting Scribe <onboarding@resend.dev>';
 
     const resend = new Resend(resendApiKey);
 

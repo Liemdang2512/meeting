@@ -172,10 +172,6 @@ export const MindmapPage: React.FC<MindmapPageProps> = ({ user, navigate }) => {
               <Download size={15} />
               Export PNG/PDF
             </button>
-            <button className="px-5 py-2.5 rounded-full nebula-gradient text-white font-bold text-sm shadow-lg shadow-primary/25 flex items-center gap-2 hover:-translate-y-0.5 transition-all active:scale-95">
-              <Plus size={15} />
-              New Project
-            </button>
           </div>
         </div>
       </div>
@@ -242,13 +238,6 @@ export const MindmapPage: React.FC<MindmapPageProps> = ({ user, navigate }) => {
               >
                 <Sparkles size={18} />
                 {loading ? 'Đang phân tích...' : 'Tạo sơ đồ tư duy'}
-              </button>
-              <button
-                disabled={!text.trim() || loading}
-                className="w-full py-4 rounded-2xl bg-surface-container-high text-primary font-bold flex items-center justify-center gap-2 hover:bg-surface-container-highest transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <BarChart2 size={18} />
-                Trích xuất số liệu
               </button>
             </div>
           </div>

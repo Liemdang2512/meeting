@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Check, Shield, Lock } from 'lucide-react';
 import { UpgradeModal } from './UpgradeModal';
-import { CreditHistory } from './CreditHistory';
-import { authFetch } from '../../lib/api';
 
 interface Plan {
   id: 'reporter' | 'specialist' | 'officer';
@@ -85,28 +83,6 @@ interface PricingPageProps {
 export const PricingPage: React.FC<PricingPageProps> = ({ currentUserRole, userPlans, onPaymentSuccess }) => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
-  const [wallet, setWallet] = useState<{ balance: number; overdraftLimit: number } | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-    void (async () => {
-      try {
-        const res = await authFetch('/payments/check-upgrade', { method: 'POST' });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!isMounted) return;
-        setWallet({
-          balance: Number(data?.wallet?.balance ?? data?.balance ?? 0),
-          overdraftLimit: Number(data?.wallet?.overdraftLimit ?? data?.overdraftLimit ?? -10000),
-        });
-      } catch {
-        // Ignore wallet load errors on pricing page to keep purchase flow available.
-      }
-    })();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const handleCtaClick = (plan: Plan) => {
     if (plan.ctaAction === 'upgrade') {
@@ -143,22 +119,6 @@ export const PricingPage: React.FC<PricingPageProps> = ({ currentUserRole, userP
             Tối ưu hóa quy trình ghi chép và tóm tắt cuộc họp với sức mạnh AI của MOMAI. Chọn gói dịch vụ được thiết kế riêng cho nhu cầu của bạn.
           </p>
         </div>
-
-        {wallet && (
-          <div className="mb-4 bg-surface-container-low rounded-xl border border-outline-variant/20 p-5 flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold text-on-surface">Số dư hiện tại</p>
-              <p className="text-xs text-on-surface-variant">
-                Giới hạn âm tối đa: {wallet.overdraftLimit.toLocaleString('vi-VN')} credits
-              </p>
-            </div>
-            <p className="text-xl font-bold text-primary">
-              {wallet.balance.toLocaleString('vi-VN')} credits
-            </p>
-          </div>
-        )}
-
-        {wallet && <CreditHistory />}
 
         {/* Pricing Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">

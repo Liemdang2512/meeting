@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { login } from '../lib/auth';
+import React, { useEffect, useState } from 'react';
+import { login, getGoogleOAuthStartUrl } from '../lib/auth';
 import { Mail, Lock, Activity, Eye, EyeOff } from 'lucide-react';
 
 interface LoginPageProps {
@@ -12,6 +12,26 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [verifiedBanner, setVerifiedBanner] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const path = window.location.pathname;
+    if (params.get('verified') === '1') {
+      setVerifiedBanner('Email đã được xác nhận. Bạn có thể đăng nhập.');
+    } else if (params.get('verified') === '0') {
+      setVerifiedBanner(
+        'Liên kết xác nhận không hợp lệ hoặc đã hết hạn. Vui lòng đăng ký lại hoặc liên hệ hỗ trợ.',
+      );
+    } else if (params.get('oauth_error')) {
+      setVerifiedBanner('Đăng nhập Google thất bại. Vui lòng thử lại.');
+    } else if (params.get('google') === '1') {
+      setVerifiedBanner('Đăng nhập Google thành công.');
+    }
+    if (params.toString()) {
+      window.history.replaceState({}, '', path);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,6 +141,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <p className="text-on-surface-variant font-medium">Đăng nhập để tiếp tục tối ưu hóa công việc của bạn.</p>
           </div>
 
+          {verifiedBanner && (
+            <div
+              className={`mb-6 p-4 rounded-xl text-sm font-medium ${
+                verifiedBanner.includes('xác nhận. Bạn có thể')
+                  ? 'bg-emerald-50 border border-emerald-200 text-emerald-800'
+                  : 'bg-amber-50 border border-amber-200 text-amber-900'
+              }`}
+            >
+              {verifiedBanner}
+            </div>
+          )}
+
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email */}
@@ -207,9 +239,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           <div className="grid grid-cols-2 gap-4">
             <button
               type="button"
-              disabled
-              title="Sắp ra mắt"
-              className="flex items-center justify-center gap-3 py-3 px-4 bg-surface-container-lowest border border-outline-variant/30 rounded-xl hover:bg-surface-container transition-all duration-200 group disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => {
+                window.location.href = getGoogleOAuthStartUrl();
+              }}
+              className="flex items-center justify-center gap-3 py-3 px-4 bg-surface-container-lowest border border-outline-variant/30 rounded-xl hover:bg-surface-container transition-all duration-200 group"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>

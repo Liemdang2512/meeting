@@ -41,6 +41,7 @@ export const MyTokenUsagePage: React.FC<MyTokenUsagePageProps> = ({ currentUserI
     userId: currentUserId,
     page,
     pageSize: 20,
+    fetchAggregate: false,
   });
 
   const presetLabels: { id: DateRangePreset; label: string }[] = [

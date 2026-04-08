@@ -14,9 +14,10 @@ interface TranscriptionViewProps {
   userId?: string | null;
   onMindmapCapture?: (fn: (() => Promise<string | null>) | null) => void;
   onMindmapPdfReady?: (pdfDataUrl: string) => void;
+  hideMindmapTab?: boolean;
 }
 
-export const TranscriptionView: React.FC<TranscriptionViewProps> = ({ text, userId, onMindmapCapture, onMindmapPdfReady }) => {
+export const TranscriptionView: React.FC<TranscriptionViewProps> = ({ text, userId, onMindmapCapture, onMindmapPdfReady, hideMindmapTab }) => {
   const formattedText = useMemo(() => formatMinutesMarkdown(text), [text]);
   const [copied, setCopied] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -96,19 +97,21 @@ export const TranscriptionView: React.FC<TranscriptionViewProps> = ({ text, user
             <FileText size={14} />
             Biên bản
           </button>
-          <button
-            role="tab"
-            aria-selected={activeTab === 'mindmap'}
-            onClick={handleSwitchToMindmap}
-            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold rounded-lg transition-all ${
-              activeTab === 'mindmap'
-                ? 'bg-primary text-white shadow-md'
-                : 'text-on-surface-variant hover:bg-surface-container-high'
-            }`}
-          >
-            <GitBranch size={14} />
-            Sơ đồ tư duy
-          </button>
+          {!hideMindmapTab && (
+            <button
+              role="tab"
+              aria-selected={activeTab === 'mindmap'}
+              onClick={handleSwitchToMindmap}
+              className={`flex items-center gap-1.5 px-4 py-2 text-sm font-bold rounded-lg transition-all ${
+                activeTab === 'mindmap'
+                  ? 'bg-primary text-white shadow-md'
+                  : 'text-on-surface-variant hover:bg-surface-container-high'
+              }`}
+            >
+              <GitBranch size={14} />
+              Sơ đồ tư duy
+            </button>
+          )}
         </div>
 
         {/* Actions — only for minutes tab */}

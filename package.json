@@ -15,8 +15,10 @@
     "db:down": "docker compose -f docker-compose.test.yml down",
     "db:reset": "bash scripts/db-reset.sh",
     "db:seed": "docker exec -i meeting_postgres_test psql -U postgres -d meeting_test < db/seed.sql",
-    "server": "tsx server/index.ts",
-    "server:dev": "tsx server/index.ts",
+    "db:migrate": "node --env-file=.env.local ./scripts/apply-sql-migrations.mjs",
+    "db:migrate:railway": "node ./scripts/apply-sql-migrations.mjs",
+    "server": "node --env-file=.env.local ./node_modules/.bin/tsx server/index.ts",
+    "server:dev": "node --env-file=.env.local ./node_modules/.bin/tsx server/index.ts",
     "dev:full": "concurrently \"npm run dev\" \"npm run server\""
   },
   "dependencies": {
@@ -34,6 +36,7 @@
     "docx": "^9.6.1",
     "express": "^4.21.2",
     "express-rate-limit": "^8.3.1",
+    "google-auth-library": "^10.6.2",
     "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
     "jsonwebtoken": "^9.0.2",

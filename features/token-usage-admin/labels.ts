@@ -16,6 +16,7 @@ export const ACTION_LABELS: Record<TokenUsageActionType, string> = {
   'minutes-generate': 'Tạo biên bản',
   'transcribe-basic': 'Phiên âm cơ bản',
   'transcribe-deep': 'Phiên âm chuyên sâu',
+  'transcribe-synthesize': 'Gộp file',
   'file-split-analyze': 'Phân tích cắt file',
   'admin-view': 'Xem admin',
   'my-usage-view': 'Xem token của tôi',

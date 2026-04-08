@@ -7,7 +7,7 @@ const key = env.split("\n").find(line => line.startsWith("VITE_GEMINI_API_KEY"))
 const run = async () => {
   const ai = new GoogleGenAI({ apiKey: key });
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3-flash-preview',
     contents: 'Say hi'
   });
   console.log(JSON.stringify(response.usageMetadata, null, 2));

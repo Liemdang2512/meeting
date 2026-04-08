@@ -69,6 +69,7 @@ describe('POST /api/email/send-minutes', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSql.mockResolvedValue([] as any);
   });
 
   it('returns 403 for non-admin user', async () => {
@@ -123,7 +124,46 @@ describe('POST /api/email/send-minutes', () => {
     process.env.RESEND_API_KEY = saved;
 
     expect(res.statusCode).toBe(503);
-    expect(res.body).toEqual({ error: 'Email chưa được cấu hình. Kiểm tra RESEND_API_KEY trong env.' });
+    expect(res.body).toEqual({
+      error:
+        'Email chưa được cấu hình. Đặt RESEND_API_KEY trong env hoặc lưu API key Resend trong Admin → Cài đặt email (resend_api_key).',
+    });
+  });
+
+  it('uses Resend key from app_settings when RESEND_API_KEY env is unset', async () => {
+    const savedKey = process.env.RESEND_API_KEY;
+    delete process.env.RESEND_API_KEY;
+
+    mockSql
+      .mockResolvedValueOnce([] as any)
+      .mockResolvedValueOnce([
+        { key: 'resend_api_key', value: 're_from_settings' },
+        { key: 'resend_from', value: 'DB <db@example.com>' },
+      ] as any);
+
+    mockSendEmail.mockResolvedValue({ data: { id: 'msg-db' }, error: null });
+    mockGenerateMinutesPdfBuffer.mockResolvedValue(Buffer.from('pdf-buffer'));
+    mockMarkdownToHtml.mockReturnValue('<p>minutes html</p>');
+    mockBuildEmailHtml.mockReturnValue('<html>email</html>');
+
+    const req = {
+      user: createAdminUser(),
+      body: {
+        recipients: ['a@example.com'],
+        subject: 'Test',
+        minutesMarkdown: 'Noi dung',
+      },
+    } as Partial<Request> as Request;
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    if (savedKey !== undefined) process.env.RESEND_API_KEY = savedKey;
+    else delete process.env.RESEND_API_KEY;
+
+    expect(res.statusCode).toBe(200);
+    expect(mockSendEmail).toHaveBeenCalledTimes(1);
+    expect(mockSendEmail.mock.calls[0][0].from).toBe('DB <db@example.com>');
   });
 
   it('calls Resend with correct payload including PDF attachment', async () => {
@@ -255,5 +295,17 @@ describe('PUT /api/admin/settings', () => {
     const callArgs = mockSql.mock.calls[0];
     expect(callArgs[1]).toBe('gmail_user');
     expect(callArgs[2]).toBe('new@gmail.com');
+  });
+
+  it('accepts resend_api_key and resend_from', async () => {
+    mockSql.mockResolvedValueOnce([] as any);
+    const req = { body: { key: 'resend_api_key', value: 're_secret' } } as Partial<Request> as Request;
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(mockSql.mock.calls[0][1]).toBe('resend_api_key');
+    expect(mockSql.mock.calls[0][2]).toBe('re_secret');
   });
 });

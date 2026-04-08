@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
-import { register } from '../lib/auth';
+import React, { useRef, useState } from 'react';
+import { register, getGoogleOAuthStartUrl } from '../lib/auth';
 import { Mail, AlertCircle, Eye, EyeOff } from 'lucide-react';
 
 interface RegisterPageProps {
-  onRegisterSuccess: () => void;
   onGoToLogin: () => void;
 }
 
-export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, onGoToLogin }) => {
+export const RegisterPage: React.FC<RegisterPageProps> = ({ onGoToLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -15,33 +14,44 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, o
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [registrationComplete, setRegistrationComplete] = useState(false);
+  const [registeredMessage, setRegisteredMessage] = useState<string | null>(null);
+  const submitLockRef = useRef(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitLockRef.current) return;
+    submitLockRef.current = true;
     setError(null);
 
     const termsChecked = (document.getElementById('terms') as HTMLInputElement)?.checked;
     if (!termsChecked) {
       setError('Vui lòng đồng ý với Điều khoản dịch vụ để tiếp tục');
+      submitLockRef.current = false;
       return;
     }
     if (password.length < 8) {
       setError('Mật khẩu phải có ít nhất 8 ký tự');
+      submitLockRef.current = false;
       return;
     }
     if (password !== confirmPassword) {
       setError('Mật khẩu xác nhận không khớp');
+      submitLockRef.current = false;
       return;
     }
 
     setLoading(true);
     try {
-      await register(email.trim(), password, confirmPassword);
-      onRegisterSuccess();
+      const result = await register(email.trim(), password, confirmPassword);
+      setRegisteredMessage(result.message);
+      setRegistrationComplete(true);
+      setError(null);
     } catch (err: any) {
       setError(err?.message || 'Không thể đăng ký. Vui lòng thử lại.');
     } finally {
       setLoading(false);
+      submitLockRef.current = false;
     }
   };
 
@@ -116,13 +126,30 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, o
             <h3 className="font-body text-xl font-semibold text-on-surface-variant text-center md:text-left">Tạo tài khoản mới</h3>
           </div>
 
+          {registrationComplete ? (
+            <div className="mb-8 p-5 rounded-xl bg-primary/10 border border-primary/20 text-on-surface">
+              <p className="font-semibold text-lg mb-2">Kiểm tra hộp thư</p>
+              <p className="text-on-surface-variant mb-4">
+                {registeredMessage ?? 'Chúng tôi đã gửi liên kết xác nhận tới email của bạn. Sau khi xác nhận, bạn có thể đăng nhập.'}
+              </p>
+              <button
+                type="button"
+                onClick={onGoToLogin}
+                className="w-full nebula-gradient py-3 rounded-full text-white font-bold shadow-md hover:opacity-95 transition-opacity"
+              >
+                Đến trang đăng nhập
+              </button>
+            </div>
+          ) : (
+            <>
           {/* Social Registration */}
           <div className="grid grid-cols-2 gap-4 mb-8">
             <button
               type="button"
-              disabled
-              title="Sắp ra mắt"
-              className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-surface-container-low text-on-surface font-medium border border-outline-variant/15 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => {
+                window.location.href = getGoogleOAuthStartUrl();
+              }}
+              className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-surface-container-low text-on-surface font-medium border border-outline-variant/15 hover:bg-surface-container-highest transition-colors"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -247,6 +274,8 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({ onRegisterSuccess, o
               {loading ? 'Đang đăng ký...' : 'Tạo tài khoản'}
             </button>
           </form>
+            </>
+          )}
 
           {/* Footer Link */}
           <div className="mt-10 text-center">

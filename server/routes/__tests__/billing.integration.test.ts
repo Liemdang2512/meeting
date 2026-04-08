@@ -56,6 +56,7 @@ describe('Billing runtime integration (D-04/D-05/D-07)', () => {
     const result = await authorizeAndCharge({
       userId,
       actionType: 'minutes-generate',
+      amountCredits: 10_000,
       correlationId,
       metadata: { source: 'billing.integration.test.ts' },
     });
@@ -84,6 +85,7 @@ describe('Billing runtime integration (D-04/D-05/D-07)', () => {
       authorizeAndCharge({
         userId,
         actionType: 'minutes-generate',
+        amountCredits: 10_000,
         correlationId,
         metadata: { source: 'billing.integration.test.ts' },
       }),
@@ -93,6 +95,7 @@ describe('Billing runtime integration (D-04/D-05/D-07)', () => {
       authorizeAndCharge({
         userId,
         actionType: 'minutes-generate',
+        amountCredits: 10_000,
         correlationId: `${correlationId}_PAYLOAD`,
       }),
     ).rejects.toMatchObject({
@@ -110,6 +113,7 @@ describe('Billing runtime integration (D-04/D-05/D-07)', () => {
     await authorizeAndCharge({
       userId,
       actionType: 'minutes-generate',
+      amountCredits: 10_000,
       correlationId,
       metadata: { source: 'billing.integration.test.ts' },
     });

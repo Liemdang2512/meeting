@@ -1,7 +1,79 @@
 # Bug Report
 
 ## Status
-INVESTIGATING
+FIXED
+
+## Bug Title
+Trừ tiền 2 lần cho mỗi tác vụ (double-charge)
+
+## Bug Description
+Mỗi tác vụ (Voice to Text, tạo biên bản, v.v.) bị trừ tiền 2 lần với cùng số tiền và cùng thời điểm.
+
+## Steps to Reproduce
+1. Đăng nhập và upload file âm thanh
+2. Chạy tác vụ Voice to Text (hoặc bất kỳ tác vụ nào)
+3. Kiểm tra lịch sử giao dịch → thấy 2 dòng trừ tiền giống hệt nhau
+
+## Actual Result
+2 dòng `-556` cùng timestamp cho cùng 1 tác vụ
+
+## Expected Result
+1 dòng trừ tiền duy nhất
+
+---
+
+## Root Cause Analysis
+
+Trong `runAudioAgent()` (`services/geminiService.ts:629-653`), sau mỗi lần gọi Gemini, code thực hiện **2 lần charge song song**:
+
+```
+runAudioAgent() hoàn thành
+    │
+    ├─► logTokenUsage()          → POST /api/token-logs
+    │       └─► server/routes/tokenLogs.ts:61
+    │               └─► authorizeAndCharge()   ← CHARGE #1
+    │
+    └─► authFetch('/wallet/charge', ...)        ← CHARGE #2 (THỪA)
+            └─► server/routes/wallet.ts:93
+                    └─► authorizeAndCharge()
+```
+
+**Cụ thể:**
+- `services/geminiService.ts:630` — gọi `logTokenUsage()` → `POST /api/token-logs`
+- `server/routes/tokenLogs.ts:61` — route này đã tự gọi `authorizeAndCharge()` (charge #1)
+- `services/geminiService.ts:645` — đồng thời gọi thêm `POST /api/wallet/charge` (charge #2)
+- `server/routes/wallet.ts:93` — route này cũng gọi `authorizeAndCharge()` (charge #2)
+
+`/api/wallet/charge` là route charge thủ công từ trước, còn `/api/token-logs` đã được tích hợp charge tự động. Hai route cùng tồn tại và cùng được gọi cho cùng 1 tác vụ.
+
+## Proposed Fixes
+
+### Fix Option 1 — Recommended: Xóa lệnh gọi `/wallet/charge` thừa trong `runAudioAgent`
+
+**File:** `services/geminiService.ts:645-653`
+
+Trước:
+```
+void logTokenUsage({ ... });       // charge qua /token-logs ✓
+void authFetch('/wallet/charge')   // charge thêm lần nữa ✗ THỪA
+```
+
+Sau:
+```
+void logTokenUsage({ ... });       // chỉ charge 1 lần ✓
+```
+
+- Rủi ro: Thấp. `/token-logs` đã charge đầy đủ.
+- Cần kiểm tra toàn bộ `geminiService.ts` xem còn chỗ nào khác gọi cả 2 không.
+
+### Fix Option 2 — Alternative: Tắt billing trong `/api/token-logs`
+
+Không khuyến khích — `/api/token-logs` là luồng chuẩn mới, `/wallet/charge` là luồng cũ.
+
+## Verification Plan
+- Chạy 1 tác vụ Voice to Text → wallet history chỉ có 1 dòng trừ tiền
+- Số dư giảm đúng 1 lần
+- Kiểm tra `geminiService.ts` không còn lệnh gọi `/wallet/charge` nào
 
 ## Bug Title
 Trang lịch sử sử dụng token (My Token Usage) không hiển thị dữ liệu

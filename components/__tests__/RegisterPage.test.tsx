@@ -4,6 +4,7 @@ import { vi } from 'vitest';
 
 vi.mock('../../lib/auth', () => ({
   register: vi.fn(),
+  getGoogleOAuthStartUrl: vi.fn(() => '/api/auth/google'),
 }));
 
 import { RegisterPage } from '../RegisterPage';
@@ -20,7 +21,7 @@ describe('RegisterPage', () => {
   });
 
   it('hien thi form dang ky voi 3 truong', () => {
-    render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
+    render(<RegisterPage onGoToLogin={() => {}} />);
 
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^mật khẩu$/i)).toBeInTheDocument();
@@ -29,7 +30,7 @@ describe('RegisterPage', () => {
   });
 
   it('hien thi loi khi chua dong y dieu khoan', async () => {
-    render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
+    render(<RegisterPage onGoToLogin={() => {}} />);
 
     fireEvent.change(screen.getByLabelText(/email/i), {
       target: { value: 'user@example.com' },
@@ -51,7 +52,7 @@ describe('RegisterPage', () => {
   });
 
   it('hien thi loi khi mat khau ngan hon 8 ky tu (truoc khi goi API)', async () => {
-    render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
+    render(<RegisterPage onGoToLogin={() => {}} />);
 
     checkTerms();
 
@@ -74,7 +75,7 @@ describe('RegisterPage', () => {
   });
 
   it('hien thi loi khi mat khau khong khop (truoc khi goi API)', async () => {
-    render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
+    render(<RegisterPage onGoToLogin={() => {}} />);
 
     checkTerms();
 
@@ -96,12 +97,15 @@ describe('RegisterPage', () => {
     expect(register).not.toHaveBeenCalled();
   });
 
-  it('goi register va onRegisterSuccess khi form hop le', async () => {
+  it('sau dang ky thanh cong hien hop thu va khong tu dong dang nhap', async () => {
     const mockedRegister = register as unknown as ReturnType<typeof vi.fn>;
-    mockedRegister.mockResolvedValueOnce(undefined);
-    const onRegisterSuccess = vi.fn();
+    mockedRegister.mockResolvedValueOnce({
+      ok: true,
+      message: 'Đã gửi email xác nhận. Vui lòng kiểm tra hộp thư.',
+    });
+    const onGoToLoginSpy = vi.fn();
 
-    render(<RegisterPage onRegisterSuccess={onRegisterSuccess} onGoToLogin={() => {}} />);
+    render(<RegisterPage onGoToLogin={onGoToLoginSpy} />);
 
     checkTerms();
 
@@ -123,17 +127,22 @@ describe('RegisterPage', () => {
         'securepass123',
         'securepass123',
       );
-      expect(onRegisterSuccess).toHaveBeenCalled();
+      expect(screen.getByText('Kiểm tra hộp thư', { exact: true })).toBeInTheDocument();
     });
+    expect(onGoToLoginSpy).not.toHaveBeenCalled();
+    expect(localStorage.getItem('auth_token')).toBeNull();
   });
 
   it('hien thi "Dang dang ky..." va disable nut submit khi dang loading', async () => {
     const mockedRegister = register as unknown as ReturnType<typeof vi.fn>;
     mockedRegister.mockImplementation(
-      () => new Promise((resolve) => setTimeout(resolve, 200)),
+      () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve({ ok: true, message: 'Đã gửi email.' }), 200),
+        ),
     );
 
-    render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
+    render(<RegisterPage onGoToLogin={() => {}} />);
 
     checkTerms();
 
@@ -159,7 +168,7 @@ describe('RegisterPage', () => {
     const mockedRegister = register as unknown as ReturnType<typeof vi.fn>;
     mockedRegister.mockRejectedValueOnce(new Error('Email đã được sử dụng'));
 
-    render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={() => {}} />);
+    render(<RegisterPage onGoToLogin={() => {}} />);
 
     checkTerms();
 
@@ -182,7 +191,7 @@ describe('RegisterPage', () => {
 
   it('co link "Da co tai khoan? Dang nhap" goi onGoToLogin', () => {
     const onGoToLogin = vi.fn();
-    render(<RegisterPage onRegisterSuccess={() => {}} onGoToLogin={onGoToLogin} />);
+    render(<RegisterPage onGoToLogin={onGoToLogin} />);
 
     fireEvent.click(screen.getByRole('button', { name: /đăng nhập ngay/i }));
     expect(onGoToLogin).toHaveBeenCalled();

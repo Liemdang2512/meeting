@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect, useRef } from 'react';
+import React, { useCallback, useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { Info, Mic, FileText, CheckCircle2 } from 'lucide-react';
 import { takePendingUpload } from '../shared/fileStore';
 import { SESSION_KEY_MEETING_LANGUAGE } from '../shared/sessionKeys';
@@ -17,6 +17,9 @@ import {
 import { authFetch } from '../../../lib/api';
 import { downloadAsPdf, downloadAsDocx } from '../../../lib/minutesDocxExport';
 import type { AuthUser } from '../../../lib/auth';
+import { useMindmapTree } from '../../mindmap/hooks/useMindmapTree';
+
+const MindmapTreeCanvasLazy = lazy(() => import('../../mindmap/components/MindmapTreeCanvas').then(m => ({ default: m.MindmapTreeCanvas })));
 
 const DEFAULT_SPECIALIST_PROMPT = `Hãy tạo BIÊN BẢN CUỘC HỌP (Meeting Minute) chuyên nghiệp theo đúng cấu trúc sau. Viết bằng tiếng Việt, súc tích, trung thực với nội dung transcript.
 
@@ -126,6 +129,17 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
   // Step: 1=Info, 2=Transcription, 3=Minutes, 4=Done
   const [step, setStep] = useState(1);
 
+  const { tree: mindmapTree, loading: mindmapLoading, error: mindmapError, generate: generateMindmap, reset: resetMindmap } = useMindmapTree();
+
+  // Auto-generate mindmap khi đến bước Hoàn thành và có biên bản
+  useEffect(() => {
+    if (step === 4 && !mindmapTree && !mindmapLoading && (summary || effectiveTranscript)) {
+      const text = summary || effectiveTranscript!;
+      generateMindmap(text, user.userId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
   const [files] = useState<File[]>(() => pendingRef.current?.files ?? []);
   const [audioLanguage] = useState<AudioLanguage>(() => {
     if (pendingRef.current) return pendingRef.current.language;
@@ -217,6 +231,7 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
     setStep(2);
 
     const orderedResults: (string | null)[] = new Array(files.length).fill(null);
+    const orderedErrors: (any | null)[] = new Array(files.length).fill(null);
 
     // Chạy song song
     await Promise.all(
@@ -234,6 +249,7 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
           resultsRef.current[i] = text;
           setFileResults(prev => prev.map((r, idx) => idx === i ? { ...r, status: 'done', text } : r));
         } catch (err: unknown) {
+          orderedErrors[i] = err;
           const msg = err instanceof Error ? err.message : 'Lỗi phiên âm.';
           setFileResults(prev => prev.map((r, idx) => idx === i ? { ...r, status: 'error', errorMsg: msg } : r));
         }
@@ -247,7 +263,12 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
       .filter(Boolean) as { name: string; text: string }[];
 
     if (successPairs.length === 0) {
-      setErrorMsg('Tất cả file đều lỗi phiên âm. Vui lòng thử lại.');
+      const isCreditError = orderedErrors.some((e: any) => e?.code === 'INSUFFICIENT_BALANCE');
+      if (isCreditError) {
+        setErrorMsg('Số dư credit không đủ. Vui lòng nạp thêm credit để sử dụng tính năng này.');
+      } else {
+        setErrorMsg('Tất cả file đều lỗi phiên âm. Vui lòng thử lại.');
+      }
       setStep(1);
       return;
     }
@@ -285,7 +306,7 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
       try {
         const synthesized = await synthesizeTranscriptions(
           successPairs,
-          { feature: 'minutes', actionType: 'other', metadata: { mode: 'synthesize', fileCount: successPairs.length } },
+          { feature: 'minutes', actionType: 'transcribe-synthesize', metadata: { mode: 'synthesize', fileCount: successPairs.length } },
           user.userId,
         );
         setEffectiveTranscript(synthesized);
@@ -674,7 +695,7 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
                   </svg>
                 </summary>
                 <div className="px-6 py-4 border-t border-outline-variant/10 max-h-[400px] overflow-y-auto">
-                  <TranscriptionView text={effectiveTranscript} userId={user.userId} />
+                  <TranscriptionView text={effectiveTranscript} userId={user.userId} hideMindmapTab />
                 </div>
               </details>
             )}
@@ -705,7 +726,7 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
                   </div>
                 </div>
                 <div className="px-6 py-6">
-                  <TranscriptionView text={summary} userId={user.userId} />
+                  <TranscriptionView text={summary} userId={user.userId} hideMindmapTab />
                 </div>
 
                 {/* Prompt editor + regenerate */}
@@ -739,20 +760,50 @@ export default function SpecialistWorkflowPage({ navigate, user }: SpecialistWor
 
             {/* 3. Sơ đồ tư duy */}
             <div className="bg-surface-container-lowest border border-outline-variant/20 rounded-xl shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-outline-variant/10 flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-surface-container text-on-surface-variant text-xs font-bold flex items-center justify-center">3</span>
-                <h2 className="text-base font-semibold text-on-surface">Sơ đồ tư duy</h2>
+              <div className="px-6 py-4 border-b border-outline-variant/10 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-surface-container text-on-surface-variant text-xs font-bold flex items-center justify-center">3</span>
+                  <h2 className="text-base font-semibold text-on-surface">Sơ đồ tư duy</h2>
+                </div>
+                {mindmapTree && (
+                  <button
+                    type="button"
+                    onClick={resetMindmap}
+                    className="text-xs text-on-surface-variant hover:text-on-surface transition-colors"
+                  >
+                    Đóng
+                  </button>
+                )}
               </div>
-              <div className="px-6 py-6 flex flex-col items-center gap-3 text-center">
-                <p className="text-sm text-on-surface-variant">Tạo sơ đồ tư duy từ nội dung biên bản để dễ theo dõi các điểm chính.</p>
-                <button
-                  type="button"
-                  onClick={() => navigate('/mindmap')}
-                  className="px-5 py-2.5 text-sm font-medium nebula-gradient text-white rounded-xl shadow-lg shadow-primary/20 hover:brightness-110 transition-all"
-                >
-                  Tạo sơ đồ tư duy
-                </button>
-              </div>
+              {!mindmapTree && !mindmapLoading && (
+                <div className="px-6 py-6 flex flex-col items-center gap-3 text-center">
+                  <p className="text-sm text-on-surface-variant">Tạo sơ đồ tư duy từ nội dung biên bản để dễ theo dõi các điểm chính.</p>
+                  {mindmapError && (
+                    <p className="text-xs text-error">{mindmapError}</p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => { const text = summary || effectiveTranscript; if (text) generateMindmap(text, user.userId); }}
+                    disabled={!summary && !effectiveTranscript}
+                    className="px-5 py-2.5 text-sm font-medium nebula-gradient text-white rounded-xl shadow-lg shadow-primary/20 hover:brightness-110 transition-all disabled:opacity-50"
+                  >
+                    Tạo sơ đồ tư duy
+                  </button>
+                </div>
+              )}
+              {mindmapLoading && (
+                <div className="px-6 py-10 flex flex-col items-center gap-3 text-on-surface-variant text-sm">
+                  <span className="animate-spin inline-block w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
+                  Đang phân tích và tạo sơ đồ tư duy...
+                </div>
+              )}
+              {!mindmapLoading && mindmapTree && (
+                <div className="p-4" style={{ height: 480 }}>
+                  <Suspense fallback={<div className="h-full flex items-center justify-center text-on-surface-variant text-sm">Đang tải...</div>}>
+                    <MindmapTreeCanvasLazy tree={mindmapTree} />
+                  </Suspense>
+                </div>
+              )}
             </div>
 
             {/* Email — chỉ hiển thị cho admin */}

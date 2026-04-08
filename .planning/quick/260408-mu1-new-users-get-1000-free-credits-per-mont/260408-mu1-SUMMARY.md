@@ -15,4 +15,4 @@
 ## Git
 
 - Feature + planning artifacts: `d21ce3a`
-- STATE hash row fix: `312b0f5`
+- STATE hash row + SUMMARY note: `e43b607`

@@ -6,7 +6,7 @@ import { ensureFreeMonthlyAllowance } from '../billing/freeMonthlyAllowance';
 const router = Router();
 
 const DEFAULT_FREE_DAILY_LIMIT = 1;
-const DEFAULT_OVERDRAFT_LIMIT = -10000;
+const DEFAULT_OVERDRAFT_LIMIT = 0;
 
 interface WalletSnapshot {
   balanceCredits: number;

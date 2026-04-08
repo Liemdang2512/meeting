@@ -22,7 +22,7 @@ describe('PricingPage', () => {
     expect(upgradeBtn).toBeTruthy();
     fireEvent.click(upgradeBtn);
     // After click, UpgradeModal should be open - check for modal content
-    expect(screen.getByText('Nâng cấp lên Pro')).toBeInTheDocument();
+    expect(screen.getByText('Hoàn tất đơn hàng của bạn')).toBeInTheDocument();
   });
 
   it('currentUserRole="pro" được tính là đang dùng gói Chuyên viên', () => {
@@ -40,6 +40,6 @@ describe('PricingPage', () => {
 
   it('UpgradeModal không hiển thị khi mới render (isOpen=false)', () => {
     render(<PricingPage />);
-    expect(screen.queryByText('Nâng cấp lên Pro')).not.toBeInTheDocument();
+    expect(screen.queryByText('Hoàn tất đơn hàng của bạn')).not.toBeInTheDocument();
   });
 });

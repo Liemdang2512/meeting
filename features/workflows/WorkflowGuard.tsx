@@ -38,7 +38,7 @@ export function WorkflowGuard({ group, user, navigate, children }: WorkflowGuard
           <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800">
             <div className="flex items-center gap-2 text-sm font-medium">
               <Lock size={15} className="shrink-0" />
-              <span>Gói miễn phí — 1 lượt ghi chép/ngày. Nâng cấp để không giới hạn.</span>
+              <span>Gói miễn phí — Sử dụng bằng credit. Hết credit sẽ không thể sử dụng.</span>
             </div>
             <div className="flex items-center gap-3 shrink-0">
               <QuotaBadge />

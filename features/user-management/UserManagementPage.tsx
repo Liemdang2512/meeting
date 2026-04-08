@@ -29,6 +29,7 @@ interface UserRow {
   email: string;
   role: SystemRole;
   daily_limit: number | null;
+  balance_credits: number;
   features: Feature[];
   created_at: string;
   tokens_used: number;
@@ -146,18 +147,21 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
     }
   };
 
-  const handleChangeDailyLimit = async (userId: string, value: string) => {
-    const daily_limit = value === '' ? null : parseInt(value, 10);
-    if (daily_limit !== null && (isNaN(daily_limit) || daily_limit < 1)) return;
+  const handleChangeBalanceCredits = async (userId: string, value: string) => {
+    const balance_credits = value === '' ? 0 : parseInt(value, 10);
+    if (isNaN(balance_credits) || balance_credits < 0) return;
     try {
       const res = await authFetch(`/admin/users/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ daily_limit }),
+        body: JSON.stringify({ balance_credits }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Cập nhật thất bại');
-      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, daily_limit } : u)));
+      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, balance_credits } : u)));
+      if (userId === currentUserId) {
+        window.dispatchEvent(new Event('quota-updated'));
+      }
     } catch (e: any) {
       alert(`Lỗi: ${e.message}`);
     }
@@ -193,7 +197,14 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Tạo user thất bại');
-      setUsers((prev) => [{ ...data.user, plans: createPlans, features: [], tokens_used: 0, daily_limit: null }, ...prev]);
+      setUsers((prev) => [{
+        ...data.user,
+        plans: createPlans,
+        features: [],
+        tokens_used: 0,
+        daily_limit: null,
+        balance_credits: 0,
+      }, ...prev]);
       setShowCreate(false);
       setCreateEmail('');
       setCreatePassword('');
@@ -356,7 +367,7 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
                 <tr className="bg-surface-container-low/50">
                   <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest">Email</th>
                   <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest">Gói / Quyền</th>
-                  <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest text-center">Lần/ngày</th>
+                  <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest text-center">Số tiền còn để sử dụng dịch vụ</th>
                   <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest text-center hidden md:table-cell">
                     Token dùng
                     {tokenFilterMode === 'month' && (
@@ -424,19 +435,18 @@ export const UserManagementPage: React.FC<UserManagementPageProps> = ({ currentU
                       </div>
                     </td>
                     <td className="px-6 py-5 text-center">
-                      {true ? (
+                      <div className="inline-flex items-center gap-1">
                         <input
                           type="number"
-                          min={1}
-                          key={`${u.id}-${u.daily_limit}`}
-                          defaultValue={u.daily_limit ?? 1}
-                          onBlur={(e) => handleChangeDailyLimit(u.id, e.target.value)}
+                          min={0}
+                          key={`${u.id}-${u.balance_credits}`}
+                          defaultValue={u.balance_credits ?? 0}
+                          onBlur={(e) => handleChangeBalanceCredits(u.id, e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-                          className="w-16 text-sm font-medium border border-outline-variant/20 px-2 py-1 bg-surface-container-lowest text-on-surface focus:outline-none focus:bg-surface-container-low rounded-lg text-center"
+                          className="w-32 text-sm font-medium border border-outline-variant/20 px-2 py-1 bg-surface-container-lowest text-on-surface focus:outline-none focus:bg-surface-container-low rounded-lg text-right"
                         />
-                      ) : (
-                        <span className="text-xs text-on-surface-variant font-medium">—</span>
-                      )}
+                        <span className="text-xs text-on-surface-variant font-medium">₫</span>
+                      </div>
                     </td>
                     <td className="px-6 py-5 text-center hidden md:table-cell">
                       {u.tokens_used > 0 ? (

@@ -816,28 +816,7 @@ function App() {
     if (route === '/register') {
       return (
         <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><Spinner /></div>}>
-          <RegisterPage
-            onRegisterSuccess={async () => {
-              const loggedInUser = await getMe();
-              setUser(loggedInUser);
-              if (loggedInUser) {
-                navigate('/meeting');
-              } else {
-                navigate('/pricing');
-              }
-              if (loggedInUser) {
-                setIsAdmin(loggedInUser.role === 'admin');
-                const accountKey = await loadApiKeyFromAccount(loggedInUser.userId);
-                if (accountKey) {
-                  setUserApiKey(accountKey);
-                  localStorage.setItem('gemini_api_key', accountKey);
-                  setHasApiKey(true);
-                  setShowApiKeyInput(false);
-                }
-              }
-            }}
-            onGoToLogin={() => navigate('/login')}
-          />
+          <RegisterPage onGoToLogin={() => navigate('/login')} />
         </Suspense>
       );
     }
@@ -998,7 +977,7 @@ function App() {
         {/* Logo */}
         <div className="px-6 mb-8">
           <button
-            onClick={() => { navigate('/meeting'); setMode('notes'); }}
+            onClick={() => navigate('/')}
             className="flex items-center gap-3 w-full text-left hover:opacity-90 transition-opacity"
           >
             <div className="w-10 h-10 rounded-xl nebula-gradient flex items-center justify-center text-white shadow-lg shadow-primary/20">
@@ -1041,7 +1020,7 @@ function App() {
                   <p className="text-[10px] font-bold uppercase tracking-widest text-outline">Admin</p>
                 </div>
                 {([
-                  { label: 'Token Usage', icon: <BarChart2 size={18} />, active: isAdminRoute, onClick: () => navigate('/admin/token-usage') },
+                  { label: 'Theo dõi token', icon: <BarChart2 size={18} />, active: isAdminRoute, onClick: () => navigate('/admin/token-usage') },
                   { label: 'Quản lý tài khoản', icon: <Users size={18} />, active: isUserMgmtRoute, onClick: () => navigate('/admin/users') },
                 ] as const).map(item => (
                   <button
@@ -1102,7 +1081,7 @@ function App() {
         <header className="flex justify-between items-center w-full px-6 py-3 bg-surface-container-lowest/80 backdrop-blur-xl sticky top-0 z-30 border-b border-outline-variant/10 shadow-sm">
           {/* Mobile: logo */}
           <button
-            onClick={() => { navigate('/meeting'); setMode('notes'); }}
+            onClick={() => navigate('/')}
             className="md:hidden flex items-center gap-2 font-bold font-headline text-on-surface"
           >
             <div className="w-7 h-7 rounded-lg nebula-gradient flex items-center justify-center">
@@ -1121,7 +1100,7 @@ function App() {
               {isOfficerRoute && 'Thông tin Dự án'}
               {isMindmapRoute && 'Sơ đồ tư duy'}
               {isPricingRoute && 'Nâng cấp'}
-              {isAdminRoute && 'Token Usage (Admin)'}
+              {isAdminRoute && 'Theo dõi token'}
               {isUserMgmtRoute && 'Quản lý tài khoản'}
             </span>
             {user && (

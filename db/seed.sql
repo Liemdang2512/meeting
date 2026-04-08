@@ -2,11 +2,12 @@
 -- Email: admin@local.dev | Password: admin123
 -- Chạy sau db:reset: npm run db:seed
 
-INSERT INTO auth.users (id, email, password_hash, created_at)
+INSERT INTO auth.users (id, email, password_hash, email_verified_at, created_at)
 VALUES (
   gen_random_uuid(),
   'admin@local.dev',
   '$2a$12$dwXHFb3yINXjGrbaa6I3yuq/B9e09NZjGYDt419tu.wYQHKLK2SRy',
+  NOW(),
   NOW()
 )
 ON CONFLICT DO NOTHING

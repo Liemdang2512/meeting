@@ -35,6 +35,7 @@ export type TokenUsageActionType =
   | 'minutes-generate'
   | 'transcribe-basic'
   | 'transcribe-deep'
+  | 'transcribe-synthesize'
   | 'file-split-analyze'
   | 'admin-view'
   | 'my-usage-view'

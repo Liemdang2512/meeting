@@ -6,7 +6,7 @@
 
 ## Phases
 
-- [x] **Phase 1: Auth** - Đăng nhập JWT, quản lý user invite-only
+- [x] **Phase 1: Auth** - Đăng nhập JWT, invite-only, xác nhận email + Google OAuth, cấu hình Resend/DB
 - [x] **Phase 2: Token Usage** - Theo dõi chi phí token Gemini theo user/feature
 - [x] **Phase 3: Docker + PostgreSQL** - Hạ tầng local dev với Docker
 - [x] **Phase 4: Replace Supabase** - Chuyển sang PostgreSQL tự quản
@@ -20,14 +20,16 @@
 ## Phase Details
 
 ### Phase 1: Auth
-**Goal**: Đăng nhập JWT, quản lý user invite-only, phân quyền admin/user
+**Goal**: Đăng nhập JWT, quản lý user invite-only, phân quyền admin/user; xác nhận email sau đăng ký và Google OAuth; Postgres (`auth.users`, token verify, migrations); gửi mail qua Resend từ env **hoặc** `app_settings` (Admin → Cài đặt email)
 **Depends on**: Nothing
 **Requirements**: TBD
 **Success Criteria**:
-  1. User có thể đăng nhập bằng email/password
+  1. User có thể đăng nhập bằng email/password (sau khi xác nhận email nếu self-register)
   2. Admin có thể tạo user mới
   3. JWT được lưu và gửi đúng cách
-**Plans**: Complete
+  4. Migration auth/verify/OAuth đã có trong repo và có thể áp dụng lên Postgres
+  5. Resend: `RESEND_API_KEY` / `RESEND_FROM` hoặc lưu `resend_api_key` / `resend_from` qua API admin — dùng chung cho email xác nhận và gửi biên bản
+**Plans**: Complete (01-01 … 01-05)
 
 ### Phase 2: Token Usage
 **Goal**: Theo dõi chi phí token Gemini theo user và feature
@@ -141,6 +143,7 @@ Plans:
 - [x] 11-02-PLAN.md — Wave 1 business policy: migration batch sunset + overdraft floor tests/contracts (D-06, D-07, D-08, D-09)
 - [x] 11-03-PLAN.md — Wave 2 technical: payment webhook top-up funding + workflow unlock + wallet refresh payload (D-03)
 - [ ] 11-04-PLAN.md — Wave 3 technical: charge-at-start runtime, auto-refund on failure, insufficient-balance UX and E2E verify (D-04, D-05, D-06, D-07)
+- [ ] 11-05-PLAN.md — Lịch sử giao dịch credit: API GET /api/wallet/history + CreditHistory UI trong PricingPage
 
 ---
 

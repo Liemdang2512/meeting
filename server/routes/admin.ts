@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import sql from '../db';
@@ -49,9 +50,11 @@ router.get('/users', requireAuth, requireAdmin, async (req, res) => {
         p.daily_limit,
         COALESCE(p.features, '{}') AS features,
         COALESCE(p.workflow_groups, '{}') AS plans,
+        COALESCE(wb.balance_credits, 0) AS balance_credits,
         COALESCE(t.tokens_used, 0) AS tokens_used
       FROM auth.users u
       LEFT JOIN public.profiles p ON p.user_id = u.id
+      LEFT JOIN public.wallet_balances wb ON wb.user_id = u.id
       LEFT JOIN (
         SELECT user_id, SUM(total_tokens) AS tokens_used
         FROM public.token_usage_logs
@@ -88,8 +91,8 @@ router.post('/users', requireAuth, requireAdmin, async (req, res) => {
 
     const password_hash = await bcrypt.hash(password, 12);
     const [newUser] = await sql`
-      INSERT INTO auth.users (email, password_hash, created_at)
-      VALUES (${email}, ${password_hash}, NOW())
+      INSERT INTO auth.users (email, password_hash, email_verified_at, created_at)
+      VALUES (${email}, ${password_hash}, NOW(), NOW())
       RETURNING id, email, created_at
     `;
 
@@ -97,6 +100,12 @@ router.post('/users', requireAuth, requireAdmin, async (req, res) => {
     await sql`
       INSERT INTO public.profiles (user_id, role, workflow_groups, features, created_at, updated_at)
       VALUES (${newUser.id}, ${role}, ${plansArraySql(plans)}, ${sql.array(feats)}, NOW(), NOW())
+    `;
+
+    await sql`
+      INSERT INTO public.wallet_balances (user_id, balance_credits, created_at, updated_at)
+      VALUES (${newUser.id}, 0, NOW(), NOW())
+      ON CONFLICT (user_id) DO NOTHING
     `;
 
     return res.status(201).json({
@@ -108,11 +117,11 @@ router.post('/users', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-// PUT /api/admin/users/:id — cập nhật role, plans, password, features
-// Body: { role?, plans?, password?, daily_limit?, features? }
+// PUT /api/admin/users/:id — cập nhật role, plans, password, features, ví
+// Body: { role?, plans?, password?, daily_limit?, features?, balance_credits? }
 router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
   const { id } = req.params;
-  const { role, plans, password, daily_limit, features } = req.body ?? {};
+  const { role, plans, password, daily_limit, features, balance_credits } = req.body ?? {};
 
   // Không cho xóa role admin của chính mình
   if (req.user?.userId === id && role && role !== 'admin') {
@@ -132,6 +141,9 @@ router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
   if (features !== undefined && !Array.isArray(features)) {
     return res.status(400).json({ error: 'features phải là mảng' });
   }
+  if (balance_credits !== undefined && (!Number.isInteger(balance_credits) || balance_credits < 0)) {
+    return res.status(400).json({ error: 'balance_credits phải là số nguyên >= 0' });
+  }
   if (password) {
     if (password.length < 8) {
       return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 8 ký tự' });
@@ -147,7 +159,12 @@ router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
   try {
     // 1 query duy nhất lấy cả user + profile — thay vì nhiều SELECT rải rác
     const [existing] = await sql`
-      SELECT u.id, p.user_id AS profile_exists, p.role AS current_role, p.workflow_groups AS current_plans
+      SELECT
+        u.id,
+        p.user_id AS profile_exists,
+        p.role AS current_role,
+        p.workflow_groups AS current_plans,
+        p.daily_limit AS current_daily_limit
       FROM auth.users u
       LEFT JOIN public.profiles p ON p.user_id = u.id
       WHERE u.id = ${id}
@@ -160,21 +177,24 @@ router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
 
     // Tính toán role/plans/features mới từ state hiện tại
     const effectiveRole = role ?? existing.current_role ?? 'free';
-    const effectivePlans = plans ?? existing.current_plans ?? [];
+    const rawPlans = plans ?? existing.current_plans;
+    const effectivePlans = Array.isArray(rawPlans) ? rawPlans : [];
     const needsProfileUpdate = role !== undefined || plans !== undefined || daily_limit !== undefined || features !== undefined;
 
     if (needsProfileUpdate) {
       // Tính features dựa trên role + plans cuối cùng
       const effectiveFeatures = features ?? featuresForPlans(effectiveRole, effectivePlans);
+      const nextDailyLimit =
+        daily_limit !== undefined ? daily_limit : (existing.current_daily_limit ?? null);
 
       if (hasProfile) {
-        // UPDATE — chỉ set những cột nào thực sự được truyền vào
+        // UPDATE — giá trị daily_limit lấy từ DB khi body không gửi (tránh fragment sql lồng nhau gây lỗi driver)
         await sql`
           UPDATE public.profiles SET
             role = ${role ?? existing.current_role ?? 'free'},
             workflow_groups = ${plansArraySql(effectivePlans)},
             features = ${sql.array(effectiveFeatures)},
-            daily_limit = ${daily_limit !== undefined ? daily_limit : sql`daily_limit`},
+            daily_limit = ${nextDailyLimit},
             updated_at = NOW()
           WHERE user_id = ${id}
         `;
@@ -194,6 +214,62 @@ router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
     if (password) {
       const password_hash = await bcrypt.hash(password, 12);
       await sql`UPDATE auth.users SET password_hash = ${password_hash} WHERE id = ${id}`;
+    }
+
+    if (balance_credits !== undefined) {
+      const [wallet] = await sql`
+        INSERT INTO public.wallet_balances (user_id, balance_credits, created_at, updated_at)
+        VALUES (${id}, 0, NOW(), NOW())
+        ON CONFLICT (user_id) DO NOTHING
+        RETURNING balance_credits
+      `;
+
+      const [currentWallet] = wallet
+        ? [wallet]
+        : await sql`
+            SELECT balance_credits
+            FROM public.wallet_balances
+            WHERE user_id = ${id}
+          `;
+
+      const currentBalance = Number(currentWallet?.balance_credits ?? 0);
+      const targetBalance = Math.trunc(Number(balance_credits));
+      if (currentBalance !== targetBalance) {
+        await sql`
+          UPDATE public.wallet_balances
+          SET balance_credits = ${targetBalance}, updated_at = NOW()
+          WHERE user_id = ${id}
+        `;
+
+        const delta = targetBalance - currentBalance;
+        const correlationId = `admin-adjust-${id}-${randomUUID()}`;
+        await sql`
+          INSERT INTO public.wallet_ledger (
+            user_id,
+            event_type,
+            action_type,
+            pack_id,
+            amount_credits,
+            balance_after_credits,
+            correlation_id,
+            metadata,
+            created_at
+          ) VALUES (
+            ${id},
+            'adjustment',
+            NULL,
+            NULL,
+            ${delta},
+            ${targetBalance},
+            ${correlationId},
+            ${JSON.stringify({
+              source: 'admin-ui',
+              note: 'Manual wallet balance adjustment',
+            })}::jsonb,
+            NOW()
+          )
+        `;
+      }
     }
 
     return res.json({ ok: true });
@@ -218,6 +294,11 @@ router.delete('/users/:id', requireAuth, requireAdmin, async (req, res) => {
     }
 
     await sql.begin(async (tx: any) => {
+      // Tắt trigger append-only của wallet_ledger trong transaction này
+      // để có thể xóa các bản ghi ledger khi xóa user
+      await tx`SET LOCAL session_replication_role = replica`;
+      await tx`DELETE FROM public.wallet_ledger WHERE user_id = ${id}`;
+      await tx`DELETE FROM public.wallet_balances WHERE user_id = ${id}`;
       await tx`DELETE FROM public.summaries WHERE transcription_id IN (
         SELECT id FROM public.transcriptions WHERE user_id = ${id}
       )`;
@@ -286,11 +367,15 @@ router.get('/payments', requireAuth, requireAdmin, async (req, res) => {
 router.get('/settings', requireAuth, requireAdmin, async (req, res) => {
   try {
     const rows = await sql`SELECT key, value, updated_at FROM public.app_settings ORDER BY key`;
-    const masked = rows.map(r =>
-      r.key === 'gmail_app_password' && r.value.length > 4
-        ? { ...r, value: r.value.slice(0, 4) + '...' }
-        : r
-    );
+    const masked = rows.map(r => {
+      if (
+        (r.key === 'gmail_app_password' || r.key === 'resend_api_key') &&
+        r.value.length > 4
+      ) {
+        return { ...r, value: r.value.slice(0, 4) + '...' };
+      }
+      return r;
+    });
     res.json({ settings: masked });
   } catch (err: any) {
     console.error('[admin/get-settings]', err);
@@ -301,7 +386,13 @@ router.get('/settings', requireAuth, requireAdmin, async (req, res) => {
 // PUT /api/admin/settings — upsert a single setting
 router.put('/settings', requireAuth, requireAdmin, async (req, res) => {
   const { key, value } = req.body ?? {};
-  const ALLOWED_KEYS = ['gmail_user', 'gmail_app_password', 'email_max_recipients'];
+  const ALLOWED_KEYS = [
+    'gmail_user',
+    'gmail_app_password',
+    'email_max_recipients',
+    'resend_api_key',
+    'resend_from',
+  ];
   if (!key || !ALLOWED_KEYS.includes(key)) {
     return res.status(400).json({ error: 'Setting key khong hop le' });
   }

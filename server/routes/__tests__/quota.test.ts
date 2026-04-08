@@ -8,7 +8,7 @@ describe('quota route wallet payload helpers', () => {
       role: 'free',
       billingModel: 'wallet',
       balance: 0,
-      overdraftLimit: -10000,
+      overdraftLimit: 0,
       legacyAccessUntil: null,
     });
   });
@@ -23,7 +23,7 @@ describe('quota route wallet payload helpers', () => {
       role: 'user',
       billingModel: 'wallet',
       balance: 12345,
-      overdraftLimit: -10000,
+      overdraftLimit: 0,
       legacyAccessUntil: '2026-04-08T10:00:00.000Z',
     });
   });

@@ -46,7 +46,7 @@ export function PaymentResultPage({ onTokenRefresh }: PaymentResultPageProps) {
         onTokenRefresh(data.user);
         setWallet({
           balance: Number(data?.wallet?.balance ?? data?.balance ?? 0),
-          overdraftLimit: Number(data?.wallet?.overdraftLimit ?? data?.overdraftLimit ?? -10000),
+          overdraftLimit: Number(data?.wallet?.overdraftLimit ?? data?.overdraftLimit ?? 0),
         });
         setUpgradeState('done');
       })

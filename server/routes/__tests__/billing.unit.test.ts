@@ -1,11 +1,19 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  getActionCost,
+  getBillingUsdToVnd,
+  getCreditsPerMillionOutputTokens,
+  getOutputTokenChargeCredits,
   getPackCredits,
   getPackPrice,
+  OUTPUT_USD_PER_MILLION_TOKENS,
+  resolveBillableOutputTokens,
 } from '../../billing/rateCard';
 
 describe('billing contract constants', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('maps fixed pack IDs to canonical VND price anchors', () => {
     expect(getPackPrice('specialist')).toBe(299000);
     expect(getPackPrice('reporter')).toBe(399000);
@@ -18,15 +26,32 @@ describe('billing contract constants', () => {
     expect(getPackCredits('officer')).toBeGreaterThan(0);
   });
 
-  it('returns deterministic non-zero debit cost for minutes generation', () => {
-    const first = getActionCost('minutes-generate');
-    const second = getActionCost('minutes-generate');
-
-    expect(first).toBe(second);
-    expect(first).toBeGreaterThan(0);
+  it('prices output tokens as USD/M × VND/USD → credits/M (default FX)', () => {
+    vi.stubEnv('BILLING_USD_TO_VND', '');
+    expect(getBillingUsdToVnd()).toBe(25_000);
+    expect(getCreditsPerMillionOutputTokens()).toBe(OUTPUT_USD_PER_MILLION_TOKENS * 25_000);
+    expect(getOutputTokenChargeCredits(1_000_000)).toBe(250_000);
+    expect(getOutputTokenChargeCredits(1)).toBe(1);
+    expect(getOutputTokenChargeCredits(0)).toBe(0);
   });
 
-  it('rejects unknown action types (no silent fallback)', () => {
-    expect(() => getActionCost('unknown-action' as never)).toThrow(/unknown action/i);
+  it('respects BILLING_USD_TO_VND override', () => {
+    vi.stubEnv('BILLING_USD_TO_VND', '26000');
+    expect(getBillingUsdToVnd()).toBe(26_000);
+    expect(getCreditsPerMillionOutputTokens()).toBe(OUTPUT_USD_PER_MILLION_TOKENS * 26_000);
+  });
+
+  it('uses provider output token count when present', () => {
+    expect(resolveBillableOutputTokens({ candidatesTokenCount: 500 }, 'x'.repeat(10_000))).toBe(500);
+  });
+
+  it('falls back to text-length estimate when usage is missing', () => {
+    const text = 'abcd';
+    expect(resolveBillableOutputTokens(undefined, text)).toBe(1);
+    expect(resolveBillableOutputTokens({}, 'a'.repeat(40))).toBe(10);
+  });
+
+  it('returns 0 billable tokens for empty text without usage', () => {
+    expect(resolveBillableOutputTokens(undefined, '   ')).toBe(0);
   });
 });

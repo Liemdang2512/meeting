@@ -24,7 +24,7 @@ const TokenUsageAdminPage = lazy<React.FC<{ currentUserId: string; isAdmin: bool
 const UserManagementPage = lazy<React.FC<{ currentUserId: string; isAdmin: boolean }>>(() => import('../../user-management/UserManagementPage').then(m => ({ default: m.UserManagementPage })));
 const MindmapPage = lazy<React.FC<{ user?: AuthUser | null }>>(() => import('../../mindmap/MindmapPage').then(m => ({ default: m.MindmapPage })));
 const MindmapTreeCanvasLazy = lazy<React.FC<{ tree: any }>>(() => import('../../mindmap/components/MindmapTreeCanvas').then(m => ({ default: m.MindmapTreeCanvas })));
-const RegisterPage = lazy<React.FC<{ onRegisterSuccess: () => void; onGoToLogin: () => void }>>(() => import('../../../components/RegisterPage').then(m => ({ default: m.RegisterPage })));
+const RegisterPage = lazy<React.FC<{ onGoToLogin: () => void }>>(() => import('../../../components/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const PricingPage = lazy<React.FC<{ currentUserRole?: string }>>(() => import('../../pricing/PricingPage').then(m => ({ default: m.PricingPage })));
 const HomePage = lazy<React.FC<{ onNavigate: (path: string) => void }>>(() => import('../../../components/HomePage').then(m => ({ default: m.HomePage })));
 import { WorkflowGuard } from '../WorkflowGuard';
@@ -125,19 +125,19 @@ Tóm tắt các nội dung chính đã thảo luận, chia theo từng chủ đ�
 - Nội dung trao đổi phải được chia thành các MỤC rõ ràng (Nội dung 01, 02, 03...).`;
 
 function EmailSettingsSection() {
-  const [gmailUser, setGmailUser] = useState('');
-  const [gmailPass, setGmailPass] = useState('');
+  const [resendApiKey, setResendApiKey] = useState('');
+  const [resendFrom, setResendFrom] = useState('');
   const [maxRecipients, setMaxRecipients] = useState('20');
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [loadedGmailUser, setLoadedGmailUser] = useState('');
-  const [loadedPassMasked, setLoadedPassMasked] = useState('');
+  const [loadedKeyMasked, setLoadedKeyMasked] = useState('');
+  const [loadedFrom, setLoadedFrom] = useState('');
 
   useEffect(() => {
     authFetch('/admin/settings').then(r => r.json()).then(data => {
       if (data.settings) {
         for (const s of data.settings) {
-          if (s.key === 'gmail_user') setLoadedGmailUser(s.value);
-          if (s.key === 'gmail_app_password') setLoadedPassMasked(s.value);
+          if (s.key === 'resend_api_key') setLoadedKeyMasked(s.value);
+          if (s.key === 'resend_from') setLoadedFrom(s.value);
           if (s.key === 'email_max_recipients') setMaxRecipients(s.value);
         }
       }
@@ -147,11 +147,17 @@ function EmailSettingsSection() {
   const handleSave = async () => {
     setSaveState('saving');
     try {
-      if (gmailUser) {
-        await authFetch('/admin/settings', { method: 'PUT', body: JSON.stringify({ key: 'gmail_user', value: gmailUser }) });
+      if (resendApiKey.trim()) {
+        await authFetch('/admin/settings', {
+          method: 'PUT',
+          body: JSON.stringify({ key: 'resend_api_key', value: resendApiKey.trim() }),
+        });
       }
-      if (gmailPass) {
-        await authFetch('/admin/settings', { method: 'PUT', body: JSON.stringify({ key: 'gmail_app_password', value: gmailPass }) });
+      if (resendFrom.trim()) {
+        await authFetch('/admin/settings', {
+          method: 'PUT',
+          body: JSON.stringify({ key: 'resend_from', value: resendFrom.trim() }),
+        });
       }
       if (maxRecipients) {
         await authFetch('/admin/settings', { method: 'PUT', body: JSON.stringify({ key: 'email_max_recipients', value: maxRecipients }) });
@@ -162,12 +168,12 @@ function EmailSettingsSection() {
       const data = await resp.json();
       if (data.settings) {
         for (const s of data.settings) {
-          if (s.key === 'gmail_user') setLoadedGmailUser(s.value);
-          if (s.key === 'gmail_app_password') setLoadedPassMasked(s.value);
+          if (s.key === 'resend_api_key') setLoadedKeyMasked(s.value);
+          if (s.key === 'resend_from') setLoadedFrom(s.value);
         }
       }
-      setGmailUser('');
-      setGmailPass('');
+      setResendApiKey('');
+      setResendFrom('');
     } catch {
       setSaveState('idle');
     }
@@ -175,39 +181,45 @@ function EmailSettingsSection() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-medium text-slate-800">Cấu hình gửi email (Gmail SMTP)</h2>
+      <h2 className="text-lg font-medium text-slate-800">Cấu hình email (Resend)</h2>
+      <p className="text-sm text-slate-600">
+        Dùng cho email xác nhận đăng ký và gửi biên bản (admin). Biến môi trường{' '}
+        <code className="text-xs bg-slate-100 px-1 rounded">RESEND_API_KEY</code> /{' '}
+        <code className="text-xs bg-slate-100 px-1 rounded">RESEND_FROM</code> nếu có sẽ được ưu tiên hơn giá trị lưu dưới đây.
+      </p>
 
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-        {/* Gmail account */}
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-slate-800">Gmail</label>
-          {loadedGmailUser && (
-            <p className="text-xs text-slate-400">Hiện tại: {loadedGmailUser}</p>
-          )}
-          <input
-            type="email"
-            value={gmailUser}
-            onChange={(e) => setGmailUser(e.target.value)}
-            className="w-full px-4 py-3 border-slate-200 focus:border-slate-200 bg-white focus:outline-none text-sm font-medium transition-colors border rounded-xl"
-            placeholder="youraccount@gmail.com"
-          />
-        </div>
-
-        {/* App Password */}
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-slate-800">Gmail App Password</label>
-          {loadedPassMasked && (
-            <p className="text-xs text-slate-400">Hiện tại: {loadedPassMasked}</p>
+          <label className="block text-sm font-medium text-slate-800">Resend API key</label>
+          {loadedKeyMasked && (
+            <p className="text-xs text-slate-400">Hiện tại: {loadedKeyMasked}</p>
           )}
           <input
             type="password"
-            value={gmailPass}
-            onChange={(e) => setGmailPass(e.target.value)}
+            value={resendApiKey}
+            onChange={(e) => setResendApiKey(e.target.value)}
             className="w-full px-4 py-3 border-slate-200 focus:border-slate-200 bg-white focus:outline-none text-sm font-medium transition-colors border rounded-xl"
-            placeholder="xxxx xxxx xxxx xxxx"
+            placeholder="re_..."
           />
           <p className="text-xs text-slate-400">
-            Tạo App Password tại: myaccount.google.com → Security → 2-Step Verification → App passwords
+            Lấy tại resend.com → API Keys. Chỉ điền khi không dùng RESEND_API_KEY trong file env server.
+          </p>
+        </div>
+
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-slate-800">Địa chỉ gửi (From)</label>
+          {loadedFrom && (
+            <p className="text-xs text-slate-400">Hiện tại: {loadedFrom}</p>
+          )}
+          <input
+            type="text"
+            value={resendFrom}
+            onChange={(e) => setResendFrom(e.target.value)}
+            className="w-full px-4 py-3 border-slate-200 focus:border-slate-200 bg-white focus:outline-none text-sm font-medium transition-colors border rounded-xl"
+            placeholder="Meeting Scribe <no-reply@yourdomain.com>"
+          />
+          <p className="text-xs text-slate-400">
+            Domain phải đã xác minh trong Resend. Để trống nếu chỉ dùng env RESEND_FROM.
           </p>
         </div>
 
@@ -624,7 +636,7 @@ function App() {
       try {
         const synthLoggingContext: TokenLoggingContext = {
           feature: 'minutes',
-          actionType: 'other',
+          actionType: 'transcribe-synthesize',
           metadata: { fileName: 'Synthesize Combined', mode: 'synthesize', fileCount: completedList.length },
         };
         const synthesized = await synthesizeTranscriptions(
@@ -907,26 +919,7 @@ function App() {
     if (route === '/register') {
       return (
         <Suspense fallback={<div className="min-h-screen bg-slate-50 flex items-center justify-center"><Spinner /></div>}>
-          <RegisterPage
-            onRegisterSuccess={async () => {
-              const loggedInUser = await getMe();
-              setUser(loggedInUser);
-              if (loggedInUser) {
-                navigate('/meeting');
-              }
-              if (loggedInUser) {
-                setIsAdmin(loggedInUser.role === 'admin');
-                const accountKey = await loadApiKeyFromAccount(loggedInUser.userId);
-                if (accountKey) {
-                  setUserApiKey(accountKey);
-                  localStorage.setItem('gemini_api_key', accountKey);
-                  setHasApiKey(true);
-                  setShowApiKeyInput(false);
-                }
-              }
-            }}
-            onGoToLogin={() => navigate('/login')}
-          />
+          <RegisterPage onGoToLogin={() => navigate('/login')} />
         </Suspense>
       );
     }
@@ -1158,7 +1151,7 @@ function App() {
                 onClick={() => navigate('/admin/token-usage')}
                 className={`px-4 py-1.5 text-sm font-medium transition-colors whitespace-nowrap ${isAdminRoute ? 'bg-indigo-700 text-white rounded-xl' : 'text-slate-600 hover:bg-slate-200 hover:text-slate-800 rounded-xl'}`}
               >
-                Sử dụng token (Admin)
+                Theo dõi token
               </button>
             )}
             {isAdmin && (
@@ -1181,40 +1174,42 @@ function App() {
         </div>
       </header>
 
-      {/* Step indicator — clickable cho các bước đã hoàn thành */}
-      <div className="bg-white border-b border-slate-200 sticky top-[72px] lg:top-[76px] z-10 transition-all">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 overflow-x-auto scrollbar-none">
-          <div className="flex items-center justify-start sm:justify-center min-w-max">
-            {steps.map((step, idx) => {
-              const isActivelyProcessing = status === TranscriptionStatus.PROCESSING ||
-                status === TranscriptionStatus.READING_FILE ||
-                status === TranscriptionStatus.SYNTHESIZING ||
-                status === TranscriptionStatus.SUMMARIZING;
-              const isNavigable = step.n >= 2 && step.n <= currentStep && !isActivelyProcessing;
-              const isViewing = step.n === viewStep && !isActivelyProcessing && step.n > 1;
-              return (
-                <div key={step.n} className="flex items-center">
-                  <div
-                    className={`flex flex-col items-center ${isNavigable ? 'cursor-pointer group' : ''}`}
-                    onClick={() => isNavigable && setViewStep(step.n)}
-                    title={isNavigable ? `Xem lại: ${step.label}` : undefined}
-                  >
-                    <div className={`w-9 h-9 flex items-center justify-center text-sm font-medium border transition-all duration-300 ${currentStep > step.n ? 'bg-indigo-600 text-white border-slate-200' : ''} ${currentStep === step.n ? 'bg-indigo-600 text-white border-slate-200 ring-2 ring-offset-2 ring-indigo-500' : ''} ${currentStep < step.n ? 'bg-white border-slate-200 text-slate-400' : ''} ${isViewing && currentStep > step.n ? 'ring-2 ring-offset-2 ring-indigo-300' : ''} ${isNavigable ? 'group- group- rounded-xl' : ''} `}>
-                      {currentStep > step.n ? '✓' : step.n}
+      {/* Chỉ hiện tiến trình bước khi đang ở /meeting — tránh chồng UI trên trang admin / mindmap / pricing */}
+      {isNotesRoute && (
+        <div className="bg-white border-b border-slate-200 sticky top-[72px] lg:top-[76px] z-10 transition-all">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3 overflow-x-auto scrollbar-none">
+            <div className="flex items-center justify-start sm:justify-center min-w-max">
+              {steps.map((step, idx) => {
+                const isActivelyProcessing = status === TranscriptionStatus.PROCESSING ||
+                  status === TranscriptionStatus.READING_FILE ||
+                  status === TranscriptionStatus.SYNTHESIZING ||
+                  status === TranscriptionStatus.SUMMARIZING;
+                const isNavigable = step.n >= 2 && step.n <= currentStep && !isActivelyProcessing;
+                const isViewing = step.n === viewStep && !isActivelyProcessing && step.n > 1;
+                return (
+                  <div key={step.n} className="flex items-center">
+                    <div
+                      className={`flex flex-col items-center ${isNavigable ? 'cursor-pointer group' : ''}`}
+                      onClick={() => isNavigable && setViewStep(step.n)}
+                      title={isNavigable ? `Xem lại: ${step.label}` : undefined}
+                    >
+                      <div className={`w-9 h-9 flex items-center justify-center text-sm font-medium border transition-all duration-300 ${currentStep > step.n ? 'bg-indigo-600 text-white border-slate-200' : ''} ${currentStep === step.n ? 'bg-indigo-600 text-white border-slate-200 ring-2 ring-offset-2 ring-indigo-500' : ''} ${currentStep < step.n ? 'bg-white border-slate-200 text-slate-400' : ''} ${isViewing && currentStep > step.n ? 'ring-2 ring-offset-2 ring-indigo-300' : ''} ${isNavigable ? 'group- group- rounded-xl' : ''} `}>
+                        {currentStep > step.n ? '✓' : step.n}
+                      </div>
+                      <span className={`text-xs mt-2 font-medium whitespace-nowrap transition-colors duration-300 ${currentStep >= step.n ? 'text-slate-800' : 'text-slate-400'} ${isViewing ? 'underline decoration-2 underline-offset-4' : ''} `}>
+                        {step.label}
+                      </span>
                     </div>
-                    <span className={`text-xs mt-2 font-medium whitespace-nowrap transition-colors duration-300 ${currentStep >= step.n ? 'text-slate-800' : 'text-slate-400'} ${isViewing ? 'underline decoration-2 underline-offset-4' : ''} `}>
-                      {step.label}
-                    </span>
+                    {idx < steps.length - 1 && (
+                      <div className={`w-12 sm:w-20 lg:w-24 h-0.5 mx-2 sm:mx-3 mb-6 transition-all duration-500 border-t ${currentStep > step.n ? 'border-indigo-500' : 'border-slate-100 border-dashed'}`} />
+                    )}
                   </div>
-                  {idx < steps.length - 1 && (
-                    <div className={`w-12 sm:w-20 lg:w-24 h-0.5 mx-2 sm:mx-3 mb-6 transition-all duration-500 border-t ${currentStep > step.n ? 'border-indigo-500' : 'border-slate-100 border-dashed'}`} />
-                  )}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Suspense fallback={<div className="flex justify-center items-center h-64"><Spinner /></div>}>
@@ -1487,7 +1482,7 @@ function App() {
                         )}
                       </div>
                     ) : (
-                      <TranscriptionView text={completedTranscriptions[viewingIndex]?.text || ''} userId={user?.userId ?? null} onMindmapCapture={(fn) => { mindmapCaptureFnRef.current = fn; }} onMindmapPdfReady={(pdf) => { mindmapPdfDataRef.current = pdf; }} />
+                      <TranscriptionView text={completedTranscriptions[viewingIndex]?.text || ''} userId={user?.userId ?? null} onMindmapCapture={(fn) => { mindmapCaptureFnRef.current = fn; }} onMindmapPdfReady={(pdf) => { mindmapPdfDataRef.current = pdf; }} hideMindmapTab />
                     )}
                   </div>
                 </div>
@@ -1539,7 +1534,7 @@ function App() {
                 </div>
               )}
               <div className="h-[calc(100vh-300px)] border-transparent rounded-2xl">
-                <TranscriptionView text={completedTranscriptions[viewingIndex]?.text || ''} userId={user?.userId ?? null} onMindmapCapture={(fn) => { mindmapCaptureFnRef.current = fn; }} onMindmapPdfReady={(pdf) => { mindmapPdfDataRef.current = pdf; }} />
+                <TranscriptionView text={completedTranscriptions[viewingIndex]?.text || ''} userId={user?.userId ?? null} onMindmapCapture={(fn) => { mindmapCaptureFnRef.current = fn; }} onMindmapPdfReady={(pdf) => { mindmapPdfDataRef.current = pdf; }} hideMindmapTab />
               </div>
             </div>
           )}
@@ -1572,7 +1567,7 @@ function App() {
                 )}
               </div>
               <div className="h-[calc(100vh-280px)] border-transparent rounded-2xl">
-                <TranscriptionView text={synthesizedTranscription} userId={user?.userId ?? null} onMindmapCapture={(fn) => { mindmapCaptureFnRef.current = fn; }} onMindmapPdfReady={(pdf) => { mindmapPdfDataRef.current = pdf; }} />
+                <TranscriptionView text={synthesizedTranscription} userId={user?.userId ?? null} onMindmapCapture={(fn) => { mindmapCaptureFnRef.current = fn; }} onMindmapPdfReady={(pdf) => { mindmapPdfDataRef.current = pdf; }} hideMindmapTab />
               </div>
             </div>
           )}
@@ -1645,7 +1640,7 @@ function App() {
                         : completedTranscriptions.length > 1
                           ? completedTranscriptions[viewingIndex]?.text || ''
                           : transcription
-                    } userId={user?.userId ?? null} onMindmapCapture={(fn) => { mindmapCaptureFnRef.current = fn; }} onMindmapPdfReady={(pdf) => { mindmapPdfDataRef.current = pdf; }} />
+                    } userId={user?.userId ?? null} onMindmapCapture={(fn) => { mindmapCaptureFnRef.current = fn; }} onMindmapPdfReady={(pdf) => { mindmapPdfDataRef.current = pdf; }} hideMindmapTab />
                   </div>
                 </div>
 
@@ -1730,7 +1725,7 @@ function App() {
                     ) : (
                       <div className="flex-1 flex flex-col overflow-hidden animate-in fade-in duration-300">
                         <div className="flex-1 border-transparent overflow-hidden rounded-2xl">
-                          <TranscriptionView text={summary} userId={user?.userId ?? null} onMindmapCapture={(fn) => { mindmapCaptureFnRef.current = fn; }} onMindmapPdfReady={(pdf) => { mindmapPdfDataRef.current = pdf; }} />
+                          <TranscriptionView text={summary} userId={user?.userId ?? null} onMindmapCapture={(fn) => { mindmapCaptureFnRef.current = fn; }} onMindmapPdfReady={(pdf) => { mindmapPdfDataRef.current = pdf; }} hideMindmapTab />
                         </div>
                         <div className="mt-4 flex flex-col sm:flex-row gap-3">
                           <button
@@ -1815,6 +1810,16 @@ function App() {
                       </div>
                     )}
                   </div>
+                  {!mindmapLoading && mindmapTree && summary && (
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() => setViewStep(hoànThànhStep)}
+                        className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-xl hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                      >
+                        Xem trang hoàn thành
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

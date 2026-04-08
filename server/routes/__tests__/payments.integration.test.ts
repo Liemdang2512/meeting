@@ -159,7 +159,7 @@ describe('Payment webhook integration — credit funding + workflow unlock', () 
 
     const payload = await buildCheckUpgradePayload(testUserId, `payments-${testUserId}@example.com`);
     expect(payload.balance).toBe(getPackCredits('specialist'));
-    expect(payload.overdraftLimit).toBe(-10000);
+    expect(payload.overdraftLimit).toBe(0);
     expect(payload.legacyAccessUntil).toBeTruthy();
     expect(payload.user.plans).toContain('specialist');
   });

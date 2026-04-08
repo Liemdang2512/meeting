@@ -10,6 +10,17 @@ const EVENT_LABELS: Record<string, string> = {
   adjustment: 'Điều chỉnh',
 };
 
+const ACTION_LABELS: Record<string, string> = {
+  'transcribe-basic': 'Voice to Text',
+  'transcribe-deep': 'Voice to Text (nâng cao)',
+  'transcribe-synthesize': 'Gộp file',
+  'minutes-generate': 'Tạo biên bản',
+  'mindmap-generate': 'Tạo Mindmap',
+  'checklist-generate': 'Tạo Checklist',
+  'diagram-generate': 'Tạo Sơ đồ',
+  other: 'Khác',
+};
+
 interface LedgerRow {
   id: string;
   event_type: string;
@@ -96,6 +107,7 @@ export const CreditHistory: React.FC = () => {
                 <tr className="bg-surface-container-low text-on-surface-variant text-left">
                   <th className="px-4 py-3 font-semibold">Thời gian</th>
                   <th className="px-4 py-3 font-semibold">Loại</th>
+                  <th className="px-4 py-3 font-semibold">Tính năng</th>
                   <th className="px-4 py-3 font-semibold text-right">Số tiền</th>
                   <th className="px-4 py-3 font-semibold text-right">Số dư sau</th>
                 </tr>
@@ -106,6 +118,9 @@ export const CreditHistory: React.FC = () => {
                   const amountClass = isNegative ? 'text-error font-semibold' : 'text-primary font-semibold';
                   const amountPrefix = isNegative ? '' : '+';
                   const label = EVENT_LABELS[row.event_type] ?? row.event_type;
+                  const featureLabel = row.action_type
+                    ? (ACTION_LABELS[row.action_type] ?? row.action_type)
+                    : null;
 
                   return (
                     <tr key={row.id} className="hover:bg-surface-container-low/50 transition-colors">
@@ -113,6 +128,9 @@ export const CreditHistory: React.FC = () => {
                         {formatDate(row.created_at)}
                       </td>
                       <td className="px-4 py-3 text-on-surface">{label}</td>
+                      <td className="px-4 py-3 text-on-surface-variant text-sm">
+                        {featureLabel ?? <span className="text-outline">—</span>}
+                      </td>
                       <td className={`px-4 py-3 text-right whitespace-nowrap ${amountClass}`}>
                         {amountPrefix}{row.amount_credits.toLocaleString('vi-VN')}
                       </td>
