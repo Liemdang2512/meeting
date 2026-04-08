@@ -285,6 +285,18 @@ vietqrRouter.get('/:orderId/status', requireAuth, async (req, res) => {
 // Generic webhook endpoint for banking/bridge services to confirm incoming transfer.
 vietqrRouter.post('/webhook', async (req, res) => {
   const payload = (req.body ?? {}) as WebhookPayload;
+
+  // Log mọi request trước — kể cả khi auth fail, để dễ debug
+  const orderId = pickOrderId(payload);
+  try {
+    await sql`
+      INSERT INTO public.payment_webhook_events (gateway, event_type, order_id, raw_payload)
+      VALUES ('vietqr', 'ipn', ${orderId ?? null}, ${JSON.stringify({ ...payload, _headers: req.headers })}::jsonb)
+    `;
+  } catch (logErr) {
+    console.error('[vietqr/webhook] log failed:', logErr);
+  }
+
   const expectedSecret = process.env.VIETQR_WEBHOOK_SECRET;
 
   if (expectedSecret) {
@@ -298,23 +310,14 @@ vietqrRouter.post('/webhook', async (req, res) => {
     const providedKey = sepayKey || (Array.isArray(legacyKey) ? legacyKey[0] : legacyKey) || '';
 
     if (providedKey !== expectedSecret) {
+      console.error('[vietqr/webhook] Auth failed. Provided:', providedKey?.slice(0, 8) + '...', 'Expected prefix:', expectedSecret?.slice(0, 8) + '...');
       return res.status(401).json({ error: 'Unauthorized webhook.' });
     }
   }
 
-  const orderId = pickOrderId(payload);
   const transferContent = pickTransferContent(payload);
   const amount = toNumber(payload.transferAmount ?? payload.amount ?? payload.data?.amount);
   const success = isWebhookSuccess(payload);
-
-  try {
-    await sql`
-      INSERT INTO public.payment_webhook_events (gateway, event_type, order_id, raw_payload)
-      VALUES ('vietqr', 'ipn', ${orderId ?? null}, ${JSON.stringify(payload)}::jsonb)
-    `;
-  } catch (logErr) {
-    console.error('[vietqr/webhook] log failed:', logErr);
-  }
 
   if (!success) {
     return res.json({ message: 'Ignored (not successful payment).' });
