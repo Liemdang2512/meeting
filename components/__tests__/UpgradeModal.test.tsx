@@ -33,25 +33,44 @@ describe('UpgradeModal', () => {
     render(<UpgradeModal isOpen={true} onClose={vi.fn()} />);
     expect(screen.getByText('Hoàn tất đơn hàng của bạn')).toBeInTheDocument();
     expect(screen.getByText('Phương thức thanh toán')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('0000 0000 0000 0000')).toBeInTheDocument();
+    expect(screen.getByText('Chuyển khoản')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tạo mã QR →' })).toBeInTheDocument();
   });
 
-  it('form có trường: cardNumber, expiry, CVV', () => {
+  it('tab chuyển khoản hiển thị hướng dẫn VietQR', () => {
     render(<UpgradeModal isOpen={true} onClose={vi.fn()} />);
-    expect(screen.getByPlaceholderText('NGUYEN VAN A')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('0000 0000 0000 0000')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('MM/YY')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('•••')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Tạo mã QR →' })).toBeInTheDocument();
+    expect(
+      screen.getByText(/Hỗ trợ tất cả ngân hàng Việt Nam qua VietQR/i),
+    ).toBeInTheDocument();
   });
 
-  it('nhấn thanh toán mở cổng và hiển thị trạng thái chờ', async () => {
+  it('nhấn Tạo mã QR gọi API và hiển thị trạng thái chờ xác nhận', async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        orderId: 'ord_test_1',
+        qrImageUrl: 'https://example.com/qr.png',
+        amount: 299000,
+        accountNo: '123456',
+        accountName: 'CONG TY TEST',
+        bankBin: '970436',
+        transferContent: 'TEST CK',
+        expiresAt: new Date().toISOString(),
+      }),
+    })) as unknown as typeof fetch;
+    vi.stubGlobal('fetch', fetchMock);
+
     render(<UpgradeModal isOpen={true} onClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Thanh toán ngay →' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Tạo mã QR →' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Đang chờ xác nhận từ cổng thanh toán...')).toBeInTheDocument();
+      expect(screen.getByText('Đang chờ xác nhận thanh toán...')).toBeInTheDocument();
     });
-    expect(window.open).toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/payments/vietqr/create',
+      expect.objectContaining({ method: 'POST' }),
+    );
   });
 
   it('nhận postMessage success thì gọi onPaymentSuccess và onClose', async () => {

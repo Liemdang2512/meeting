@@ -28,7 +28,7 @@ export async function sendVerificationEmail({
     const { error } = await resend.emails.send({
       from,
       to: [to],
-      subject: 'Xác nhận email — Meeting Scribe',
+      subject: 'Xác nhận tài khoản Meeting Minutes AI',
       html,
     });
     if (error) {
