@@ -39,7 +39,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   planPrice = '299.000',
   planSubtitle = 'Thanh toán định kỳ hàng tháng',
 }) => {
-  const [activeTab, setActiveTab] = useState<PaymentTab>('card');
+  const [activeTab, setActiveTab] = useState<PaymentTab>('transfer');
   const [loading, setLoading] = useState<PaymentGateway | null>(null);
   const [gatewayPending, setGatewayPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -254,8 +254,6 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   const subtotal = priceNum - vatAmount;
 
   const tabs: { id: PaymentTab; icon: React.ReactNode; label: string }[] = [
-    { id: 'card', icon: <CreditCard className="w-5 h-5" />, label: 'Thẻ quốc tế' },
-    { id: 'ewallet', icon: <Smartphone className="w-5 h-5" />, label: 'Ví điện tử' },
     { id: 'transfer', icon: <Building2 className="w-5 h-5" />, label: 'Chuyển khoản' },
   ];
 
