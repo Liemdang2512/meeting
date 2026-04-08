@@ -212,19 +212,20 @@ vietqrRouter.post('/create', requireAuth, async (req, res) => {
   const qrImageUrl = `https://img.vietqr.io/image/${bankBin}-${accountNo}-compact2.png?amount=${amountVnd}&addInfo=${encodeURIComponent(transferContent)}&accountName=${encodeURIComponent(accountName)}`;
 
   try {
+    const metadata = {
+      email,
+      plan: planId,
+      transfer_content: transferContent,
+      bank_bin: bankBin,
+      account_no: accountNo,
+      account_name: accountName,
+    };
     await sql`
       INSERT INTO public.payment_orders
         (id, user_id, gateway, amount, currency, status, plan_granted, metadata)
       VALUES
         (${orderId}, ${userId}, 'vietqr', ${amountVnd}, 'VND', 'pending', ${planId},
-         ${JSON.stringify({
-           email,
-           plan: planId,
-           transfer_content: transferContent,
-           bank_bin: bankBin,
-           account_no: accountNo,
-           account_name: accountName,
-         })}::jsonb)
+         ${metadata})
     `;
 
     return res.json({
@@ -342,7 +343,10 @@ vietqrRouter.post('/webhook', async (req, res) => {
         FROM public.payment_orders
         WHERE gateway = 'vietqr'
           AND status = 'pending'
-          AND metadata->>'transfer_content' = ${transferContent}
+          AND (
+            metadata->>'transfer_content' = ${transferContent}
+            OR (jsonb_typeof(metadata) = 'string' AND (metadata#>>'{}')::jsonb->>'transfer_content' = ${transferContent})
+          )
         ORDER BY created_at DESC
         LIMIT 1
       `;
