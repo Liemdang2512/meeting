@@ -20,6 +20,9 @@ import { vietqrRouter } from './routes/payments/vietqr';
 const app = express();
 const PORT = process.env.PORT ?? 3001;
 
+// Trust Railway / Vercel reverse proxy so rate-limiter reads the correct client IP
+app.set('trust proxy', 1);
+
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
   : ['http://localhost:3000', 'http://localhost:3003'];
