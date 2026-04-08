@@ -4,6 +4,7 @@ import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import sql from '../db';
 import { signToken, signRefreshToken, verifyRefreshToken, requireAuth, FREE_FEATURES, ALL_FEATURES, Feature, COOKIE_OPTIONS } from '../auth';
+import { ensureFreeMonthlyAllowance, ensureFreeMonthlyAllowanceInTx } from '../billing/freeMonthlyAllowance';
 
 const router = Router();
 
@@ -43,6 +44,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     if (!valid) {
       return res.status(401).json({ error: 'Email hoặc mật khẩu không đúng' });
     }
+    await ensureFreeMonthlyAllowance(user.id);
     const role = user.role ?? 'free';
     const plans: string[] = user.workflow_groups ?? [];
     const features: Feature[] = user.features?.length ? user.features : FREE_FEATURES;
@@ -99,6 +101,7 @@ router.post('/register', registerLimiter, async (req, res) => {
         INSERT INTO public.profiles (user_id, role, workflow_groups, features, created_at, updated_at)
         VALUES (${u.id}, 'free', ARRAY[]::text[], ${sql.array(FREE_FEATURES)}, NOW(), NOW())
       `;
+      await ensureFreeMonthlyAllowanceInTx(tx, u.id);
       return u;
     });
     const token = signToken({ userId: newUser.id, email: newUser.email, role: 'free', plans: [], features: FREE_FEATURES });
@@ -149,6 +152,7 @@ router.post('/refresh', async (req, res) => {
     if (!user) {
       return res.status(401).json({ error: 'User not found' });
     }
+    await ensureFreeMonthlyAllowance(user.id);
     const role = user.role ?? 'free';
     const plans: string[] = user.workflow_groups ?? [];
     const features: Feature[] = user.features?.length ? user.features : FREE_FEATURES;

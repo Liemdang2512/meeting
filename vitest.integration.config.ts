@@ -10,6 +10,7 @@ export default defineConfig({
     include: [
       'tests/integration/**/*.test.ts',
       'server/routes/__tests__/*.integration.test.ts',
+      'server/billing/__tests__/*.integration.test.ts',
     ],
     setupFiles: ['./tests/integration/helpers/setup.ts'],
     testTimeout: 30000,

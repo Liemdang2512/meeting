@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import sql from '../db';
 import { isLegacyAccessAllowed, canDebitWithOverdraftFloor, LEGACY_OVERDRAFT_FLOOR_CREDITS } from './legacyAccessPolicy';
-import { getActionCost } from './rateCard';
+import { ensureFreeMonthlyAllowance } from './freeMonthlyAllowance';
 import type { BillingActionType } from './types';
 
 export interface InsufficientBalancePayload {
@@ -28,6 +28,8 @@ export class BillingInsufficientBalanceError extends Error {
 export interface AuthorizeAndChargeInput {
   userId: string;
   actionType: BillingActionType;
+  /** Whole credits to debit (e.g. from output-token pricing). Zero skips debit. */
+  amountCredits: number;
   correlationId?: string;
   metadata?: Record<string, unknown>;
 }
@@ -37,7 +39,7 @@ export interface AuthorizeAndChargeResult {
   correlationId: string;
   amountCredits: number;
   balanceAfterCredits: number;
-  skippedReason?: 'legacy-access';
+  skippedReason?: 'legacy-access' | 'zero-amount';
 }
 
 export interface RefundChargeInput {
@@ -58,10 +60,16 @@ export interface RefundChargeResult {
 export async function authorizeAndCharge({
   userId,
   actionType,
+  amountCredits,
   correlationId = randomUUID(),
   metadata = {},
 }: AuthorizeAndChargeInput): Promise<AuthorizeAndChargeResult> {
-  const requiredCredits = getActionCost(actionType);
+  const requiredCredits = Math.max(0, Math.ceil(Number(amountCredits)));
+  if (!Number.isFinite(requiredCredits)) {
+    throw new Error('Invalid amountCredits');
+  }
+
+  await ensureFreeMonthlyAllowance(userId);
 
   return sql.begin(async (tx: any) => {
     const [legacyAssignment] = await tx`
@@ -86,6 +94,27 @@ export async function authorizeAndCharge({
         amountCredits: 0,
         balanceAfterCredits: Number(existingBalance?.balance_credits ?? 0),
         skippedReason: 'legacy-access' as const,
+      };
+    }
+
+    if (requiredCredits === 0) {
+      await tx`
+        INSERT INTO public.wallet_balances (user_id, balance_credits, created_at, updated_at)
+        VALUES (${userId}, 0, NOW(), NOW())
+        ON CONFLICT (user_id) DO NOTHING
+      `;
+      const [existingBalance] = await tx`
+        SELECT balance_credits
+        FROM public.wallet_balances
+        WHERE user_id = ${userId}
+        LIMIT 1
+      `;
+      return {
+        charged: false,
+        correlationId,
+        amountCredits: 0,
+        balanceAfterCredits: Number(existingBalance?.balance_credits ?? 0),
+        skippedReason: 'zero-amount' as const,
       };
     }
 
@@ -119,7 +148,7 @@ export async function authorizeAndCharge({
       SET balance_credits = balance_credits - ${requiredCredits},
           updated_at = NOW()
       WHERE user_id = ${userId}
-      RETURNING balance_credits
+      RETURNING (balance_credits)::int AS balance_credits
     `;
 
     await tx`
@@ -135,8 +164,8 @@ export async function authorizeAndCharge({
         ${userId},
         'debit',
         ${actionType},
-        ${-requiredCredits},
-        ${updatedBalance.balance_credits},
+        ${-requiredCredits}::int,
+        ${updatedBalance.balance_credits}::int,
         ${correlationId},
         ${JSON.stringify({
           ...metadata,
@@ -221,7 +250,7 @@ export async function refundCharge({
       SET balance_credits = balance_credits + ${refundAmount},
           updated_at = NOW()
       WHERE user_id = ${userId}
-      RETURNING balance_credits
+      RETURNING (balance_credits)::int AS balance_credits
     `;
 
     await tx`
@@ -237,8 +266,8 @@ export async function refundCharge({
         ${userId},
         'refund',
         ${actionType},
-        ${refundAmount},
-        ${updatedBalance.balance_credits},
+        ${refundAmount}::int,
+        ${updatedBalance.balance_credits}::int,
         ${refundCorrelationId},
         ${JSON.stringify({
           ...metadata,
