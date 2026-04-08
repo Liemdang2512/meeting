@@ -2,22 +2,22 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Phase complete — ready for verification
+status: Executing Phase 01
 stopped_at: Completed 11-05-PLAN.md
-last_updated: "2026-04-08T03:16:46.055Z"
+last_updated: "2026-04-08T10:55:44.780Z"
 progress:
   total_phases: 12
   completed_phases: 6
-  total_plans: 41
-  completed_plans: 40
+  total_plans: 51
+  completed_plans: 41
 ---
 
 # Project State
 
 ## Current Position
 
-Phase: 11 (s-a-giao-th-c-t-nh-ti-n-sau-ng-k-t-i-kho-n-c-s-d-c-nh-s-d-ng-s-tr-tr-c-ti-p-v-o-s-d) — EXECUTING
-Plan: 4 of 4
+Phase: 01 (auth) — EXECUTING
+Plan: 1 of 4
 
 ## Last Session
 
@@ -145,3 +145,4 @@ Phases 01–07 complete. Phase 09 executing (plan 09-01 done — 09-02 through 0
 | 260328-our | bo section chon nhom workflow khoi profile; pricing hien "Da dang ky"; admin xem nhom user | 2026-03-28 | b252191 | [260328-our-bo-section-chon-nhom-workflow-khoi-profi](./quick/260328-our-bo-section-chon-nhom-workflow-khoi-profi/) |
 | 260401-mkq | lam lai giao dien trang chu theo noi dung Trangchu.md | 2026-04-01 | 57e4501 | [260401-mkq-l-m-l-i-giao-di-n-trang-ch-theo-n-i-dung](./quick/260401-mkq-l-m-l-i-giao-di-n-trang-ch-theo-n-i-dung/) |
 | 260408-mu1 | New users get 1000 free credits per month | 2026-04-08 | d21ce3a | [260408-mu1-new-users-get-1000-free-credits-per-mont](./quick/260408-mu1-new-users-get-1000-free-credits-per-mont/) |
+| 260408-pp1 | Admin token-usage: facets và tổng hợp từ toàn DB; top user top 5 | 2026-04-08 | (pending) | [260408-pp1-admin-token-usage-facets-v-t-ng-h-p-t-to](./quick/260408-pp1-admin-token-usage-facets-v-t-ng-h-p-t-to/) |
