@@ -11,3 +11,8 @@
 
 - `npm test` (unit) — pass.
 - `npm run test:integration` — new file passes; some unrelated integration tests may fail in dirty DB.
+
+## Git
+
+- Feature + planning artifacts: `d21ce3a`
+- STATE hash row fix: `312b0f5`
