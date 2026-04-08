@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import sql from '../db';
 import { requireAuth } from '../auth';
+import { authorizeAndCharge, BillingInsufficientBalanceError } from '../billing/billingService';
+import { getOutputTokenChargeCredits, resolveBillableOutputTokens } from '../billing/rateCard';
+import { canDebitWithOverdraftFloor, LEGACY_OVERDRAFT_FLOOR_CREDITS } from '../billing/legacyAccessPolicy';
 
 const router = Router();
 
@@ -50,6 +53,61 @@ router.get('/history', requireAuth, async (req, res) => {
     });
   } catch (err: any) {
     console.error('[wallet/history]', err);
+    return res.status(500).json({ error: 'Lỗi hệ thống' });
+  }
+});
+
+// GET /api/wallet/floor — check if user's balance is above overdraft floor (no write)
+router.get('/floor', requireAuth, async (req, res) => {
+  const user = req.user!;
+  try {
+    const [wallet] = await sql`
+      SELECT balance_credits FROM public.wallet_balances WHERE user_id = ${user.userId}
+    `;
+    const balance = Number(wallet?.balance_credits ?? 0);
+    const allowed = canDebitWithOverdraftFloor(balance, 1, LEGACY_OVERDRAFT_FLOOR_CREDITS);
+    return res.json({ allowed, balance, overdraftLimit: LEGACY_OVERDRAFT_FLOOR_CREDITS });
+  } catch (err: any) {
+    console.error('[wallet/floor]', err);
+    return res.status(500).json({ error: 'Lỗi hệ thống' });
+  }
+});
+
+// POST /api/wallet/charge — charge based on output tokens (called by client after transcription)
+// Body: { outputTokens: number, actionType: string, outputText?: string }
+router.post('/charge', requireAuth, async (req, res) => {
+  const user = req.user!;
+  const { outputTokens, actionType, outputText } = req.body ?? {};
+
+  if (!actionType || typeof actionType !== 'string') {
+    return res.status(400).json({ error: 'actionType là bắt buộc' });
+  }
+
+  const tokens = resolveBillableOutputTokens(
+    typeof outputTokens === 'number' ? { candidatesTokenCount: outputTokens } : undefined,
+    typeof outputText === 'string' ? outputText : '',
+  );
+  const amountCredits = getOutputTokenChargeCredits(tokens);
+
+  try {
+    const billing = await authorizeAndCharge({
+      userId: user.userId,
+      actionType: actionType as any,
+      amountCredits,
+      metadata: { route: '/api/wallet/charge', outputTokensBillable: tokens },
+    });
+    return res.json({
+      charged: billing.charged,
+      amountCredits: billing.amountCredits,
+      balanceAfterCredits: billing.balanceAfterCredits,
+      outputTokensBilled: tokens,
+      skippedReason: billing.skippedReason,
+    });
+  } catch (err: any) {
+    if (err instanceof BillingInsufficientBalanceError) {
+      return res.status(err.statusCode).json(err.payload);
+    }
+    console.error('[wallet/charge]', err);
     return res.status(500).json({ error: 'Lỗi hệ thống' });
   }
 });

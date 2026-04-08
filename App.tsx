@@ -14,7 +14,7 @@ import type { AuthUser } from './lib/auth';
 import { authFetch } from './lib/api';
 import { Spinner } from './components/Spinner';
 import { FileAudioIcon, RefreshIcon, AlertCircleIcon, DownloadIcon, CheckIcon, CopyIcon, MailIcon } from './components/Icons';
-import { FileText, Scissors, GitBranch, Zap, BarChart2, Users, Settings, User as UserIcon } from 'lucide-react';
+import { FileText, Scissors, GitBranch, Zap, BarChart2, Users, Settings, User as UserIcon, History } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import type { MeetingInfo } from './features/minutes/types';
@@ -38,6 +38,7 @@ const MindmapPage = lazy(() => import('./features/mindmap/MindmapPage').then(m =
 const MindmapTreeCanvasLazy = lazy(() => import('./features/mindmap/components/MindmapTreeCanvas').then(m => ({ default: m.MindmapTreeCanvas })));
 const RegisterPage = lazy(() => import('./components/RegisterPage').then(m => ({ default: m.RegisterPage })));
 const PricingPage = lazy(() => import('./features/pricing/PricingPage').then(m => ({ default: m.PricingPage })));
+const WalletHistoryPage = lazy(() => import('./features/wallet/WalletHistoryPage').then(m => ({ default: m.WalletHistoryPage })));
 const HomePage = lazy(() => import('./components/HomePage').then(m => ({ default: m.HomePage })));
 const PaymentResultPage = lazy(() => import('./components/PaymentResultPage').then(m => ({ default: m.PaymentResultPage })));
 import { WorkflowGuard } from './features/workflows/WorkflowGuard';
@@ -918,8 +919,9 @@ function App() {
   const isNotesRoute = route === '/meeting';
   const isAdminRoute = route === '/admin/token-usage';
   const isUserMgmtRoute = route === '/admin/users';
-const isMindmapRoute = route === '/mindmap';
+  const isMindmapRoute = route === '/mindmap';
   const isPricingRoute = route === '/pricing';
+  const isWalletHistoryRoute = route === '/wallet/history';
   const isHomeRoute = route === '/';
   const isReporterRoute = route === '/reporter' || route === '/meeting/reporter';
   const isSpecialistRoute = route === '/specialist' || route === '/meeting/specialist';
@@ -1017,6 +1019,7 @@ const isMindmapRoute = route === '/mindmap';
               { label: 'Cắt file', icon: <Scissors size={18} />, active: isNotesRoute && mode === 'splitter', onClick: () => { navigate('/meeting'); setMode('splitter'); } },
               { label: 'Sơ đồ tư duy', icon: <GitBranch size={18} />, active: isMindmapRoute, onClick: () => navigate('/mindmap') },
               { label: 'Nâng cấp', icon: <Zap size={18} />, active: isPricingRoute, onClick: () => navigate('/pricing') },
+              { label: 'Lịch sử ví', icon: <History size={18} />, active: isWalletHistoryRoute, onClick: () => navigate('/wallet/history') },
             ] as const).map(item => (
               <button
                 key={item.label}
@@ -1160,6 +1163,9 @@ const isMindmapRoute = route === '/mindmap';
               }}
             />
           )}
+          {isWalletHistoryRoute && (
+            <WalletHistoryPage onBack={() => window.history.back()} />
+          )}
           {isReporterRoute && user && (
             <WorkflowGuard group="reporter" user={user} navigate={navigate}>
               <ReporterWorkflowPage navigate={navigate} user={user} />
@@ -1227,9 +1233,9 @@ const isMindmapRoute = route === '/mindmap';
         <div className="flex items-center justify-around px-2 py-2">
           {[
             { label: 'Ghi chép', icon: <FileText size={20} />, active: (isNotesRoute || isWorkflowRoute) && mode !== 'splitter', onClick: () => { navigate('/meeting'); setMode('notes'); } },
-            { label: 'Cắt file', icon: <Scissors size={20} />, active: isNotesRoute && mode === 'splitter', onClick: () => { navigate('/meeting'); setMode('splitter'); } },
             { label: 'Sơ đồ', icon: <GitBranch size={20} />, active: isMindmapRoute, onClick: () => navigate('/mindmap') },
             { label: 'Nâng cấp', icon: <Zap size={20} />, active: isPricingRoute, onClick: () => navigate('/pricing') },
+            { label: 'Lịch sử', icon: <History size={20} />, active: isWalletHistoryRoute, onClick: () => navigate('/wallet/history') },
             { label: 'Tôi', icon: <UserIcon size={20} />, active: route === '/profile', onClick: () => navigate('/profile') },
           ].map(item => (
             <button

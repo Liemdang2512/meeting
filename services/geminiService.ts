@@ -585,6 +585,25 @@ const runAudioAgent = async (
   loggingContext?: TokenLoggingContext,
   userId?: string | null,
 ): Promise<string> => {
+  // Balance floor check trước khi gọi Gemini (tránh lãng phí API call)
+  if (userId) {
+    try {
+      const floorRes = await authFetch('/wallet/floor');
+      if (floorRes.ok) {
+        const floorData = await floorRes.json();
+        if (!floorData.allowed) {
+          throw Object.assign(new Error('Số dư không đủ. Vui lòng nạp thêm credit để tiếp tục.'), {
+            code: 'INSUFFICIENT_BALANCE',
+            upgradeRequired: true,
+          });
+        }
+      }
+    } catch (err: any) {
+      if (err.code === 'INSUFFICIENT_BALANCE') throw err;
+      // Lỗi kết nối floor check → cho phép tiếp tục (best-effort)
+    }
+  }
+
   const apiKey = getApiKey();
   const ai = new GoogleGenAI({ apiKey });
   const base64Audio = await fileToBase64(file);
@@ -622,6 +641,16 @@ const runAudioAgent = async (
           : null),
       metadata: loggingContext.metadata,
     });
+    // Charge theo output tokens thực tế
+    void authFetch('/wallet/charge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        outputTokens: usage?.candidatesTokenCount ?? null,
+        outputText: response.text,
+        actionType: loggingContext.actionType ?? 'transcription',
+      }),
+    }).catch(() => { /* fire-and-forget, không block UX */ });
   }
 
   return response.text;
@@ -879,6 +908,7 @@ export const summarizeTranscript = async (
   loggingContext?: TokenLoggingContext,
   userId?: string | null,
 ): Promise<string> => {
+  console.log('[summarizeTranscript] userId:', userId, '| path:', userId ? 'SERVER /gemini/generate' : 'DIRECT client');
   const fullPrompt = `Dưới đây là văn bản ghi chép cuộc họp:\n\n${transcript}\n\n--- Yêu cầu: ---\n${customPrompt}`;
 
   try {
@@ -896,7 +926,7 @@ export const summarizeTranscript = async (
         method: 'POST',
         body: JSON.stringify({
           prompt: fullPrompt,
-          model: 'gemini-2.0-flash',
+          model: 'gemini-3-flash-preview',
         }),
       });
       const data = await response.json().catch(() => ({}));
@@ -921,6 +951,9 @@ export const summarizeTranscript = async (
           }
         : undefined;
       _lastSummaryBillingCorrelationId = data?.billing?.correlationId ?? null;
+      if (data?.billing?.charged) {
+        window.dispatchEvent(new Event('quota-updated'));
+      }
     } else {
       // Always create a new instance to use the most up-to-date API key
       const apiKey = getApiKey();
