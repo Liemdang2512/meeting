@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Check, Shield, Lock } from 'lucide-react';
 import { UpgradeModal } from './UpgradeModal';
+import { CreditHistory } from './CreditHistory';
 import { authFetch } from '../../lib/api';
 
 interface Plan {
@@ -144,7 +145,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({ currentUserRole, userP
         </div>
 
         {wallet && (
-          <div className="mb-10 bg-surface-container-low rounded-xl border border-outline-variant/20 p-5 flex items-center justify-between gap-4">
+          <div className="mb-4 bg-surface-container-low rounded-xl border border-outline-variant/20 p-5 flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-on-surface">Số dư hiện tại</p>
               <p className="text-xs text-on-surface-variant">
@@ -156,6 +157,8 @@ export const PricingPage: React.FC<PricingPageProps> = ({ currentUserRole, userP
             </p>
           </div>
         )}
+
+        {wallet && <CreditHistory />}
 
         {/* Pricing Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
