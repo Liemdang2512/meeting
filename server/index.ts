@@ -16,6 +16,7 @@ import { paymentsRouter } from './routes/payments/index';
 // import { vnpayRouter } from './routes/payments/vnpay';
 // import { momoRouter } from './routes/payments/momo';
 import { vietqrRouter } from './routes/payments/vietqr';
+import { sepayRouter } from './routes/payments/sepay';
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -45,6 +46,7 @@ app.use('/api/payments', paymentsRouter);
 // app.use('/api/payments/vnpay', vnpayRouter);
 // app.use('/api/payments/momo', momoRouter);
 app.use('/api/payments/vietqr', vietqrRouter);
+app.use('/api/payments/sepay', sepayRouter);
 
 // Keep root path healthy for platform health checks that probe "/".
 app.get('/', (_req, res) => res.status(200).send('ok'));

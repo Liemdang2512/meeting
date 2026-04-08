@@ -14,21 +14,7 @@ interface UpgradeModalProps {
 
 type PaymentTab = 'card' | 'ewallet' | 'transfer';
 type VnpayChannel = 'intl_card' | 'domestic_bank';
-type PaymentGateway = 'vnpay' | 'momo' | 'vietqr';
-type VietQrStatus = 'pending' | 'completed' | 'failed' | 'expired';
-
-interface VietQrOrder {
-  orderId: string;
-  amount: number;
-  currency: string;
-  bankBin: string;
-  accountNo: string;
-  accountName: string;
-  transferContent: string;
-  qrImageUrl: string;
-  expiresAt: string;
-  status: VietQrStatus;
-}
+type PaymentGateway = 'vnpay' | 'momo' | 'sepay';
 
 export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   isOpen,
@@ -44,7 +30,6 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   const [gatewayPending, setGatewayPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [vietQrOrder, setVietQrOrder] = useState<VietQrOrder | null>(null);
 
   useEffect(() => {
     const handleGatewayMessage = async (event: MessageEvent) => {
@@ -76,7 +61,6 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
   useEffect(() => {
     if (isOpen) return;
-    setVietQrOrder(null);
     setError(null);
     setNotice(null);
     setGatewayPending(false);
@@ -129,14 +113,14 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     }
   };
 
-  const handleCreateVietQr = async () => {
-    setLoading('vietqr');
+  const handleSepayCheckout = async () => {
+    setLoading('sepay');
     setError(null);
     setNotice(null);
     const token = getToken();
 
     try {
-      const res = await fetch('/api/payments/vietqr/create', {
+      const res = await fetch('/api/payments/sepay/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -146,94 +130,29 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? 'Không thể tạo mã QR chuyển khoản.');
+        setError(data.error ?? 'Không thể tạo đơn thanh toán.');
         setLoading(null);
         return;
       }
-      setVietQrOrder({
-        orderId: data.orderId,
-        amount: data.amount,
-        currency: data.currency,
-        bankBin: data.bankBin,
-        accountNo: data.accountNo,
-        accountName: data.accountName,
-        transferContent: data.transferContent,
-        qrImageUrl: data.qrImageUrl,
-        expiresAt: data.expiresAt,
-        status: data.status ?? 'pending',
+
+      // Submit form to SePay checkout (redirects to SePay payment page)
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = data.checkoutUrl;
+      Object.entries(data.fields as Record<string, string>).forEach(([key, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value;
+        form.appendChild(input);
       });
-      setNotice('Mã QR đã tạo. Vui lòng chuyển khoản đúng nội dung để hệ thống tự xác nhận.');
-      setLoading(null);
+      document.body.appendChild(form);
+      form.submit();
     } catch {
-      setError('Lỗi kết nối khi tạo QR. Vui lòng thử lại.');
+      setError('Lỗi kết nối. Vui lòng thử lại.');
       setLoading(null);
     }
   };
-
-  async function checkVietQrStatus(orderId: string, silent = false) {
-    const token = getToken();
-    if (!silent) {
-      setLoading('vietqr');
-      setError(null);
-    }
-
-    try {
-      const res = await fetch(`/api/payments/vietqr/${orderId}/status`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        if (!silent) setError(data.error ?? 'Không thể kiểm tra trạng thái thanh toán.');
-        setLoading(null);
-        return;
-      }
-
-      setVietQrOrder((prev) => (
-        prev
-          ? {
-              ...prev,
-              status: data.status ?? prev.status,
-            }
-          : prev
-      ));
-
-      if (data.status === 'completed') {
-        setNotice('Đã nhận chuyển khoản. Đang cập nhật trạng thái tài khoản...');
-        await onPaymentSuccess?.();
-        setNotice('Đã nâng cấp thành công.');
-        setLoading(null);
-        onClose();
-        return;
-      }
-
-      if (data.status === 'failed' || data.status === 'expired') {
-        setError('Đơn thanh toán đã hết hạn hoặc thất bại. Vui lòng tạo mã QR mới.');
-      } else if (!silent) {
-        setNotice('Chưa ghi nhận giao dịch. Vui lòng đợi vài giây rồi kiểm tra lại.');
-      }
-
-      setLoading(null);
-    } catch {
-      if (!silent) setError('Lỗi khi kiểm tra trạng thái chuyển khoản.');
-      setLoading(null);
-    }
-  }
-
-  useEffect(() => {
-    if (!isOpen || activeTab !== 'transfer' || !vietQrOrder || vietQrOrder.status !== 'pending') {
-      return;
-    }
-
-    const timer = window.setInterval(() => {
-      void checkVietQrStatus(vietQrOrder.orderId, true);
-    }, 3000);
-
-    return () => {
-      window.clearInterval(timer);
-    };
-  }, [activeTab, isOpen, vietQrOrder]);
 
   const handlePayNow = () => {
     if (activeTab === 'ewallet') {
@@ -241,11 +160,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     } else if (activeTab === 'card') {
       handlePay('vnpay', 'intl_card');
     } else {
-      if (!vietQrOrder || vietQrOrder.status !== 'pending') {
-        void handleCreateVietQr();
-      } else {
-        void checkVietQrStatus(vietQrOrder.orderId);
-      }
+      void handleSepayCheckout();
     }
   };
 
@@ -468,34 +383,15 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                   <div className="w-16 h-16 rounded-2xl bg-indigo-100 flex items-center justify-center">
                     <Building2 className="w-8 h-8 text-indigo-500" />
                   </div>
-                  {!vietQrOrder ? (
-                    <p className="text-sm text-gray-500 text-center max-w-xs">
-                      Nhấn <strong>"Tạo mã QR"</strong> để hiện VietQR ngay tại đây. Sau khi chuyển khoản, hệ thống tự xác nhận.
+                  <p className="text-sm text-gray-500 text-center max-w-xs">
+                    Nhấn <strong>"Thanh toán ngay"</strong> để chuyển đến trang thanh toán SePay. Quét QR và chuyển khoản — hệ thống tự xác nhận ngay lập tức.
+                  </p>
+                  <div className="flex items-start gap-2.5 bg-indigo-50 border border-indigo-100 rounded-xl p-3.5 w-full">
+                    <Info className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
+                    <p className="text-xs text-indigo-600 leading-relaxed">
+                      Hỗ trợ tất cả ngân hàng Việt Nam qua VietQR. Xác nhận tức thì sau khi thanh toán.
                     </p>
-                  ) : (
-                    <div className="w-full space-y-3">
-                      <div className="rounded-xl border border-gray-200 p-3 bg-gray-50">
-                        <img src={vietQrOrder.qrImageUrl} alt="VietQR" className="w-56 h-56 object-contain mx-auto" />
-                      </div>
-                      <div className="text-sm text-gray-700 space-y-1">
-                        <p><strong>Ngân hàng:</strong> {vietQrOrder.bankBin}</p>
-                        <p><strong>Số tài khoản:</strong> {vietQrOrder.accountNo}</p>
-                        <p><strong>Chủ tài khoản:</strong> {vietQrOrder.accountName}</p>
-                        <p><strong>Số tiền:</strong> {vietQrOrder.amount.toLocaleString('vi-VN')}đ</p>
-                        <p><strong>Nội dung CK:</strong> {vietQrOrder.transferContent}</p>
-                      </div>
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>Trạng thái: {vietQrOrder.status}</span>
-                        <button
-                          type="button"
-                          className="text-indigo-600 hover:underline"
-                          onClick={() => void navigator.clipboard?.writeText(vietQrOrder.transferContent)}
-                        >
-                          Sao chép nội dung
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                  </div>
                 </div>
               )}
 
@@ -528,9 +424,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                   </svg>
                 ) : (
-                  activeTab === 'transfer'
-                    ? (vietQrOrder && vietQrOrder.status === 'pending' ? 'Kiểm tra thanh toán' : 'Tạo mã QR')
-                    : 'Thanh toán ngay →'
+                  'Thanh toán ngay →'
                 )}
               </button>
 
