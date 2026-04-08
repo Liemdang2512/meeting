@@ -56,6 +56,98 @@ function parseTokenLogQuery(query: Record<string, string | undefined>) {
   return { dateFilter, featureFilter, userFilter, emailFilter, actionTypeFilter };
 }
 
+type TokenLogSqlFilters = ReturnType<typeof parseTokenLogQuery>;
+
+function tokenLogBaseJoin(f: TokenLogSqlFilters) {
+  const { dateFilter, featureFilter, userFilter, emailFilter, actionTypeFilter } = f;
+  return sql`
+      FROM public.token_usage_logs l
+      JOIN auth.users u ON u.id = l.user_id
+      WHERE 1=1
+        ${dateFilter}
+        ${featureFilter}
+        ${userFilter}
+        ${emailFilter}
+        ${actionTypeFilter}
+    `;
+}
+
+/** Tổng hợp + facet trên toàn bộ dòng khớp bộ lọc (cùng WHERE với list). */
+async function computeTokenLogAggregates(f: TokenLogSqlFilters) {
+  const baseJoin = tokenLogBaseJoin(f);
+
+  const [totalRow] = await sql`
+      SELECT COALESCE(SUM(l.total_tokens), 0)::bigint AS total_tokens
+      ${baseJoin}
+    `;
+
+  const byUserRows = await sql`
+      SELECT l.user_id::text AS user_id, u.email, COALESCE(SUM(l.total_tokens), 0)::bigint AS total_tokens
+      ${baseJoin}
+      GROUP BY l.user_id, u.email
+      ORDER BY total_tokens DESC
+      LIMIT 5
+    `;
+
+  const byFeatureRows = await sql`
+      SELECT COALESCE(l.feature, 'unknown') AS feature, COALESCE(SUM(l.total_tokens), 0)::bigint AS total_tokens
+      ${baseJoin}
+      GROUP BY COALESCE(l.feature, 'unknown')
+      ORDER BY total_tokens DESC
+    `;
+
+  const emailFacetRows = await sql`
+      SELECT DISTINCT u.email AS email
+      ${baseJoin}
+        AND u.email IS NOT NULL
+        AND TRIM(u.email) <> ''
+      ORDER BY u.email
+      LIMIT 500
+    `;
+
+  const userIdFacetRows = await sql`
+      SELECT DISTINCT l.user_id::text AS user_id
+      ${baseJoin}
+      ORDER BY 1
+      LIMIT 500
+    `;
+
+  const featureFacetRows = await sql`
+      SELECT DISTINCT l.feature AS feature
+      ${baseJoin}
+        AND l.feature IS NOT NULL
+      ORDER BY l.feature
+      LIMIT 200
+    `;
+
+  const actionFacetRows = await sql`
+      SELECT DISTINCT l.action_type AS action_type
+      ${baseJoin}
+        AND l.action_type IS NOT NULL
+      ORDER BY l.action_type
+      LIMIT 200
+    `;
+
+  return {
+    totalTokens: Number(totalRow?.total_tokens ?? 0),
+    byUser: byUserRows.map((r) => ({
+      userId: r.user_id as string,
+      email: (r.email as string | null) ?? null,
+      totalTokens: Number(r.total_tokens ?? 0),
+    })),
+    byFeature: byFeatureRows.map((r) => ({
+      feature: (r.feature as string) ?? 'unknown',
+      totalTokens: Number(r.total_tokens ?? 0),
+    })),
+    facets: {
+      emails: emailFacetRows.map((r) => r.email as string).filter(Boolean),
+      userIds: userIdFacetRows.map((r) => r.user_id as string),
+      features: featureFacetRows.map((r) => r.feature as string).filter(Boolean),
+      actionTypes: actionFacetRows.map((r) => r.action_type as string).filter(Boolean),
+    },
+  };
+}
+
 // POST /api/token-logs
 // Body: { feature, action_type, model, input_tokens?, output_tokens?, total_tokens?, metadata? }
 router.post('/', async (req, res) => {
@@ -160,91 +252,9 @@ router.get('/summary', async (req, res) => {
   }
 
   try {
-    const { dateFilter, featureFilter, userFilter, emailFilter, actionTypeFilter } = parseTokenLogQuery(
-      req.query as Record<string, string>,
-    );
-
-    const baseJoin = sql`
-      FROM public.token_usage_logs l
-      JOIN auth.users u ON u.id = l.user_id
-      WHERE 1=1
-        ${dateFilter}
-        ${featureFilter}
-        ${userFilter}
-        ${emailFilter}
-        ${actionTypeFilter}
-    `;
-
-    const [totalRow] = await sql`
-      SELECT COALESCE(SUM(l.total_tokens), 0)::bigint AS total_tokens
-      ${baseJoin}
-    `;
-
-    const byUserRows = await sql`
-      SELECT l.user_id::text AS user_id, u.email, COALESCE(SUM(l.total_tokens), 0)::bigint AS total_tokens
-      ${baseJoin}
-      GROUP BY l.user_id, u.email
-      ORDER BY total_tokens DESC
-      LIMIT 5
-    `;
-
-    const byFeatureRows = await sql`
-      SELECT COALESCE(l.feature, 'unknown') AS feature, COALESCE(SUM(l.total_tokens), 0)::bigint AS total_tokens
-      ${baseJoin}
-      GROUP BY COALESCE(l.feature, 'unknown')
-      ORDER BY total_tokens DESC
-    `;
-
-    const emailFacetRows = await sql`
-      SELECT DISTINCT u.email AS email
-      ${baseJoin}
-        AND u.email IS NOT NULL
-        AND TRIM(u.email) <> ''
-      ORDER BY u.email
-      LIMIT 500
-    `;
-
-    const userIdFacetRows = await sql`
-      SELECT DISTINCT l.user_id::text AS user_id
-      ${baseJoin}
-      ORDER BY 1
-      LIMIT 500
-    `;
-
-    const featureFacetRows = await sql`
-      SELECT DISTINCT l.feature AS feature
-      ${baseJoin}
-        AND l.feature IS NOT NULL
-      ORDER BY l.feature
-      LIMIT 200
-    `;
-
-    const actionFacetRows = await sql`
-      SELECT DISTINCT l.action_type AS action_type
-      ${baseJoin}
-        AND l.action_type IS NOT NULL
-      ORDER BY l.action_type
-      LIMIT 200
-    `;
-
-    return res.json({
-      totalTokens: Number(totalRow?.total_tokens ?? 0),
-      byUser: byUserRows.map((r) => ({
-        userId: r.user_id as string,
-        email: (r.email as string | null) ?? null,
-        totalTokens: Number(r.total_tokens ?? 0),
-      })),
-      byFeature: byFeatureRows.map((r) => ({
-        feature: (r.feature as string) ?? 'unknown',
-        totalTokens: Number(r.total_tokens ?? 0),
-      })),
-      facets: {
-        emails: emailFacetRows.map((r) => r.email as string).filter(Boolean),
-        userIds: userIdFacetRows.map((r) => r.user_id as string),
-        features: featureFacetRows.map((r) => r.feature as string).filter(Boolean),
-        actionTypes: actionFacetRows.map((r) => r.action_type as string).filter(Boolean),
-      },
-    });
+    const parsed = parseTokenLogQuery(req.query as Record<string, string>);
+    const body = await computeTokenLogAggregates(parsed);
+    return res.json(body);
   } catch (err: any) {
     console.error('[token-logs/summary]', err);
     return res.status(500).json({ error: 'Lỗi hệ thống' });
@@ -257,20 +267,25 @@ router.get('/', async (req, res) => {
   if (req.user!.role !== 'admin') {
     return res.status(403).json({ error: 'Chỉ admin mới có thể xem tất cả token logs' });
   }
+  const q = req.query as Record<string, string>;
   const {
     page = '1',
     pageSize = '20',
-  } = req.query as Record<string, string>;
+    includeAggregate,
+  } = q;
   const pageNum = parseInt(page, 10);
   const pageSizeNum = parseInt(pageSize, 10);
   const offset = (pageNum - 1) * pageSizeNum;
+  const wantAggregate =
+    includeAggregate === '1' ||
+    String(includeAggregate ?? '').toLowerCase() === 'true' ||
+    String(includeAggregate ?? '').toLowerCase() === 'yes';
 
   try {
-    const { dateFilter, featureFilter, userFilter, emailFilter, actionTypeFilter } = parseTokenLogQuery(
-      req.query as Record<string, string>,
-    );
+    const parsed = parseTokenLogQuery(q);
+    const { dateFilter, featureFilter, userFilter, emailFilter, actionTypeFilter } = parsed;
 
-    const rows = await sql`
+    const listQuery = sql`
       SELECT
         l.*,
         u.email,
@@ -286,8 +301,22 @@ router.get('/', async (req, res) => {
       ORDER BY l.created_at DESC
       LIMIT ${pageSizeNum} OFFSET ${offset}
     `;
+
+    if (!wantAggregate) {
+      const rows = await listQuery;
+      const total = Number(rows[0]?.total_count ?? 0);
+      return res.json({ rows, total, page: pageNum, pageSize: pageSizeNum });
+    }
+
+    const [rows, aggregate] = await Promise.all([listQuery, computeTokenLogAggregates(parsed)]);
     const total = Number(rows[0]?.total_count ?? 0);
-    return res.json({ rows, total, page: pageNum, pageSize: pageSizeNum });
+    return res.json({
+      rows,
+      total,
+      page: pageNum,
+      pageSize: pageSizeNum,
+      aggregate,
+    });
   } catch (err: any) {
     console.error('[token-logs/list]', err);
     return res.status(500).json({ error: 'Lỗi hệ thống' });

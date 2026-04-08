@@ -193,13 +193,11 @@ export const useTokenUsageLogs = (options: UseTokenUsageLogsOptions): UseTokenUs
       const listParams = new URLSearchParams(filterParams);
       listParams.set('page', String(page));
       listParams.set('pageSize', String(pageSize));
+      if (fetchAggregate) {
+        listParams.set('includeAggregate', '1');
+      }
 
-      const [listRes, summaryRes] = fetchAggregate
-        ? await Promise.all([
-            authFetch(`/token-logs?${listParams.toString()}`),
-            authFetch(`/token-logs/summary?${filterParams.toString()}`),
-          ])
-        : [await authFetch(`/token-logs?${listParams.toString()}`), null];
+      const listRes = await authFetch(`/token-logs?${listParams.toString()}`);
 
       if (!listRes.ok) {
         const err = await listRes.json().catch(() => ({ error: 'Loi khong xac dinh' }));
@@ -232,13 +230,27 @@ export const useTokenUsageLogs = (options: UseTokenUsageLogsOptions): UseTokenUs
       setLogs(mappedLogs);
       setTotal(Number.isFinite(nextTotal) ? nextTotal : mappedLogs.length);
 
+      let aggregatePayload: {
+        totalTokens?: number;
+        byUser?: { userId: string; email: string | null; totalTokens: number }[];
+        byFeature?: { feature: string; totalTokens: number }[];
+        facets?: { emails?: string[]; userIds?: string[]; features?: string[]; actionTypes?: string[] };
+      } | null =
+        data?.aggregate && typeof data.aggregate === 'object' ? data.aggregate : null;
+
+      if (fetchAggregate && !aggregatePayload) {
+        const summaryRes = await authFetch(`/token-logs/summary?${filterParams.toString()}`);
+        if (summaryRes.ok) {
+          aggregatePayload = await summaryRes.json();
+        }
+      }
+
       if (!fetchAggregate) {
         setSummaryFromServer(null);
         setFacetsFromServer(null);
         setAggregateScope('off');
-      } else if (summaryRes?.ok) {
-        const sumData = await summaryRes.json();
-        const parsed = parseSummaryPayload(sumData);
+      } else if (aggregatePayload) {
+        const parsed = parseSummaryPayload(aggregatePayload);
         setSummaryFromServer(parsed.summary);
         setFacetsFromServer(parsed.facets);
         setAggregateScope('server');
