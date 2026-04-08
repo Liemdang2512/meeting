@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { getToken } from '../../lib/api';
-import { Shield, Lock, CreditCard, Smartphone, Building2, ChevronDown, Info } from 'lucide-react';
+import { Shield, Lock, CreditCard, Building2, Info, Copy, CheckCircle2, Clock, ChevronDown } from 'lucide-react';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -14,7 +14,18 @@ interface UpgradeModalProps {
 
 type PaymentTab = 'card' | 'ewallet' | 'transfer';
 type VnpayChannel = 'intl_card' | 'domestic_bank';
-type PaymentGateway = 'vnpay' | 'momo' | 'sepay';
+type PaymentGateway = 'vnpay' | 'momo' | 'vietqr';
+
+interface VietQrData {
+  orderId: string;
+  qrImageUrl: string;
+  amount: number;
+  accountNo: string;
+  accountName: string;
+  bankBin: string;
+  transferContent: string;
+  expiresAt: string;
+}
 
 export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   isOpen,
@@ -30,6 +41,10 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   const [gatewayPending, setGatewayPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [qrData, setQrData] = useState<VietQrData | null>(null);
+  const [qrPolling, setQrPolling] = useState(false);
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const handleGatewayMessage = async (event: MessageEvent) => {
@@ -59,13 +74,57 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     };
   }, [onClose, onPaymentSuccess]);
 
+  // Stop polling and clear QR when modal closes
   useEffect(() => {
     if (isOpen) return;
+    if (pollRef.current) clearInterval(pollRef.current);
     setError(null);
     setNotice(null);
     setGatewayPending(false);
     setLoading(null);
+    setQrData(null);
+    setQrPolling(false);
   }, [isOpen]);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
+
+  const startPolling = (orderId: string) => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    setQrPolling(true);
+    const token = getToken();
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/payments/vietqr/${orderId}/status`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.status === 'completed') {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setQrPolling(false);
+          setNotice('Thanh toán thành công! Đang cập nhật tài khoản...');
+          await onPaymentSuccess?.();
+          onClose();
+        }
+      } catch {
+        // ignore transient errors
+      }
+    }, 5000);
+  };
+
+  const copyToClipboard = async (text: string, field: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch { /* ignore */ }
+  };
 
   const handlePay = async (gateway: 'vnpay' | 'momo', channel?: VnpayChannel) => {
     setLoading(gateway);
@@ -113,14 +172,14 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     }
   };
 
-  const handleSepayCheckout = async () => {
-    setLoading('sepay');
+  const handleVietQrCheckout = async () => {
+    setLoading('vietqr');
     setError(null);
     setNotice(null);
     const token = getToken();
 
     try {
-      const res = await fetch('/api/payments/sepay/create', {
+      const res = await fetch('/api/payments/vietqr/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -130,24 +189,24 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? 'Không thể tạo đơn thanh toán.');
+        setError(data.error ?? 'Không thể tạo mã QR. Vui lòng thử lại.');
         setLoading(null);
         return;
       }
 
-      // Submit form to SePay checkout (redirects to SePay payment page)
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = data.checkoutUrl;
-      Object.entries(data.fields as Record<string, string>).forEach(([key, value]) => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = value;
-        form.appendChild(input);
+      setQrData({
+        orderId: data.orderId,
+        qrImageUrl: data.qrImageUrl,
+        amount: data.amount,
+        accountNo: data.accountNo,
+        accountName: data.accountName,
+        bankBin: data.bankBin,
+        transferContent: data.transferContent,
+        expiresAt: data.expiresAt,
       });
-      document.body.appendChild(form);
-      form.submit();
+      setLoading(null);
+      setNotice('Quét mã QR hoặc chuyển khoản thủ công. Hệ thống tự xác nhận ngay khi nhận được tiền.');
+      startPolling(data.orderId);
     } catch {
       setError('Lỗi kết nối. Vui lòng thử lại.');
       setLoading(null);
@@ -160,7 +219,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
     } else if (activeTab === 'card') {
       handlePay('vnpay', 'intl_card');
     } else {
-      void handleSepayCheckout();
+      void handleVietQrCheckout();
     }
   };
 
@@ -379,19 +438,83 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
 
               {/* Transfer tab */}
               {activeTab === 'transfer' && (
-                <div className="flex flex-col items-center py-6 space-y-4">
-                  <div className="w-16 h-16 rounded-2xl bg-indigo-100 flex items-center justify-center">
-                    <Building2 className="w-8 h-8 text-indigo-500" />
-                  </div>
-                  <p className="text-sm text-gray-500 text-center max-w-xs">
-                    Nhấn <strong>"Thanh toán ngay"</strong> để chuyển đến trang thanh toán SePay. Quét QR và chuyển khoản — hệ thống tự xác nhận ngay lập tức.
-                  </p>
-                  <div className="flex items-start gap-2.5 bg-indigo-50 border border-indigo-100 rounded-xl p-3.5 w-full">
-                    <Info className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
-                    <p className="text-xs text-indigo-600 leading-relaxed">
-                      Hỗ trợ tất cả ngân hàng Việt Nam qua VietQR. Xác nhận tức thì sau khi thanh toán.
-                    </p>
-                  </div>
+                <div className="flex flex-col items-center space-y-4">
+                  {!qrData ? (
+                    <>
+                      <div className="w-16 h-16 rounded-2xl bg-indigo-100 flex items-center justify-center">
+                        <Building2 className="w-8 h-8 text-indigo-500" />
+                      </div>
+                      <p className="text-sm text-gray-500 text-center max-w-xs">
+                        Nhấn <strong>"Tạo mã QR"</strong> để hiển thị mã chuyển khoản ngay tại đây. Hệ thống tự xác nhận sau khi nhận được tiền.
+                      </p>
+                      <div className="flex items-start gap-2.5 bg-indigo-50 border border-indigo-100 rounded-xl p-3.5 w-full">
+                        <Info className="w-4 h-4 text-indigo-500 mt-0.5 shrink-0" />
+                        <p className="text-xs text-indigo-600 leading-relaxed">
+                          Hỗ trợ tất cả ngân hàng Việt Nam qua VietQR. Xác nhận tức thì sau khi thanh toán.
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* QR Code */}
+                      <div className="border-2 border-indigo-200 rounded-2xl p-3 bg-white shadow-sm">
+                        <img
+                          src={qrData.qrImageUrl}
+                          alt="Mã QR chuyển khoản"
+                          className="w-52 h-52 object-contain"
+                        />
+                      </div>
+
+                      {/* Bank info */}
+                      <div className="w-full space-y-2.5 text-sm">
+                        <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-2.5">
+                          <span className="text-gray-500">Số tài khoản</span>
+                          <div className="flex items-center gap-2 font-semibold text-gray-800">
+                            {qrData.accountNo}
+                            <button
+                              onClick={() => copyToClipboard(qrData.accountNo, 'accountNo')}
+                              className="text-indigo-400 hover:text-indigo-600"
+                              title="Sao chép"
+                            >
+                              {copiedField === 'accountNo' ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-2.5">
+                          <span className="text-gray-500">Chủ tài khoản</span>
+                          <span className="font-semibold text-gray-800 uppercase">{qrData.accountName}</span>
+                        </div>
+
+                        <div className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-2.5">
+                          <span className="text-gray-500">Số tiền</span>
+                          <span className="font-bold text-indigo-700">{qrData.amount.toLocaleString('vi-VN')}đ</span>
+                        </div>
+
+                        <div className="flex justify-between items-center bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-2.5">
+                          <span className="text-yellow-700 font-medium">Nội dung CK</span>
+                          <div className="flex items-center gap-2 font-bold text-yellow-800">
+                            {qrData.transferContent}
+                            <button
+                              onClick={() => copyToClipboard(qrData.transferContent, 'content')}
+                              className="text-yellow-500 hover:text-yellow-700"
+                              title="Sao chép"
+                            >
+                              {copiedField === 'content' ? <CheckCircle2 className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Polling indicator */}
+                      {qrPolling && (
+                        <div className="flex items-center gap-2 text-xs text-indigo-500">
+                          <Clock className="w-3.5 h-3.5 animate-pulse" />
+                          <span>Đang chờ xác nhận thanh toán...</span>
+                        </div>
+                      )}
+                    </>
+                  )}
                 </div>
               )}
 
@@ -411,22 +534,26 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                 </div>
               )}
 
-              {/* Pay button */}
-              <button
-                onClick={handlePayNow}
-                disabled={loading !== null || gatewayPending}
-                className="mt-6 w-full py-4 rounded-full font-bold text-base text-white shadow-lg transition-opacity hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
-              >
-                {loading ? (
-                  <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                  </svg>
-                ) : (
-                  'Thanh toán ngay →'
-                )}
-              </button>
+              {/* Pay button — hide when QR is shown and polling */}
+              {!(activeTab === 'transfer' && qrData) && (
+                <button
+                  onClick={handlePayNow}
+                  disabled={loading !== null || gatewayPending}
+                  className="mt-6 w-full py-4 rounded-full font-bold text-base text-white shadow-lg transition-opacity hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+                >
+                  {loading ? (
+                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                  ) : activeTab === 'transfer' ? (
+                    'Tạo mã QR →'
+                  ) : (
+                    'Thanh toán ngay →'
+                  )}
+                </button>
+              )}
 
               <p className="text-xs text-gray-400 text-center mt-3 leading-relaxed">
                 Bằng việc nhấn "Thanh toán ngay", bạn đồng ý với{' '}
