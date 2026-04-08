@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 11-03-PLAN.md
-last_updated: "2026-04-07T05:59:09.203Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 11-05-PLAN.md
+last_updated: "2026-04-08T03:16:46.055Z"
 progress:
   total_phases: 12
-  completed_phases: 5
-  total_plans: 46
-  completed_plans: 39
+  completed_phases: 6
+  total_plans: 41
+  completed_plans: 40
 ---
 
 # Project State
@@ -21,7 +21,7 @@ Plan: 4 of 4
 
 ## Last Session
 
-- **Stopped At:** Completed 11-03-PLAN.md
+- **Stopped At:** Completed 11-05-PLAN.md
 - **Timestamp:** 2026-04-01T00:00:00Z
 
 ## Decisions
@@ -91,6 +91,7 @@ Plan: 4 of 4
 - [Phase 11]: Webhook success handlers now fund wallet and unlock workflow groups in one SQL transaction.
 - [Phase 11]: VNPay and MoMo create endpoints persist planId + pack price so webhook funding maps deterministically to D-02 packs.
 - [Phase 11]: check-upgrade now returns additive wallet fields (balance/overdraftLimit/legacyAccessUntil) while preserving token+user contract.
+- [Phase 11]: CreditHistory renders only when wallet state is non-null — avoids showing empty table to unauthenticated viewers
 
 ## Performance Metrics
 
@@ -123,6 +124,7 @@ Plan: 4 of 4
 | Phase 11-s-a-giao-th-c-t-nh-ti-n-sau-ng-k-t-i-kho-n-c-s-d-c-nh-s-d-ng-s-tr-tr-c-ti-p-v-o-s-d P01 | 5min | 2 tasks | 4 files |
 | Phase 11-s-a-giao-th-c-t-nh-ti-n-sau-ng-k-t-i-kho-n-c-s-d-c-nh-s-d-ng-s-tr-tr-c-ti-p-v-o-s-d P02 | 4min | 2 tasks | 4 files |
 | Phase 11-s-a-giao-th-c-t-nh-ti-n-sau-ng-k-t-i-kho-n-c-s-d-c-nh-s-d-ng-s-tr-tr-c-ti-p-v-o-s-d P03 | 6min | 3 tasks | 5 files |
+| Phase 11 P05 | 8min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
