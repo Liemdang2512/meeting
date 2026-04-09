@@ -137,7 +137,7 @@ sepayRouter.post('/webhook', async (req, res) => {
         INSERT INTO public.wallet_ledger
           (user_id, event_type, action_type, amount_credits, balance_after_credits, correlation_id, metadata)
         VALUES
-          (${order.user_id}, 'topup', NULL, ${topupCredits}, ${balance.balance_credits},
+          (${order.user_id}, 'topup', NULL, ${topupCredits}, ${Math.round(Number(balance.balance_credits))},
            ${order.id}, ${JSON.stringify({ gateway: 'sepay', planId: grantedPlan, gatewayTxnId })}::jsonb)
       `;
 

@@ -163,7 +163,7 @@ export async function applyVietqrPaymentSuccess(orderId: string, gatewayTxnId: s
         'topup',
         NULL,
         ${topupCredits},
-        ${balance.balance_credits},
+        ${Math.round(Number(balance.balance_credits))},
         ${order.id},
         ${JSON.stringify({ gateway: 'vietqr', planId: grantedPlan, gatewayTxnId })}::jsonb
       )
